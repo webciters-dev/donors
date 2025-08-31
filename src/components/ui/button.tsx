@@ -5,29 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-md hover:shadow-lg",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md",
-        outline:
-          "border border-border bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary-hover shadow-md hover:shadow-lg",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: "bg-emerald-600 text-white hover:bg-emerald-700",
+        destructive: "bg-rose-600 text-white hover:bg-rose-700",
+        outline: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50",
+        secondary: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-sm",
+        ghost: "hover:bg-slate-50 text-slate-700",
+        link: "text-emerald-600 underline-offset-4 hover:underline",
         hero: "bg-gradient-hero text-white hover:shadow-xl hover:scale-105 transform transition-all duration-300",
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-md",
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-md",
-        info: "bg-info text-info-foreground hover:bg-info/90 shadow-md",
+        success: "bg-emerald-600 text-white hover:bg-emerald-700",
+        warning: "bg-amber-600 text-white hover:bg-amber-700",
+        info: "bg-blue-600 text-white hover:bg-blue-700",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "px-4 py-2",
+        sm: "px-3 py-1.5 text-xs",
+        lg: "px-6 py-3",
+        icon: "h-9 w-9 px-0",
       },
     },
     defaultVariants: {

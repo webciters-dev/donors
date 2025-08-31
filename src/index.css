@@ -2,13 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* AWAKE Connect Design System - All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* AWAKE Connect Design System - Matching original design exactly */
 
 @layer base {
   :root {
-    /* Brand Colors - AWAKE Connect Palette */
+    /* Brand Colors - AWAKE Connect Palette (matching original) */
     --background: 0 0% 100%;
     --foreground: 220 13% 18%;
 
@@ -18,10 +16,10 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 220 13% 18%;
 
-    /* Primary - Deep teal/green for trust and growth */
+    /* Primary - Emerald for trust and growth */
     --primary: 158 64% 22%;
     --primary-foreground: 0 0% 98%;
-    --primary-hover: 158 64% 28%;
+    --primary-hover: 158 64% 32%;
     --primary-light: 158 64% 95%;
 
     /* Secondary - Warm orange for action and warmth */
@@ -65,19 +63,12 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -127,5 +118,10 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Custom input styling to match original design */
+  .input {
+    @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400;
   }
 }

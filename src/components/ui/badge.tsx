@@ -4,29 +4,27 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-lg border px-3 py-1 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        success:
-          "border-transparent bg-success text-success-foreground hover:bg-success/80",
-        warning:
-          "border-transparent bg-warning text-warning-foreground hover:bg-warning/80",
-        info:
-          "border-transparent bg-info text-info-foreground hover:bg-info/80",
-        outline: "text-foreground border-border",
+        default: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+        emerald: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+        amber: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+        rose: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+        slate: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+        secondary: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+        destructive: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+        outline: "border border-slate-200 text-slate-700",
         // Status-specific variants for applications
-        draft: "border-transparent bg-muted text-muted-foreground",
-        pending: "border-transparent bg-info text-info-foreground",
-        processing: "border-transparent bg-warning text-warning-foreground",
-        approved: "border-transparent bg-success text-success-foreground",
-        rejected: "border-transparent bg-destructive text-destructive-foreground",
+        draft: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+        pending: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+        processing: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+        approved: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+        rejected: "bg-rose-50 text-rose-700 ring-1 ring-rose-200",
+        success: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+        warning: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+        info: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
       },
     },
     defaultVariants: {
