@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Header } from "@/components/layout/Header";
+interface AdminHubProps {
+  go: (route: string, id?: number) => void;
+}
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,7 +68,11 @@ const mockKPIs = {
   successRate: 89
 };
 
-export const AdminHub = () => {
+interface AdminHubProps {
+  go: (route: string, id?: number) => void;
+}
+
+export const AdminHub = ({ go }: AdminHubProps) => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,7 +103,7 @@ export const AdminHub = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      
       
       <div className="pt-16">
         {/* Header */}
