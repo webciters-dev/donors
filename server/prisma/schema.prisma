@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  gender        String
+  university    String
+  field         String
+  program       String
+  gpa           Float
+  gradYear      Int
+  city          String
+  province      String
+  needUSD       Int
+  sponsored     Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  applications  Application[]
+  sponsorships  Sponsorship[]
+  disbursements Disbursement[]
+  
+  @@map("students")
+}
+
+model Application {
+  id           String            @id @default(cuid())
+  studentId    String
+  term         String
+  needUSD      Int
+  status       ApplicationStatus @default(PENDING)
+  submittedAt  DateTime          @default(now())
+  notes        String?
+  fxRate       Float?
+  
+  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("applications")
+}
+
+model Donor {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  organization String?
+  totalFunded  Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  sponsorships Sponsorship[]
+  
+  @@map("donors")
+}
+
+model Sponsorship {
+  id        String   @id @default(cuid())
+  donorId   String
+  studentId String
+  amount    Int
+  date      DateTime @default(now())
+  status    String   @default("active")
+  
+  donor     Donor    @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("sponsorships")
+}
+
+model Disbursement {
+  id        String            @id @default(cuid())
+  studentId String
+  amount    Int
+  date      DateTime          @default(now())
+  status    DisbursementStatus @default(INITIATED)
+  notes     String?
+  
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@map("disbursements")
+}
+
+enum ApplicationStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+}
+
+enum DisbursementStatus {
+  INITIATED
+  COMPLETED
+  FAILED
+}

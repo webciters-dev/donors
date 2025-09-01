@@ -1,6 +1,6 @@
 # AWAKE Connect - Student Sponsorship Platform
 
-A modern React frontend for managing student sponsorships with donors and administrators.
+A comprehensive platform connecting donors with students in Pakistan who need educational funding. Built with React frontend and Node.js + Express + PostgreSQL backend.
 
 ## Features
 

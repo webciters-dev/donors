@@ -1,21 +1,85 @@
-import apiClient from './client';
-import { mockData } from '../data/mockData';
+import apiClient from './client.js';
 
-// Check if API is available
-const isApiAvailable = () => Boolean(import.meta.env.VITE_API_URL);
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Students endpoints
+// Fallback mock data
+const mockData = {
+  students: [
+    {
+      id: '1',
+      name: 'Aisha Khan',
+      email: 'aisha.khan@example.com',
+      gender: 'F',
+      university: 'University of Engineering and Technology, Lahore',
+      program: 'Computer Science',
+      field: 'Engineering',
+      gpa: 3.8,
+      gradYear: 2025,
+      city: 'Lahore',
+      province: 'Punjab',
+      needUSD: 2500,
+      sponsored: false
+    },
+    {
+      id: '2',
+      name: 'Muhammad Ahmed',
+      email: 'ahmed.muhammad@example.com',
+      gender: 'M',
+      university: 'National University of Sciences and Technology',
+      program: 'Mechanical Engineering', 
+      field: 'Engineering',
+      gpa: 3.6,
+      gradYear: 2024,
+      city: 'Islamabad',
+      province: 'Islamabad',
+      needUSD: 3000,
+      sponsored: false
+    }
+  ],
+  kpis: {
+    totalDonors: 45,
+    sponsoredStudents: 89,
+    activeRepayers: 67,
+    onTimeRepaymentRate: 94,
+    totalDisbursed: 245000,
+    averageSponsorship: 2750
+  },
+  applications: [
+    {
+      id: '1',
+      student: { name: 'Hassan Malik', university: 'IBA Karachi', program: 'Business Admin' },
+      term: 'Fall 2024',
+      status: 'PENDING',
+      submittedAt: '2024-01-15'
+    }
+  ],
+  receipts: [
+    {
+      id: '1',
+      date: '2024-01-15',
+      studentName: 'Aisha Khan',
+      amount: 2500,
+      receiptNumber: 'RCP-2024-0001',
+      taxYear: 2024
+    }
+  ],
+  sponsorships: []
+};
+
+// Students API
 export const listStudents = async (params = {}) => {
-  if (!isApiAvailable()) {
-    // Fallback to mock data with client-side filtering
-    let students = mockData.students;
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, using mock data');
     
+    let students = [...mockData.students];
+    
+    // Apply filters if provided
     if (params.search) {
       const search = params.search.toLowerCase();
       students = students.filter(s => 
         s.name.toLowerCase().includes(search) ||
-        s.program.toLowerCase().includes(search) ||
         s.university.toLowerCase().includes(search) ||
+        s.program.toLowerCase().includes(search) ||
         s.city.toLowerCase().includes(search)
       );
     }
@@ -36,114 +100,255 @@ export const listStudents = async (params = {}) => {
       students = students.filter(s => s.city.toLowerCase() === params.city.toLowerCase());
     }
     
-    if (params.maxAmount) {
-      students = students.filter(s => s.needUsd <= Number(params.maxAmount));
+    if (params.maxBudget) {
+      students = students.filter(s => s.needUSD <= Number(params.maxBudget));
     }
     
-    return { data: students };
+    return { data: { students, pagination: { total: students.length } } };
   }
   
-  const response = await apiClient.get('/api/students', { params });
-  return response.data;
+  try {
+    const response = await apiClient.get('/students', { params });
+    return response;
+  } catch (error) {
+    console.error('API Error, falling back to mock data:', error);
+    return { data: { students: mockData.students, pagination: { total: mockData.students.length } } };
+  }
 };
 
 export const getStudentById = async (id) => {
-  if (!isApiAvailable()) {
+  if (!API_BASE_URL) {
     const student = mockData.students.find(s => s.id === id);
     return { data: student };
   }
   
-  const response = await apiClient.get(`/api/students/${id}`);
-  return response.data;
+  try {
+    const response = await apiClient.get(`/students/${id}`);
+    return response;
+  } catch (error) {
+    console.error('API Error, falling back to mock data:', error);
+    const student = mockData.students.find(s => s.id === id);
+    return { data: student };
+  }
 };
 
-// Sponsorship endpoints
-export const createSponsorship = async (data) => {
-  if (!isApiAvailable()) {
-    // Mock response with fake Stripe URL
-    return {
-      data: {
-        sponsorshipId: Math.random().toString(36).substr(2, 9),
-        stripeCheckoutUrl: 'https://checkout.stripe.com/pay/test_session_123'
-      }
-    };
+export const createStudent = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating student creation');
+    return { data: { ...data, id: Date.now().toString() } };
   }
   
-  const response = await apiClient.post('/api/sponsorships', data);
-  return response.data;
-};
-
-// Donor endpoints
-export const getDonorReceipts = async () => {
-  if (!isApiAvailable()) {
-    return { data: mockData.receipts };
+  try {
+    const response = await apiClient.post('/students', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
   }
-  
-  const response = await apiClient.get('/api/donor/receipts');
-  return response.data;
 };
 
-export const getDonorSponsorships = async () => {
-  if (!isApiAvailable()) {
-    return { data: mockData.sponsorships };
-  }
-  
-  const response = await apiClient.get('/api/donor/sponsorships');
-  return response.data;
-};
-
-// Reports endpoints
-export const getKPIs = async () => {
-  if (!isApiAvailable()) {
-    return { data: mockData.kpis };
-  }
-  
-  const response = await apiClient.get('/api/reports/kpis');
-  return response.data;
-};
-
-// Admin endpoints
+// Applications API
 export const getApplications = async (params = {}) => {
-  if (!isApiAvailable()) {
-    let applications = mockData.applications;
-    
-    if (params.status) {
-      applications = applications.filter(a => a.status === params.status);
-    }
-    
-    return { data: applications };
+  if (!API_BASE_URL) {
+    return { data: { applications: mockData.applications, pagination: { total: mockData.applications.length } } };
   }
   
-  const response = await apiClient.get('/api/applications', { params });
-  return response.data;
+  try {
+    const response = await apiClient.get('/applications', { params });
+    return response;
+  } catch (error) {
+    console.error('API Error, falling back to mock data:', error);
+    return { data: { applications: mockData.applications, pagination: { total: mockData.applications.length } } };
+  }
+};
+
+export const createApplication = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating application creation');
+    return { data: { ...data, id: Date.now().toString(), status: 'PENDING' } };
+  }
+  
+  try {
+    const response = await apiClient.post('/applications', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
 };
 
 export const updateApplicationStatus = async (id, data) => {
-  if (!isApiAvailable()) {
-    return { data: { success: true, message: 'Status updated (mock)' } };
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating status update');
+    return { data: { id, ...data } };
   }
   
-  const response = await apiClient.put(`/api/applications/${id}/status`, data);
-  return response.data;
+  try {
+    const response = await apiClient.patch(`/applications/${id}/status`, data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
 };
 
-// Auth endpoints
+// Donors API
+export const getDonors = async (params = {}) => {
+  if (!API_BASE_URL) {
+    return { data: { donors: [], pagination: { total: 0 } } };
+  }
+  
+  try {
+    const response = await apiClient.get('/donors', { params });
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { data: { donors: [], pagination: { total: 0 } } };
+  }
+};
+
+export const createDonor = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating donor creation');
+    return { data: { ...data, id: Date.now().toString() } };
+  }
+  
+  try {
+    const response = await apiClient.post('/donors', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+export const getDonorReceipts = async (donorId) => {
+  if (!API_BASE_URL) {
+    return { data: { receipts: mockData.receipts } };
+  }
+  
+  try {
+    const response = await apiClient.get(`/donors/${donorId}/receipts`);
+    return response;
+  } catch (error) {
+    console.error('API Error, falling back to mock data:', error);
+    return { data: { receipts: mockData.receipts } };
+  }
+};
+
+export const getDonorSponsorships = async (donorId) => {
+  if (!API_BASE_URL) {
+    return { data: { sponsorships: mockData.sponsorships } };
+  }
+  
+  try {
+    const response = await apiClient.get(`/donors/${donorId}/sponsorships`);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    return { data: { sponsorships: mockData.sponsorships } };
+  }
+};
+
+// Sponsorships API
+export const createSponsorship = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating sponsorship creation');
+    return { data: { ...data, id: Date.now().toString() } };
+  }
+  
+  try {
+    const response = await apiClient.post('/sponsorships', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+// Disbursements API
+export const createDisbursement = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, simulating disbursement creation');  
+    return { data: { ...data, id: Date.now().toString() } };
+  }
+  
+  try {
+    const response = await apiClient.post('/disbursements', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+// Reports API
+export const getKPIs = async () => {
+  if (!API_BASE_URL) {
+    return { data: mockData.kpis };
+  }
+  
+  try {
+    // This would be implemented in the backend
+    return { data: mockData.kpis };
+  } catch (error) {
+    console.error('API Error, falling back to mock data:', error);
+    return { data: mockData.kpis };
+  }
+};
+
+// Payments API
+export const createCheckoutSession = async (data) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, payment simulation not available');
+    throw new Error('Payment processing requires backend API');
+  }
+  
+  try {
+    const response = await apiClient.post('/payments/create-checkout-session', data);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+export const verifyPayment = async (sessionId) => {
+  if (!API_BASE_URL) {
+    console.log('API_BASE_URL not found, payment verification not available');
+    throw new Error('Payment verification requires backend API');
+  }
+  
+  try {
+    const response = await apiClient.post('/payments/verify-payment', { sessionId });
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+// Auth endpoints (placeholder for future implementation)
 export const login = async (credentials) => {
-  if (!isApiAvailable()) {
-    // Mock login response
+  if (!API_BASE_URL) {
+    console.log('Login simulation:', credentials);
     return {
       data: {
-        token: 'mock_jwt_token_123',
+        token: 'mock-jwt-token',
         user: {
-          id: 1,
-          name: 'Test User',
+          id: '1',
           email: credentials.email,
-          role: credentials.email.includes('admin') ? 'ADMIN' : 'DONOR'
+          role: 'admin'
         }
       }
     };
   }
   
-  const response = await apiClient.post('/api/auth/login', credentials);
-  return response.data;
+  try {
+    const response = await apiClient.post('/auth/login', credentials);
+    return response;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
 };
