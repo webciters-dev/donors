@@ -1,73 +1,154 @@
-# Welcome to your Lovable project
+# AWAKE Connect - Student Sponsorship Platform
 
-## Project info
+A modern React frontend for managing student sponsorships with donors and administrators.
 
-**URL**: https://lovable.dev/projects/1af43c53-b032-49e5-a600-bb9d44dffcf7
+## Features
 
-## How can I edit this code?
+- **HashRouter Support**: Works with static hosting (/#/marketplace, /#/students/1, etc.)
+- **Whole-Student Sponsorship Model**: No partial funding bars, clean sponsor-student matching
+- **Modern UI**: Emerald/slate design system with shadcn/ui components
+- **Mock Data with API Ready**: Fallback to mock data when backend is unavailable
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
 
-There are several ways of editing your application.
+## Project Structure
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/1af43c53-b032-49e5-a600-bb9d44dffcf7) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── api/
+│   ├── client.js          # Axios instance with baseURL config
+│   └── endpoints.js       # API functions with mock fallbacks
+├── components/
+│   ├── layout/
+│   │   └── Header.jsx     # Main navigation
+│   └── ui/                # shadcn/ui components (JS versions)
+├── data/
+│   └── mockData.js        # Mock data for development
+├── hooks/
+│   └── use-toast.js       # Toast notification hook
+├── pages/                 # All page components
+└── lib/
+    └── utils.js           # Utility functions
 ```
 
-**Edit a file directly in GitHub**
+## Quick Start
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-**Use GitHub Codespaces**
+2. **Run development server**:
+   ```bash
+   npm run dev
+   ```
+   
+   Open [http://localhost:8080](http://localhost:8080) in your browser.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Build for production**:
+   ```bash
+   npm run build
+   ```
 
-## What technologies are used for this project?
+## Configuration
 
-This project is built with:
+### Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Create a `.env` file in the root directory:
 
-## How can I deploy this project?
+```env
+# Optional: Backend API URL
+VITE_API_URL=http://localhost:3001
 
-Simply open [Lovable](https://lovable.dev/projects/1af43c53-b032-49e5-a600-bb9d44dffcf7) and click on Share -> Publish.
+# When VITE_API_URL is not set, the app uses mock data
+```
 
-## Can I connect a custom domain to my Lovable project?
+### API Integration
 
-Yes, you can!
+The app is designed to work with or without a backend:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- **With Backend**: Set `VITE_API_URL` in `.env`
+- **Without Backend**: Remove/comment out `VITE_API_URL` to use mock data
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Routes
+
+All routes use HashRouter for static hosting compatibility:
+
+- `/#/` - Landing page
+- `/#/marketplace` - Browse students needing sponsorship  
+- `/#/donor` - Donor dashboard
+- `/#/preferences` - Donor preferences
+- `/#/receipts` - Donation receipts
+- `/#/apply` - Student application form
+- `/#/admin` - Admin hub
+- `/#/reports` - Analytics and reports
+- `/#/matrix` - Sponsorship matrix
+- `/#/update` - Student term updates
+- `/#/students/:id` - Individual student detail
+
+## Key Features
+
+### Whole-Student Sponsorship Model
+- Students display total need (USD)
+- "Max I'll donate" filter for donors
+- Single "Sponsor student" CTA (no partial funding)
+- Status chips: "Sponsored" / "Repaying"
+
+### Mock Data System
+- Complete student profiles with realistic data
+- Donor sponsorship history
+- Application workflows
+- Admin management features
+
+### Modern Stack
+- **React 18** (JavaScript, not TypeScript)
+- **Vite** for fast development and building
+- **Tailwind CSS** for styling
+- **shadcn/ui** for component library
+- **React Query** for data fetching
+- **Axios** for HTTP requests
+- **React Router** with HashRouter
+
+## Development
+
+### Adding New Pages
+
+1. Create component in `src/pages/`
+2. Add route in `src/App.jsx`
+3. Update navigation in `src/components/layout/Header.jsx`
+
+### API Integration
+
+Add new endpoints in `src/api/endpoints.js`:
+
+```javascript
+export const getNewData = async () => {
+  if (!import.meta.env.VITE_API_URL) {
+    // Return mock data
+    return mockData.newData;
+  }
+  
+  // Make API call
+  const response = await apiClient.get('/new-data');
+  return response.data;
+};
+```
+
+### Styling
+
+The project uses a consistent design system:
+- **Colors**: Emerald primary, slate secondary
+- **Borders**: Rounded corners (rounded-2xl)
+- **Components**: shadcn/ui with custom variants
+- **Layout**: Cards and lists with consistent spacing
+
+## Deployment
+
+Since the app uses HashRouter, it can be deployed to any static hosting service:
+
+1. Build the project: `npm run build`
+2. Upload the `dist/` folder to your hosting provider
+3. No server-side routing configuration needed
+
+## Next Steps
+
+This frontend is ready for backend integration. The API client and endpoints are configured to switch between mock data and real API calls based on the `VITE_API_URL` environment variable.
