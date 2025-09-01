@@ -72,36 +72,38 @@ export const DonorDashboard = ({ setActive }: DonorDashboardProps) => {
     { key: "status", label: "Status", render: (r: any) => <Badge variant={r.status === "Repaying" ? "success" : "warning"}>{r.status}</Badge> },
     { key: "progress", label: "Repayment", render: (r: any) => <Progress value={r.progress} /> },
   ];
+
+  // These rows represent students the donor fully sponsors
   const rows = [
-    { name: "Ayesha Khan", university: "NUST", field: "CS", status: "Active", progress: 35 },
-    { name: "Bilal Ahmed", university: "UET Lahore", field: "ME", status: "Repaying", progress: 68 },
-    { name: "Hira Fatima", university: "DUHS", field: "MBBS", status: "Active", progress: 10 },
+    { name: "Ayesha Khan", university: "NUST",       field: "CS",   status: "Active",   progress: 35 },
+    { name: "Bilal Ahmed",  university: "UET Lahore", field: "ME",   status: "Repaying", progress: 68 },
+    { name: "Hira Fatima",  university: "DUHS",       field: "MBBS", status: "Active",   progress: 10 },
   ];
 
   return (
     <div className="space-y-6">
-      <SectionTitle icon={BadgeCheck} title="Donor Dashboard" subtitle="Your portfolio and impact" />
+      <SectionTitle icon={BadgeCheck} title="Donor Dashboard" subtitle="Students you sponsor & repayment progress" />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPI label="Students Funded" value={rows.length} icon={UserRound} />
+        <KPI label="Students Sponsored" value={rows.length} icon={UserRound} />
         <KPI label="Repayment On-Time" value="92%" icon={ShieldCheck} />
-        <KPI label="This Year Giving" value="$4,250" icon={DollarSign} />
-        <KPI label="Badges Earned" value={3} icon={BadgeCheck} />
+        <KPI label="This Year Giving"   value="$4,250" icon={DollarSign} />
+        <KPI label="Badges Earned"      value={3}      icon={BadgeCheck} />
       </div>
 
-      {/* Funded table + actions */}
+      {/* Sponsored students */}
       <Card className="p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-base font-semibold text-slate-900">Funded Students</h3>
+          <h3 className="text-base font-semibold text-slate-900">Your Sponsored Students</h3>
           <div className="flex items-center gap-2">
-            <SecondaryButton onClick={() => setActive && setActive('preferences')} aria-label="Open donor preferences">
+            <SecondaryButton onClick={() => setActive && setActive("preferences")}>
               Preferences
             </SecondaryButton>
-            <SecondaryButton onClick={() => setActive && setActive('receipts')} aria-label="Open tax receipts">
+            <SecondaryButton onClick={() => setActive && setActive("receipts")}>
               Tax Receipts
             </SecondaryButton>
-            <SecondaryButton onClick={() => alert('Downloading (static)')} aria-label="Download annual impact report">
+            <SecondaryButton onClick={() => alert("Downloading (static)")}>
               <Download className="h-4 w-4" /> Annual Impact Report
             </SecondaryButton>
           </div>

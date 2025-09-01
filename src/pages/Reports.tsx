@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
-import { Download, TrendingUp } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, Users, ShieldCheck, DollarSign } from "lucide-react";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 
 const SectionTitle = ({ icon: Icon, title, subtitle }: { icon?: any; title: string; subtitle?: string }) => (
   <div className="flex items-center justify-between">
@@ -12,65 +13,83 @@ const SectionTitle = ({ icon: Icon, title, subtitle }: { icon?: any; title: stri
   </div>
 );
 
-const SecondaryButton = ({ children, className = "", ...props }: any) => (
-  <button
-    className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium border shadow-sm border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 ${className}`}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-const KPI = ({ label, value, icon: Icon }: { label: string; value: number | string; icon?: any }) => (
-  <Card className="p-5">
-    <div className="flex items-center gap-3">
-      {Icon && <Icon className="h-5 w-5 text-emerald-600" />}
-      <div>
-        <div className="text-sm text-slate-600">{label}</div>
-        <div className="text-2xl font-semibold text-slate-900">{value}</div>
-      </div>
-    </div>
-  </Card>
-);
-
+// Mock rollups for the new model
 const kpis = [
-  { label: "Total Donors", value: 1874 },
-  { label: "Students Funded", value: 4212 },
-  { label: "Active Repayers", value: 2789 },
-  { label: "On-Time Repayment", value: "92%" },
+  { label: "Students Sponsored", value: 2, icon: Users },
+  { label: "Students Available", value: 2, icon: Users },
+  { label: "Avg Sponsorship", value: "$3,100", icon: DollarSign },
+  { label: "On-Time Repayment", value: "92%", icon: ShieldCheck },
 ];
 
-const repaymentsSeries = [
-  { month: "Jan", onTime: 90, late: 10 },
-  { month: "Feb", onTime: 92, late: 8 },
-  { month: "Mar", onTime: 93, late: 7 },
-  { month: "Apr", onTime: 91, late: 9 },
-  { month: "May", onTime: 94, late: 6 },
-  { month: "Jun", onTime: 92, late: 8 },
+// Sponsorships by program (count of students sponsored)
+const byProgram = [
+  { program: "CS", count: 1 },
+  { program: "ME", count: 1 },
+  { program: "EE", count: 0 },
+  { program: "MBBS", count: 0 },
 ];
+
+// Availability split
+const availability = [
+  { name: "Sponsored", value: 2 },
+  { name: "Available", value: 2 },
+];
+
+const COLORS = ["#10b981", "#94a3b8"];
 
 export const Reports = () => (
   <div className="space-y-6">
-    <SectionTitle icon={TrendingUp} title="Reporting & Analytics" subtitle="Program outcomes and repayment performance" />
+    <SectionTitle icon={TrendingUp} title="Reporting & Analytics" subtitle="Sponsorship and repayment performance" />
+
+    {/* KPIs */}
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      {kpis.map((k, i) => (<KPI key={i} label={k.label} value={k.value} />))}
+      {kpis.map((k, i) => (
+        <Card key={i} className="p-5">
+          <div className="flex items-center gap-3">
+            {k.icon && <k.icon className="h-5 w-5 text-emerald-600" />}
+            <div>
+              <div className="text-sm text-slate-600">{k.label}</div>
+              <div className="text-2xl font-semibold text-slate-900">{k.value}</div>
+            </div>
+          </div>
+        </Card>
+      ))}
     </div>
-    <Card className="p-5 space-y-4">
-      <h3 className="text-base font-semibold text-slate-900">Repayment Performance</h3>
-      <div className="h-64 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={repaymentsSeries}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" /><YAxis /><Tooltip />
-            <Bar dataKey="onTime" fill="#059669" />
-            <Bar dataKey="late" fill="#f59e0b" />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </Card>
-    <div className="flex items-center gap-3">
-      <SecondaryButton><Download className="h-4 w-4" /> Export CSV</SecondaryButton>
-      <SecondaryButton><Download className="h-4 w-4" /> Export PDF</SecondaryButton>
+
+    {/* Charts */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <Card className="p-5 space-y-3">
+        <h3 className="text-base font-semibold text-slate-900">Sponsorships by Program</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={byProgram}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="program" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#10b981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      <Card className="p-5 space-y-3">
+        <h3 className="text-base font-semibold text-slate-900">Availability Split</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={availability} dataKey="value" nameKey="name" outerRadius={90} label>
+                {availability.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex gap-2">
+          <Badge variant="success">Sponsored</Badge>
+          <Badge variant="secondary">Available</Badge>
+        </div>
+      </Card>
     </div>
   </div>
 );
