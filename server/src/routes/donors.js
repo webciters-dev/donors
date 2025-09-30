@@ -1,184 +1,157 @@
-import express from 'express';
-import { PrismaClient } from '@prisma/client';
+// server/src/routes/donors.js
+import express from "express";
+import prisma from "../prismaClient.js";
+import { requireAuth, onlyRoles } from "../middleware/auth.js";
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
-// GET /api/donors - List all donors
-router.get('/', async (req, res) => {
+/**
+ * GET /api/donors/me
+ * Return the donor user’s donor record + basic aggregates.
+ */
+router.get("/me", requireAuth, onlyRoles("DONOR", "ADMIN"), async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    const [donors, total] = await Promise.all([
-      prisma.donor.findMany({
-        skip,
-        take: parseInt(limit),
-        orderBy: { totalFunded: 'desc' },
-        include: {
-          sponsorships: {
-            include: {
-              student: {
-                select: {
-                  id: true,
-                  name: true,
-                  university: true,
-                  program: true,
-                  sponsored: true
-                }
-              }
-            }
-          },
-          _count: {
-            select: {
-              sponsorships: true
-            }
-          }
-        }
-      }),
-      prisma.donor.count()
-    ]);
-    
-    res.json({
-      donors,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / parseInt(limit))
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching donors:', error);
-    res.status(500).json({ error: 'Failed to fetch donors' });
-  }
-});
+    // If ADMIN calls this, allow seeing any donor by ?donorId=...
+    const donorId =
+      req.user.role === "ADMIN" && req.query.donorId
+        ? String(req.query.donorId)
+        : req.user.donorId;
 
-// GET /api/donors/:id - Get single donor
-router.get('/:id', async (req, res) => {
-  try {
+    if (!donorId) {
+      return res.status(400).json({ error: "No donorId on account." });
+    }
+
     const donor = await prisma.donor.findUnique({
-      where: { id: req.params.id },
-      include: {
-        sponsorships: {
-          include: {
-            student: {
-              select: {
-                id: true,
-                name: true,
-                university: true,
-                program: true,
-                sponsored: true,
-                gradYear: true,
-                gpa: true
-              }
-            }
-          },
-          orderBy: { date: 'desc' }
-        }
-      }
+      where: { id: donorId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        organization: true,
+        totalFunded: true,
+        createdAt: true,
+        updatedAt: true,
+        country: true,
+        address: true,
+        currencyPreference: true,
+        taxId: true,
+      },
     });
-    
-    if (!donor) {
-      return res.status(404).json({ error: 'Donor not found' });
-    }
-    
-    res.json(donor);
-  } catch (error) {
-    console.error('Error fetching donor:', error);
-    res.status(500).json({ error: 'Failed to fetch donor' });
+
+    if (!donor) return res.status(404).json({ error: "Donor not found" });
+
+    // Basic aggregates
+    const [count, sum] = await Promise.all([
+      prisma.sponsorship.count({ where: { donorId } }),
+      prisma.sponsorship.aggregate({
+        _sum: { amount: true },
+        where: { donorId },
+      }),
+    ]);
+
+    res.json({
+      donor,
+      stats: {
+        sponsorshipCount: count,
+        totalFunded: Number(sum?._sum?.amount || 0),
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to load donor profile" });
   }
 });
 
-// POST /api/donors - Create new donor
-router.post('/', async (req, res) => {
+/**
+ * PUT /api/donors/me
+ * Update donor profile fields: name, organization, country, address, currencyPreference
+ */
+router.put("/me", requireAuth, onlyRoles("DONOR", "ADMIN"), async (req, res) => {
   try {
-    const { name, email, organization } = req.body;
+    const donorId = req.user.role === "ADMIN" && req.query.donorId ? String(req.query.donorId) : req.user.donorId;
+    if (!donorId) return res.status(400).json({ error: "No donorId on account." });
 
-    if (!name || !email) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: name, email' 
-      });
-    }
-
-    const donor = await prisma.donor.create({
+    const { name, organization, country, address, currencyPreference, taxId } = req.body || {};
+    const updated = await prisma.donor.update({
+      where: { id: donorId },
       data: {
-        name,
-        email,
-        organization
+        ...(name != null ? { name } : {}),
+        ...(organization != null ? { organization } : {}),
+        ...(country != null ? { country } : {}),
+        ...(address != null ? { address } : {}),
+        ...(currencyPreference === "USD" || currencyPreference === "PKR"
+          ? { currencyPreference }
+          : {}),
+        ...(taxId != null ? { taxId } : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        organization: true,
+        totalFunded: true,
+        country: true,
+        address: true,
+        currencyPreference: true,
+        taxId: true,
+        updatedAt: true,
+      },
+    });
+
+    res.json({ donor: updated });
+  } catch (e) {
+    console.error(e);
+    if (e.code === "P2025") return res.status(404).json({ error: "Donor not found" });
+    res.status(500).json({ error: "Failed to update donor" });
+  }
+});
+/**
+ * GET /api/donors/me/sponsorships
+ * Return this donor’s sponsorships with student info (for dashboard list).
+ */
+router.get(
+  "/me/sponsorships",
+  requireAuth,
+  onlyRoles("DONOR", "ADMIN"),
+  async (req, res) => {
+    try {
+      const donorId =
+        req.user.role === "ADMIN" && req.query.donorId
+          ? String(req.query.donorId)
+          : req.user.donorId;
+
+      if (!donorId) {
+        return res.status(400).json({ error: "No donorId on account." });
       }
-    });
-    
-    res.status(201).json(donor);
-  } catch (error) {
-    console.error('Error creating donor:', error);
-    if (error.code === 'P2002') {
-      return res.status(400).json({ error: 'Donor with this email already exists' });
+
+      const sponsorships = await prisma.sponsorship.findMany({
+        where: { donorId },
+        orderBy: { date: "desc" },
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              university: true,
+              program: true,
+              city: true,
+              province: true,
+              gpa: true,
+              needUSD: true,   // current schema keeps need on Student too
+              needUsd: true,   // tolerant to both
+              needPKR: true,
+              sponsored: true,
+            },
+          },
+        },
+      });
+
+      res.json({ sponsorships });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Failed to load sponsorships" });
     }
-    res.status(500).json({ error: 'Failed to create donor' });
   }
-});
-
-// GET /api/donors/:id/receipts - Get donor receipts
-router.get('/:id/receipts', async (req, res) => {
-  try {
-    const sponsorships = await prisma.sponsorship.findMany({
-      where: { donorId: req.params.id },
-      include: {
-        student: {
-          select: {
-            name: true,
-            university: true,
-            program: true
-          }
-        }
-      },
-      orderBy: { date: 'desc' }
-    });
-    
-    // Transform sponsorships into receipt format
-    const receipts = sponsorships.map((sponsorship, index) => ({
-      id: sponsorship.id,
-      date: sponsorship.date.toISOString().split('T')[0],
-      studentName: sponsorship.student.name,
-      amount: sponsorship.amount,
-      receiptNumber: `RCP-${sponsorship.date.getFullYear()}-${String(index + 1).padStart(4, '0')}`,
-      taxYear: sponsorship.date.getFullYear()
-    }));
-    
-    res.json({ receipts });
-  } catch (error) {
-    console.error('Error fetching donor receipts:', error);
-    res.status(500).json({ error: 'Failed to fetch donor receipts' });
-  }
-});
-
-// GET /api/donors/:id/sponsorships - Get donor sponsorships
-router.get('/:id/sponsorships', async (req, res) => {
-  try {
-    const sponsorships = await prisma.sponsorship.findMany({
-      where: { donorId: req.params.id },
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            university: true,
-            program: true,
-            sponsored: true,
-            gradYear: true,
-            gpa: true
-          }
-        }
-      },
-      orderBy: { date: 'desc' }
-    });
-    
-    res.json({ sponsorships });
-  } catch (error) {
-    console.error('Error fetching donor sponsorships:', error);
-    res.status(500).json({ error: 'Failed to fetch donor sponsorships' });
-  }
-});
+);
 
 export default router;

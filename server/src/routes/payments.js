@@ -141,7 +141,8 @@ router.post('/verify-payment', async (req, res) => {
           donor: {
             select: {
               name: true,
-              organization: true
+              organization: true,
+              taxId: true
             }
           },
           student: {

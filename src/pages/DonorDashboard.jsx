@@ -1,120 +1,234 @@
+// src/pages/DonorDashboard.jsx
+import { useEffect, useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Award, DollarSign, TrendingUp, Settings, FileText, Download } from "lucide-react";
-import { mockData } from "@/data/mockData";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { DollarSign, GraduationCap, Building2, UserRound } from "lucide-react";
 
-const SectionTitle = ({ icon: Icon, title, subtitle }) => (
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-3">
-      {Icon && <Icon className="h-5 w-5 text-emerald-600" aria-hidden />}
-      <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-    </div>
-    {subtitle && <p className="text-sm text-slate-500">{subtitle}</p>}
-  </div>
-);
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-const SecondaryButton = ({ onClick, icon: Icon, children }) => (
-  <Button onClick={onClick} variant="outline" className="rounded-2xl">
-    {Icon && <Icon className="h-4 w-4 mr-2" />}
-    {children}
-  </Button>
-);
+export const DonorDashboard = () => {
+  const { token, user, logout } = useAuth();
+  const navigate = useNavigate();
 
-const KPI = ({ icon: Icon, label, value }) => (
-  <Card className="p-4">
-    <div className="flex items-center gap-3">
-      <Icon className="h-8 w-8 text-emerald-600" />
-      <div>
-        <div className="text-2xl font-bold text-slate-900">{value}</div>
-        <div className="text-sm text-slate-600">{label}</div>
-      </div>
-    </div>
-  </Card>
-);
+  const [profile, setProfile] = useState(null);
+  const [sponsorships, setSponsorships] = useState([]);
+  const [query, setQuery] = useState("");
 
-const Table = ({ columns, rows }) => (
-  <div className="overflow-x-auto">
-    <table className="min-w-full">
-      <thead>
-        <tr className="border-b border-slate-200">
-          {columns.map((col, i) => (
-            <th key={i} className="text-left py-3 px-4 font-semibold text-slate-900">
-              {col}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((row, i) => (
-          <tr key={i} className="border-b border-slate-100">
-            {row.map((cell, j) => (
-              <td key={j} className="py-3 px-4 text-slate-700">
-                {cell}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+  const isDonor = user?.role === "DONOR";
+  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-export const DonorDashboard = ({ setActive }) => {
-  const sponsoredStudents = mockData.sponsorships.map(s => ({
-    ...s.student,
-    amountUsd: s.amountUsd,
-    status: s.status === 'PAID' ? 'Sponsored' : 'Pending',
-    repaymentProgress: Math.floor(Math.random() * 100) // Mock repayment progress
-  }));
+  useEffect(() => {
+    if (!isDonor) return;
+    let dead = false;
 
-  const tableColumns = ["Name", "University", "Field", "Status", "Repayment Progress"];
-  const tableRows = sponsoredStudents.map(student => [
-    student.name,
-    student.university,
-    student.program,
-    <Badge key="status" variant={student.status === 'Sponsored' ? 'default' : 'secondary'}>
-      {student.status}
-    </Badge>,
-    `${student.repaymentProgress}%`
-  ]);
+    async function load() {
+      try {
+        const [pRes, sRes] = await Promise.all([
+          fetch(`${API}/api/donors/me`, { headers: { ...authHeader } }),
+          fetch(`${API}/api/donors/me/sponsorships`, {
+            headers: { ...authHeader },
+          }),
+        ]);
+
+        if (pRes.status === 401 || sRes.status === 401) {
+          toast.error("Your session expired. Please sign in again.");
+          logout?.();
+          return;
+        }
+
+        if (!pRes.ok) throw new Error(await pRes.text());
+        if (!sRes.ok) throw new Error(await sRes.text());
+
+        const p = await pRes.json();
+        const s = await sRes.json();
+        if (!dead) {
+          setProfile(p);
+          setSponsorships(Array.isArray(s?.sponsorships) ? s.sponsorships : []);
+        }
+      } catch (e) {
+        console.error(e);
+        if (!dead) {
+          toast.error("Failed to load donor dashboard");
+          setProfile(null);
+          setSponsorships([]);
+        }
+      }
+    }
+
+    load();
+    return () => {
+      dead = true;
+    };
+  }, [isDonor, token]);
+
+  const fmt = (n) =>
+    Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+  const filtered = useMemo(() => {
+    const t = (query || "").toLowerCase();
+    return sponsorships.filter((sp) => {
+      const s = sp.student || {};
+      return (
+        !t ||
+        s.name?.toLowerCase().includes(t) ||
+        s.university?.toLowerCase().includes(t) ||
+        s.program?.toLowerCase().includes(t) ||
+        s.city?.toLowerCase().includes(t)
+      );
+    });
+  }, [sponsorships, query]);
+
+  if (!isDonor) {
+    return (
+      <Card className="p-6">
+        <p className="text-slate-700">
+          Donor accounts only. Please{" "}
+          <Button
+            variant="link"
+            className="px-1"
+            onClick={() => navigate("/login")}
+          >
+            sign in
+          </Button>
+          .
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <SectionTitle
-        icon={Heart}
-        title="Donor Dashboard"
-        subtitle="Track your impact and sponsored students"
-      />
-
-      {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPI icon={Heart} label="Students Sponsored" value="2" />
-        <KPI icon={TrendingUp} label="Repayment On-Time" value="100%" />
-        <KPI icon={DollarSign} label="This Year Giving" value="$4,200" />
-        <KPI icon={Award} label="Badges Earned" value="3" />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3">
-        <SecondaryButton onClick={() => setActive("preferences")} icon={Settings}>
-          Preferences
-        </SecondaryButton>
-        <SecondaryButton onClick={() => setActive("receipts")} icon={FileText}>
-          Tax Receipts
-        </SecondaryButton>
-        <SecondaryButton onClick={() => alert("Annual report downloaded!")} icon={Download}>
-          Annual Impact Report
-        </SecondaryButton>
-      </div>
-
-      {/* Sponsored Students Table */}
-      <Card className="p-6">
-        <SectionTitle title="Your Sponsored Students" subtitle="Track progress and repayments" />
-        <div className="mt-4">
-          <Table columns={tableColumns} rows={tableRows} />
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Donor Dashboard</h1>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search my sponsored students…"
+            className="w-80 rounded-2xl"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <Button
+            className="rounded-2xl"
+            variant="outline"
+            onClick={() => navigate("/marketplace")}
+          >
+            Sponsor another student
+          </Button>
         </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="p-4">
+          <div className="text-sm text-slate-600">Total Sponsored (USD)</div>
+          <div className="text-2xl font-semibold">
+            ${fmt(profile?.stats?.totalFunded)}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-slate-600">Students Sponsored</div>
+          <div className="text-2xl font-semibold">
+            {fmt(profile?.stats?.sponsorshipCount)}
+          </div>
+        </Card>
+        <Card className="p-4">
+          <div className="text-sm text-slate-600">Account</div>
+          <div className="text-base font-medium truncate">
+            {profile?.donor?.name || user?.email}
+          </div>
+          <div className="text-xs text-slate-500 truncate">
+            {profile?.donor?.email}
+          </div>
+        </Card>
+      </div>
+
+      {/* Sponsored students list */}
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-3">My Sponsored Students</h3>
+
+        {filtered.length === 0 ? (
+          <p className="text-sm text-slate-600">
+            No sponsorships yet. Visit the{" "}
+            <Button
+              variant="link"
+              className="px-1"
+              onClick={() => navigate("/marketplace")}
+            >
+              Marketplace
+            </Button>{" "}
+            to sponsor a student.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filtered.map((sp) => {
+              const s = sp.student || {};
+              return (
+                <Card key={sp.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-base font-semibold">{s.name}</div>
+                      <div className="text-sm text-slate-600">
+                        {s.program} · {s.university}
+                      </div>
+                    </div>
+                    <Badge variant="secondary">
+                      ${fmt(sp.amount)} funded
+                    </Badge>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    {s.gender && (
+                      <Badge variant="secondary">
+                        <UserRound className="h-3.5 w-3.5 mr-1 inline" />
+                        {s.gender}
+                      </Badge>
+                    )}
+                    {s.city && (
+                      <Badge variant="secondary">
+                        <Building2 className="h-3.5 w-3.5 mr-1 inline" />
+                        {s.city}
+                      </Badge>
+                    )}
+                    {Number.isFinite(Number(s.gpa)) && (
+                      <Badge variant="default">
+                        <GraduationCap className="h-3.5 w-3.5 mr-1 inline" />
+                        GPA {s.gpa}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-slate-700">
+                    <div className="flex justify-between">
+                      <span>Funded on:</span>
+                      <span>
+                        {new Date(sp.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button
+                      className="rounded-2xl w-full"
+                      variant="outline"
+                      onClick={() => toast.message(s.name, { description: `${s.program} · ${s.university}` })}
+                    >
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      View details
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );
 };
+
+export default DonorDashboard;

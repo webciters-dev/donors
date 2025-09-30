@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,10 +9,11 @@ import { Search, Eye, Download } from "lucide-react";
 import { mockData } from "@/data/mockData";
 
 export const AdminHub = ({ go }) => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedApp, setSelectedApp] = useState(null);
 
-  const filteredApps = mockData.applications.filter(app =>
+  const filteredApps = mockData.applications.filter((app) =>
     app.student.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -24,9 +26,26 @@ export const AdminHub = ({ go }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Admin Hub</h1>
-        <Button variant="outline" className="rounded-2xl">
-          <Download className="h-4 w-4 mr-2" /> Export Data
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* NEW: jump to the live Applications manager page */}
+          <Button
+            className="rounded-2xl"
+            onClick={() => navigate("/admin/applications")}
+          >
+            Manage Applications
+          </Button>
+          {/* NEW: manage field officers */}
+          <Button
+            className="rounded-2xl"
+            variant="secondary"
+            onClick={() => navigate("/admin/officers")}
+          >
+            Manage Field Officers
+          </Button>
+          <Button variant="outline" className="rounded-2xl">
+            <Download className="h-4 w-4 mr-2" /> Export Data
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -78,16 +97,19 @@ export const AdminHub = ({ go }) => {
                       {app.student.program} at {app.student.university}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Submitted: {app.submittedAt} | Need: ${app.needUsd?.toLocaleString()}
+                      Submitted: {app.submittedAt} | Need: $
+                      {app.needUsd?.toLocaleString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant={app.status === 'PENDING' ? 'secondary' : 'default'}>
+                    <Badge
+                      variant={app.status === "PENDING" ? "secondary" : "default"}
+                    >
                       {app.status}
                     </Badge>
-                    <Button 
-                      onClick={() => go("student", app.studentId)} 
-                      variant="outline" 
+                    <Button
+                      onClick={() => go("student", app.studentId)}
+                      variant="outline"
                       size="sm"
                       className="rounded-2xl"
                     >

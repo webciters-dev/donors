@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// server/prisma/schema.prisma
 
 generator client {
   provider = "prisma-client-js"
@@ -10,56 +9,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// MODELS
+
 model Student {
-  id            String        @id @default(cuid())
-  name          String
-  email         String        @unique
-  gender        String
-  university    String
-  field         String
-  program       String
-  gpa           Float
-  gradYear      Int
-  city          String
-  province      String
-  needUSD       Int
-  sponsored     Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  gender     String
+  university String
+  field      String
+  program    String
+  gpa        Float
+  gradYear   Int
+  city       String
+  province   String
+  needUSD    Int
+  sponsored  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Optional extended profile
+  cnic         String?
+  dateOfBirth  DateTime?
+  guardianName String?
+  guardianCnic String?
+  phone        String?
+  address      String?
+  // Current education details (distinct from target university/program above)
+  currentInstitution    String?
+  currentCity           String?
+  currentCompletionYear Int?
+
   applications  Application[]
   sponsorships  Sponsorship[]
   disbursements Disbursement[]
-  
+  messages      Message[]
+  documents     Document[]
+  User          User?
+  fieldReviews  FieldReview[]
+
   @@map("students")
 }
 
 model Application {
-  id           String            @id @default(cuid())
-  studentId    String
-  term         String
-  needUSD      Int
-  status       ApplicationStatus @default(PENDING)
-  submittedAt  DateTime          @default(now())
-  notes        String?
-  fxRate       Float?
-  
-  student      Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+  id          String            @id @default(cuid())
+  studentId   String
+  term        String
+  needUSD     Int
+  status      ApplicationStatus @default(PENDING)
+  submittedAt DateTime          @default(now())
+  notes       String?
+  fxRate      Float?
+
+  // Currency support (optional; if null, treat as USD)
+  currency Currency?
+  needPKR  Int?
+
+  // --- Phase 1 multi-currency snapshot fields (optional for backward-compat) ---
+  // Amount as provided by the student in their local/original currency
+  amountOriginal   Int?
+  currencyOriginal Currency?
+  // Amount normalized to base (USD) using fxRateToUSD at fxAsOf
+  amountBaseUSD Int?
+  baseCurrency  Currency? @default(USD)
+  fxRateToUSD   Float?
+  fxAsOf        DateTime?
+
+  // Optional richer financials / scope
+  tuitionFee         Int?
+  hostelFee          Int?
+  otherExpenses      Int?
+  familyIncome       Int?
+  familyContribution Int?
+  purpose            String?
+
+  // Relations
+  student   Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  documents Document[]
+  fieldReviews FieldReview[]
+
   @@map("applications")
 }
 
+model Message {
+  id        String   @id @default(cuid())
+  text      String
+  fromRole  String
+  createdAt DateTime @default(now())
+
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId String
+
+  application   Application? @relation(fields: [applicationId], references: [id])
+  applicationId String?
+}
+
 model Donor {
-  id           String        @id @default(cuid())
+  id           String   @id @default(cuid())
   name         String
-  email        String        @unique
+  email        String   @unique
   organization String?
-  totalFunded  Int           @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  
+  totalFunded  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // --- Donor profile (Phase 1) ---
+  country            String?
+  address            String?
+  currencyPreference Currency?
+  taxId              String?
+
   sponsorships Sponsorship[]
-  
+  User         User?
+
   @@map("donors")
 }
 
@@ -70,25 +133,82 @@ model Sponsorship {
   amount    Int
   date      DateTime @default(now())
   status    String   @default("active")
-  
-  donor     Donor    @relation(fields: [donorId], references: [id], onDelete: Cascade)
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+
+  // --- Phase 1 multi-currency snapshot fields (optional) ---
+  amountOriginal   Int?
+  currencyOriginal Currency?
+  amountBaseUSD    Int?
+  baseCurrency     Currency? @default(USD)
+  fxRateToUSD      Float?
+  fxAsOf           DateTime?
+
+  donor   Donor   @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@map("sponsorships")
 }
 
 model Disbursement {
-  id        String            @id @default(cuid())
+  id        String             @id @default(cuid())
   studentId String
   amount    Int
-  date      DateTime          @default(now())
+  date      DateTime           @default(now())
   status    DisbursementStatus @default(INITIATED)
   notes     String?
-  
-  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  
+
+  // --- Phase 1 multi-currency snapshot fields (optional) ---
+  amountOriginal   Int?
+  currencyOriginal Currency?
+  amountBaseUSD    Int?
+  baseCurrency     Currency? @default(USD)
+  fxRateToUSD      Float?
+  fxAsOf           DateTime?
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
   @@map("disbursements")
 }
+
+model Document {
+  id            String       @id @default(cuid())
+  studentId     String
+  applicationId String?
+  type          DocumentType
+  url           String
+  originalName  String?
+  mimeType      String?
+  size          Int?
+  uploadedAt    DateTime     @default(now())
+
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  application Application? @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([applicationId])
+  @@map("documents")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String?
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  studentId    String?  @unique
+  donorId      String?  @unique
+  student      Student? @relation(fields: [studentId], references: [id])
+  donor        Donor?   @relation(fields: [donorId], references: [id])
+  // ⬇️ ADD THIS LINE
+  passwordResets PasswordReset[]
+  fieldReviews   FieldReview[] @relation("OfficerReviews")
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ENUMS
 
 enum ApplicationStatus {
   PENDING
@@ -101,4 +221,79 @@ enum DisbursementStatus {
   INITIATED
   COMPLETED
   FAILED
+}
+
+enum UserRole {
+  STUDENT
+  DONOR
+  ADMIN
+  FIELD_OFFICER
+}
+
+enum DocumentType {
+  CNIC
+  GUARDIAN_CNIC
+  PHOTO
+  SSC_RESULT
+  HSSC_RESULT
+  UNIVERSITY_CARD
+  FEE_INVOICE
+  INCOME_CERTIFICATE
+  UTILITY_BILL
+  TRANSCRIPT
+  DEGREE_CERTIFICATE
+  ENROLLMENT_CERTIFICATE
+  OTHER
+}
+
+enum Currency {
+  USD
+  PKR
+}
+
+// --- FX rates table (Phase 1) ---
+model FxRate {
+  id     String   @id @default(cuid())
+  base   Currency
+  quote  Currency
+  rate   Float
+  asOf   DateTime @default(now())
+  source String?
+
+  @@unique([base, quote, asOf])
+  @@map("fx_rates")
+}
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_resets")
+}
+
+// Field officer review of applications
+model FieldReview {
+  id             String   @id @default(cuid())
+  applicationId  String
+  studentId      String
+  officerUserId  String
+  status         String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
+  notes          String?
+  recommendation String? // APPROVE | REJECT | REQUEST_INFO
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  student     Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  officer     User        @relation("OfficerReviews", fields: [officerUserId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([studentId])
+  @@index([officerUserId])
+  @@map("field_reviews")
 }
