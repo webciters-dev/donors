@@ -11,7 +11,7 @@ export const Nav = ({ active, setActive }) => {
 
   // Build tabs based on role
   const baseTabs = [
-    { key: "home", label: "Landing" },
+    { key: "home", label: "Home" },
   ];
 
   const studentTabs = [
@@ -20,7 +20,7 @@ export const Nav = ({ active, setActive }) => {
   ];
 
   const donorTabs = [
-    { key: "marketplace", label: "Sponsor a Student" },
+    { key: "marketplace", label: "Sponsor Students" },
     { key: "donor", label: "My Dashboard" }
   ];
   
@@ -28,7 +28,7 @@ export const Nav = ({ active, setActive }) => {
 
   // For unauthenticated users - show public browse and apply
   const unauthedTabs = [
-    { key: "browse", label: "Find Students to Help" },
+    { key: "browse", label: "Sponsor Students" },
     { key: "apply", label: "Apply for Aid" }
   ];
 
@@ -109,10 +109,10 @@ export const Nav = ({ active, setActive }) => {
                   className="rounded-2xl hidden sm:inline-flex"
                   onClick={() => navigate("/donor-signup")}
                 >
-                  Donor Sign Up
+                  Become a Donor
                 </Button>
                 <Button className="rounded-2xl" onClick={() => navigate("/login")}>
-                  Login
+                  Sign In
                 </Button>
               </>
             )}
