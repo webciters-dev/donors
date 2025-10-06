@@ -54,10 +54,8 @@ export const ApplicationForm = () => {
     term: "Fall 2025",
     gender: "",
     country: "", // Country where university is located (required)
-    province: "",
     gpa: "",
     gradYear: "",
-    field: "",
     // Currency (auto-selected based on country)
     currency: "PKR", // Default to PKR for our primary market
     // Step 3 — requested amount
@@ -89,8 +87,8 @@ export const ApplicationForm = () => {
       toast.error("Passwords do not match.");
       return;
     }
-    if (!form.university || !form.program || !form.country) {
-      toast.error("Please complete university, program, and country.");
+    if (!form.university || !form.program || !form.country || !form.gpa || !form.gradYear) {
+      toast.error("Please complete all required fields: university, program, country, GPA, and graduation year.");
       return;
     }
     const amountNum = Number(form.amount || 0);
@@ -265,14 +263,16 @@ export const ApplicationForm = () => {
         {step === 2 && (
           <div className="grid md:grid-cols-2 gap-4">
             <Input
-              placeholder="University"
+              placeholder="Target university name (e.g., LUMS, Harvard University)"
               value={form.university}
               onChange={(e) => setForm({ ...form, university: e.target.value })}
+              required
             />
             <Input
-              placeholder="Program"
+              placeholder="Specific degree program (e.g., Bachelor of Computer Science, MBA)"
               value={form.program}
               onChange={(e) => setForm({ ...form, program: e.target.value })}
+              required
             />
             <Input
               placeholder="Term (e.g., Fall 2025)"
@@ -280,19 +280,20 @@ export const ApplicationForm = () => {
               onChange={(e) => setForm({ ...form, term: e.target.value })}
             />
 
-            {/* Country - required for currency determination */}
-            <select
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={form.country}
-              onChange={(e) => handleCountryChange(e.target.value)}
-              required
-            >
-              <option value="">Select Country (where university is located)</option>
-              <option value="Pakistan">🇵🇰 Pakistan</option>
-              <option value="USA">🇺🇸 United States</option>
-              <option value="Canada">🇨🇦 Canada</option>
-              <option value="UK">🇬🇧 United Kingdom</option>
-              <optgroup label="🇪🇺 European Union (EUR)">
+            {/* Country - searchable input with datalist */}
+            <div className="relative">
+              <Input
+                placeholder="Country where target university is located (type to search)"
+                value={form.country}
+                onChange={(e) => handleCountryChange(e.target.value)}
+                list="countries"
+                required
+              />
+              <datalist id="countries">
+                <option value="Pakistan">🇵🇰 Pakistan</option>
+                <option value="USA">🇺🇸 United States</option>
+                <option value="Canada">🇨🇦 Canada</option>
+                <option value="UK">🇬🇧 United Kingdom</option>
                 <option value="Germany">🇩🇪 Germany</option>
                 <option value="France">🇫🇷 France</option>
                 <option value="Italy">🇮🇹 Italy</option>
@@ -304,39 +305,38 @@ export const ApplicationForm = () => {
                 <option value="Ireland">🇮🇪 Ireland</option>
                 <option value="Finland">🇫🇮 Finland</option>
                 <option value="Greece">🇬🇷 Greece</option>
-                <option value="EU">🇪🇺 Other EU Country</option>
-              </optgroup>
-              <option value="Other">🌍 Other Country</option>
-            </select>
+                <option value="Australia">�🇺 Australia</option>
+                <option value="Japan">🇯🇵 Japan</option>
+                <option value="South Korea">🇰🇷 South Korea</option>
+                <option value="Singapore">🇸🇬 Singapore</option>
+                <option value="Switzerland">🇨🇭 Switzerland</option>
+                <option value="Norway">🇳🇴 Norway</option>
+                <option value="Sweden">🇸🇪 Sweden</option>
+                <option value="Denmark">🇩🇰 Denmark</option>
+                <option value="Other">🌍 Other Country</option>
+              </datalist>
+            </div>
             <Input
-              placeholder="Province (optional)"
-              value={form.province}
-              onChange={(e) => setForm({ ...form, province: e.target.value })}
-            />
-            <Input
-              placeholder="GPA (optional)"
-              type="number"
-              step="0.01"
+              placeholder="Current GPA (e.g., 3.5/4.0 or 85%)"
               value={form.gpa}
               onChange={(e) => setForm({ ...form, gpa: e.target.value })}
+              required
             />
             <Input
-              placeholder="Graduation Year (optional)"
+              placeholder="Expected graduation year (e.g., 2027)"
               type="number"
+              min="2024"
+              max="2035"
               value={form.gradYear}
               onChange={(e) => setForm({ ...form, gradYear: e.target.value })}
-            />
-            <Input
-              placeholder="Field (optional)"
-              value={form.field}
-              onChange={(e) => setForm({ ...form, field: e.target.value })}
+              required
             />
 
             <div className="md:col-span-2 flex justify-between">
               <Button variant="outline" onClick={back}>
                 Back
               </Button>
-              <Button onClick={next} disabled={!form.university || !form.program || !form.term || !form.country}>
+              <Button onClick={next} disabled={!form.university || !form.program || !form.term || !form.country || !form.gpa || !form.gradYear}>
                 Next
               </Button>
             </div>
