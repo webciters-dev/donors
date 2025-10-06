@@ -158,13 +158,28 @@ export const Marketplace = () => {
             }));
 
             setStudents(transformedStudents);
+          } else {
+            // No real students in database, show demo students for testing
+            console.log("No approved students in database, showing demo students");
+            setStudents(
+              mockData.students.map((s) => ({
+                ...s,
+                isApproved: true,
+                needUsd: s.needUsd || 0,
+                needUSD: s.needUsd || 0,
+                sponsored: s.sponsored || false,
+                currency: s.currency || getCurrencyFromCountry(s.country),
+                needPKR: s.needPKR || null,
+                term: "Demo Data",
+              }))
+            );
           }
         }
       } catch (err) {
         console.error("Marketplace API failed:", err);
-        // Only use mock data as fallback if API is completely unreachable
-        if (!cancelled && err.message.includes('Failed to fetch')) {
-          console.log("API unreachable, using mock data as fallback");
+        // Use mock data as fallback for any API issues
+        if (!cancelled) {
+          console.log("API failed, using demo students as fallback");
           setStudents(
             mockData.students.map((s) => ({
               ...s,
@@ -174,7 +189,7 @@ export const Marketplace = () => {
               sponsored: s.sponsored || false,
               currency: s.currency || getCurrencyFromCountry(s.country),
               needPKR: s.needPKR || null,
-              term: "Mock Data",
+              term: "Demo Data",
             }))
           );
         }
