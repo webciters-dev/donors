@@ -219,14 +219,21 @@ export const DonorDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 grid grid-cols-2 gap-2">
                     <Button
-                      className="rounded-2xl w-full"
+                      className="rounded-2xl"
                       variant="outline"
-                      onClick={() => toast.message(s.name, { description: `${s.program} · ${s.university}` })}
+                      onClick={() => navigate(`/students/${s.id}`)}
                     >
                       <DollarSign className="h-4 w-4 mr-1" />
-                      View details
+                      Details
+                    </Button>
+                    <Button
+                      className="rounded-2xl"
+                      variant="outline"
+                      onClick={() => navigate(`/donor/progress/${sp.id}`)}
+                    >
+                      Progress
                     </Button>
                   </div>
                 </Card>

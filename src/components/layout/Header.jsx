@@ -12,7 +12,6 @@ export const Nav = ({ active, setActive }) => {
   // Build tabs based on role
   const baseTabs = [
     { key: "home", label: "Landing" },
-    { key: "marketplace", label: "Marketplace" },
   ];
 
   const studentTabs = [
@@ -20,11 +19,18 @@ export const Nav = ({ active, setActive }) => {
     { key: "studentprofile", label: "My Profile" },
   ];
 
-  const donorTabs = [{ key: "donor", label: "Donor Dashboard" }];
+  const donorTabs = [
+    { key: "marketplace", label: "Sponsor a Student" },
+    { key: "donor", label: "My Dashboard" }
+  ];
+  
   const adminTabs = [{ key: "admin", label: "Admin" }];
 
-  // "Apply" is only useful when not authenticated
-  const unauthedTabs = [{ key: "apply", label: "Apply" }];
+  // For unauthenticated users - show public browse and apply
+  const unauthedTabs = [
+    { key: "browse", label: "Find Students to Help" },
+    { key: "apply", label: "Apply for Aid" }
+  ];
 
   const tabs = [
     ...baseTabs,

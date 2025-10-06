@@ -45,8 +45,8 @@ export const Landing = ({ go }) => {
           Transparent funding platform by Akhuwat USA with 100% secure donations.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button onClick={() => go("marketplace")} size="lg" className="rounded-2xl">
-            Explore Students
+          <Button onClick={() => go("browse")} size="lg" className="rounded-2xl">
+            Find Students to Help
           </Button>
           <Button onClick={() => go("apply")} variant="outline" size="lg" className="rounded-2xl">
             Apply as Student

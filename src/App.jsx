@@ -57,6 +57,7 @@ const pathFromKey = {
   marketplace: "/marketplace",
   donor: "/donor",
   donor_portal: "/donor/portal",
+  browse: "/browse",
 
   preferences: "/preferences",
   receipts: "/receipts",
@@ -74,6 +75,7 @@ const pathFromKey = {
 
 function keyFromPath(pathname) {
   if (pathname === "/" || pathname === "/#/" || pathname === "") return "home";
+  if (pathname.startsWith("/browse")) return "browse";
   if (pathname.startsWith("/students/")) return "student";
   if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
   if (pathname.startsWith("/my-application")) return "myapplication";
@@ -148,6 +150,9 @@ function Shell() {
 
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
+            
+            {/* Public browse page for potential donors */}
+            <Route path="/browse" element={<DonorBrowse />} />
 
             {/* Auth flows (public) */}
             <Route path="/donor-signup" element={<DonorSignup />} />
