@@ -159,39 +159,17 @@ export const Marketplace = () => {
 
             setStudents(transformedStudents);
           } else {
-            // No real students in database, show demo students for testing
-            console.log("No approved students in database, showing demo students");
-            setStudents(
-              mockData.students.map((s) => ({
-                ...s,
-                isApproved: true,
-                needUsd: s.needUsd || 0,
-                needUSD: s.needUsd || 0,
-                sponsored: s.sponsored || false,
-                currency: s.currency || getCurrencyFromCountry(s.country),
-                needPKR: s.needPKR || null,
-                term: "Demo Data",
-              }))
-            );
+            // No real students in database, keep empty
+            console.log("No approved students in database - showing empty state");
+            setStudents([]);
           }
         }
       } catch (err) {
         console.error("Marketplace API failed:", err);
-        // Use mock data as fallback for any API issues
+        // Keep empty on API failure - no demo data fallback
         if (!cancelled) {
-          console.log("API failed, using demo students as fallback");
-          setStudents(
-            mockData.students.map((s) => ({
-              ...s,
-              isApproved: true,
-              needUsd: s.needUsd || 0,
-              needUSD: s.needUsd || 0,
-              sponsored: s.sponsored || false,
-              currency: s.currency || getCurrencyFromCountry(s.country),
-              needPKR: s.needPKR || null,
-              term: "Demo Data",
-            }))
-          );
+          console.log("API failed, showing empty state");
+          setStudents([]);
         }
       }
     }

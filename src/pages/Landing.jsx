@@ -2,8 +2,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GraduationCap, Users, Building2, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Landing = ({ go }) => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     sponsored: '—',
     available: '—', 
@@ -45,11 +47,16 @@ export const Landing = ({ go }) => {
           Transparent funding platform by Akhuwat USA with 100% secure donations.
         </p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Button onClick={() => go("browse")} size="lg" className="rounded-2xl">
-            Find Students to Help
+          <Button onClick={() => go("apply")} size="lg" className="rounded-2xl">
+            Apply for Aid
           </Button>
-          <Button onClick={() => go("apply")} variant="outline" size="lg" className="rounded-2xl">
-            Apply as Student
+          <Button 
+            onClick={() => navigate("/donor-signup")} 
+            variant="outline" 
+            size="lg" 
+            className="rounded-2xl"
+          >
+            Become a Donor
           </Button>
         </div>
         <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
