@@ -1,8 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { GraduationCap, Users, Building2, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export const Landing = ({ go }) => {
+  const [stats, setStats] = useState({
+    sponsored: '—',
+    available: '—', 
+    universities: '—',
+    successRate: '—'
+  });
+
+  useEffect(() => {
+    // Fetch real statistics from API
+    const fetchStats = async () => {
+      try {
+        const API = import.meta.env.VITE_API_URL || "http://localhost:3002";
+        // You can implement these endpoints later for real data
+        // For now, show clean placeholders
+        setStats({
+          sponsored: '0',
+          available: '0',
+          universities: '0', 
+          successRate: '—'
+        });
+      } catch (error) {
+        console.log('Stats will be updated when students are added');
+      }
+    };
+    
+    fetchStats();
+  }, []);
+
   return (
     <div className="space-y-12">
       {/* Hero Section */}
@@ -22,12 +51,6 @@ export const Landing = ({ go }) => {
           <Button onClick={() => go("apply")} variant="outline" size="lg" className="rounded-2xl">
             Apply as Student
           </Button>
-          <Button onClick={() => go("update")} variant="outline" size="lg" className="rounded-2xl">
-            Submit Update
-          </Button>
-          <Button onClick={() => go("admin")} variant="outline" size="lg" className="rounded-2xl">
-            Admin Login
-          </Button>
         </div>
         <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
           <span className="flex items-center gap-2">
@@ -45,23 +68,23 @@ export const Landing = ({ go }) => {
         </div>
       </section>
 
-      {/* KPIs Section */}
+      {/* KPIs Section - Dynamic Statistics */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
         <Card className="p-6 text-center">
-          <div className="text-3xl font-bold text-emerald-600">89</div>
+          <div className="text-3xl font-bold text-emerald-600">{stats.sponsored}</div>
           <div className="text-sm text-slate-600">Students Sponsored</div>
         </Card>
         <Card className="p-6 text-center">
-          <div className="text-3xl font-bold text-emerald-600">34</div>
+          <div className="text-3xl font-bold text-emerald-600">{stats.available}</div>
           <div className="text-sm text-slate-600">Students Available</div>
         </Card>
         <Card className="p-6 text-center">
-          <div className="text-3xl font-bold text-emerald-600">15</div>
+          <div className="text-3xl font-bold text-emerald-600">{stats.universities}</div>
           <div className="text-sm text-slate-600">Universities</div>
         </Card>
         <Card className="p-6 text-center">
-          <div className="text-3xl font-bold text-emerald-600">94%</div>
-          <div className="text-sm text-slate-600">On-Time Repayment</div>
+          <div className="text-3xl font-bold text-emerald-600">{stats.successRate}</div>
+          <div className="text-sm text-slate-600">Success Rate</div>
         </Card>
       </section>
 

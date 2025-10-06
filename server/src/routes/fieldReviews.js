@@ -2,6 +2,8 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
+import { sendFieldOfficerWelcomeEmail } from "../lib/emailService.js";
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -17,6 +19,13 @@ router.get("/", requireAuth, async (req, res) => {
     const reviews = await prisma.fieldReview.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      include: {
+        application: {
+          include: {
+            student: true
+          }
+        }
+      }
     });
     res.json({ reviews });
   } catch (e) {
@@ -32,9 +41,64 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
     if (!applicationId || !studentId || !officerUserId) {
       return res.status(400).json({ error: "applicationId, studentId, officerUserId required" });
     }
+
+    // Get field officer details
+    const fieldOfficer = await prisma.user.findUnique({
+      where: { id: officerUserId },
+      select: { id: true, email: true, name: true }
+    });
+
+    if (!fieldOfficer) {
+      return res.status(404).json({ error: "Field officer not found" });
+    }
+
+    // Get application and student details for email
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { student: true }
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: "Application not found" });
+    }
+
+    // Create the review
     const review = await prisma.fieldReview.create({
       data: { applicationId, studentId, officerUserId, status: "PENDING" },
     });
+
+    // Send welcome email to field officer (async, don't block response)
+    if (fieldOfficer.email) {
+      // Generate temporary password if field officer doesn't have one set
+      let tempPassword = null;
+      const existingUser = await prisma.user.findUnique({ 
+        where: { id: officerUserId },
+        select: { passwordHash: true }
+      });
+      
+      if (!existingUser.passwordHash) {
+        // Generate temporary password
+        tempPassword = `FieldOfficer${Math.random().toString(36).slice(-6)}!`;
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        await prisma.user.update({
+          where: { id: officerUserId },
+          data: { passwordHash: hashedPassword }
+        });
+      }
+
+      // Send email notification
+      sendFieldOfficerWelcomeEmail({
+        email: fieldOfficer.email,
+        name: fieldOfficer.name || 'Field Officer',
+        password: tempPassword || 'Use your existing password',
+        applicationId: applicationId,
+        studentName: application.student.name
+      }).catch(emailError => {
+        console.error('Failed to send sub admin email:', emailError);
+        // Don't fail the request if email fails
+      });
+    }
+
     res.status(201).json({ review });
   } catch (e) {
     console.error("POST /field-reviews failed:", e);
@@ -46,20 +110,90 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
 router.patch("/:id", requireAuth, onlyRoles("FIELD_OFFICER", "ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, recommendation } = req.body || {};
+    const { 
+      status, 
+      notes, 
+      recommendation,
+      // Field verification fields
+      homeVisitDate,
+      homeVisitNotes,
+      familyInterviewNotes,
+      financialVerificationNotes,
+      characterAssessment,
+      deservingnessFactor,
+      documentsVerified,
+      identityVerified,
+      familyIncomeVerified,
+      educationVerified,
+      recommendationReason,
+      additionalDocumentsRequested,
+      riskFactors,
+      verificationScore,
+      fielderRecommendation,
+      adminNotesRequired
+    } = req.body || {};
+
+    const updateData = {};
+    
+    // Basic fields
+    if (status != null) updateData.status = status;
+    if (notes != null) updateData.notes = notes;
+    if (recommendation != null) updateData.recommendation = recommendation;
+    
+    // Field verification fields
+    if (homeVisitDate != null) updateData.homeVisitDate = homeVisitDate ? new Date(homeVisitDate) : null;
+    if (homeVisitNotes != null) updateData.homeVisitNotes = homeVisitNotes;
+    if (familyInterviewNotes != null) updateData.familyInterviewNotes = familyInterviewNotes;
+    if (financialVerificationNotes != null) updateData.financialVerificationNotes = financialVerificationNotes;
+    if (characterAssessment != null) updateData.characterAssessment = characterAssessment;
+    if (deservingnessFactor != null) updateData.deservingnessFactor = Number(deservingnessFactor);
+    if (documentsVerified != null) updateData.documentsVerified = documentsVerified;
+    if (identityVerified != null) updateData.identityVerified = identityVerified;
+    if (familyIncomeVerified != null) updateData.familyIncomeVerified = familyIncomeVerified;
+    if (educationVerified != null) updateData.educationVerified = educationVerified;
+    if (recommendationReason != null) updateData.recommendationReason = recommendationReason;
+    if (additionalDocumentsRequested != null) updateData.additionalDocumentsRequested = additionalDocumentsRequested;
+    if (riskFactors != null) updateData.riskFactors = riskFactors;
+    if (verificationScore != null) updateData.verificationScore = Number(verificationScore);
+    if (fielderRecommendation != null) updateData.fielderRecommendation = fielderRecommendation;
+    if (adminNotesRequired != null) updateData.adminNotesRequired = adminNotesRequired;
+
     const updated = await prisma.fieldReview.update({
       where: { id },
-      data: {
-        ...(status != null ? { status } : {}),
-        ...(notes != null ? { notes } : {}),
-        ...(recommendation != null ? { recommendation } : {}),
-      },
+      data: updateData,
     });
+
+    // Auto-notify student when Sub Admin completes verification
+    if (status === "COMPLETED") {
+      try {
+        const reviewWithDetails = await prisma.fieldReview.findUnique({
+          where: { id },
+          include: {
+            officer: { select: { name: true } }
+          }
+        });
+
+        const recommendationText = fielderRecommendation ? 
+          `Recommendation: ${fielderRecommendation.replace('_', ' ').toLowerCase()}` : '';
+
+        await prisma.message.create({
+          data: {
+            studentId: reviewWithDetails.studentId,
+            applicationId: reviewWithDetails.applicationId,
+            text: `Field verification completed by Sub Admin ${reviewWithDetails.officer?.name || 'Officer'}. ${recommendationText}. Your application is now under Admin review.`,
+            fromRole: 'field_officer'
+          }
+        });
+      } catch (msgError) {
+        console.error('Failed to create field verification notification:', msgError);
+      }
+    }
+    
     res.json({ review: updated });
   } catch (e) {
     console.error("PATCH /field-reviews/:id failed:", e);
     if (e.code === "P2025") return res.status(404).json({ error: "Not found" });
-    res.status(500).json({ error: "Failed to update review" });
+    res.status(500).json({ error: "Failed to update field review" });
   }
 });
 
@@ -94,6 +228,93 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("FIELD_OFFICER", "ADM
   } catch (e) {
     console.error("POST /field-reviews/:id/request-missing failed:", e);
     res.status(500).json({ error: "Failed to request missing info" });
+  }
+});
+
+// Reassign field officer (admin only)
+router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newOfficerUserId } = req.body;
+
+    if (!newOfficerUserId) {
+      return res.status(400).json({ error: "newOfficerUserId is required" });
+    }
+
+    // Get current review details
+    const currentReview = await prisma.fieldReview.findUnique({
+      where: { id },
+      include: { 
+        application: { include: { student: true } }
+      }
+    });
+
+    if (!currentReview) {
+      return res.status(404).json({ error: "Review not found" });
+    }
+
+    // Get new field officer details
+    const newFieldOfficer = await prisma.user.findUnique({
+      where: { id: newOfficerUserId },
+      select: { id: true, email: true, name: true, role: true }
+    });
+
+    if (!newFieldOfficer || newFieldOfficer.role !== 'FIELD_OFFICER') {
+      return res.status(404).json({ error: "Valid field officer not found" });
+    }
+
+    // Update the review assignment
+    const updatedReview = await prisma.fieldReview.update({
+      where: { id },
+      data: { 
+        officerUserId: newOfficerUserId,
+        status: "PENDING", // Reset status for new officer
+        notes: `Reassigned to ${newFieldOfficer.name || newFieldOfficer.email}. Previous notes: ${currentReview.notes || 'None'}`
+      }
+    });
+
+    // Log the reassignment as a message
+    await prisma.message.create({
+      data: {
+        studentId: currentReview.studentId,
+        applicationId: currentReview.applicationId,
+        text: `Sub admin reassigned to ${newFieldOfficer.name || newFieldOfficer.email} for further review.`,
+        fromRole: "admin"
+      }
+    });
+
+    // Send email notification to new field officer (async)
+    if (newFieldOfficer.email) {
+      let tempPassword = null;
+      const existingUser = await prisma.user.findUnique({ 
+        where: { id: newOfficerUserId },
+        select: { passwordHash: true }
+      });
+      
+      if (!existingUser.passwordHash) {
+        tempPassword = `FieldOfficer${Math.random().toString(36).slice(-6)}!`;
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        await prisma.user.update({
+          where: { id: newOfficerUserId },
+          data: { passwordHash: hashedPassword }
+        });
+      }
+
+      sendFieldOfficerWelcomeEmail({
+        email: newFieldOfficer.email,
+        name: newFieldOfficer.name || 'Field Officer',
+        password: tempPassword || 'Use your existing password',
+        applicationId: currentReview.applicationId,
+        studentName: currentReview.application.student.name
+      }).catch(emailError => {
+        console.error('Failed to send sub admin reassignment email:', emailError);
+      });
+    }
+
+    res.json({ review: updatedReview });
+  } catch (e) {
+    console.error("PATCH /field-reviews/:id/reassign failed:", e);
+    res.status(500).json({ error: "Failed to reassign field officer" });
   }
 });
 

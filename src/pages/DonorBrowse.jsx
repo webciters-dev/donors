@@ -3,12 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { demoStudents, fmtAmount } from "@/data/demoDonor";
+import { getCurrencyFlag } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
 
 export default function DonorBrowse() {
   const navigate = useNavigate();
-
-  const flag = (cur) => (cur === 'PKR' ? '🇵🇰' : cur === 'USD' ? '🇺🇸' : cur === 'GBP' ? '🇬🇧' : '');
 
   return (
     <div className="space-y-6">
@@ -28,7 +27,7 @@ export default function DonorBrowse() {
                   <div className="text-sm text-slate-600">{s.program} · {s.university}</div>
                 </div>
                 <div className="shrink-0 rounded-full bg-amber-500 text-white text-xs font-semibold px-3 py-1 shadow-sm flex items-center gap-1">
-                  <span>{flag(s.currency)}</span>
+                  <span>{getCurrencyFlag(s.currency)}</span>
                   <span>{fmtAmount(s.need, s.currency)}</span>
                 </div>
               </div>

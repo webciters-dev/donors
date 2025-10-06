@@ -22,8 +22,9 @@ export default function AdminApplicationDetail() {
   const [newMessage, setNewMessage] = useState("");
   const [assignOfficer, setAssignOfficer] = useState("");
   const [officers, setOfficers] = useState([]);
-  const [missingItems, setMissingItems] = useState("");
-  const [missingNote, setMissingNote] = useState("");
+  const [missingItems, setMissingItems] = useState({});
+  const [missingNote, setMissingNote] = useState({});
+  const [reassignOfficer, setReassignOfficer] = useState({});
 
   useEffect(() => {
     async function load() {
@@ -87,7 +88,7 @@ export default function AdminApplicationDetail() {
 
   async function createAssignment() {
     try {
-      if (!assignOfficer) { toast.error("Select a field officer"); return; }
+      if (!assignOfficer) { toast.error("Select a sub admin"); return; }
       const res = await fetch(`${API}/api/field-reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
@@ -95,8 +96,15 @@ export default function AdminApplicationDetail() {
       });
       if (!res.ok) throw new Error(await res.text());
       const j = await res.json();
-      setReviews(prev => [j.review, ...prev]);
-      toast.success("Assigned to field officer");
+      
+      // Instead of adding to existing array, refresh the reviews to avoid duplicates
+      const rres = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
+      const rj = await rres.json();
+      const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
+      setReviews(mine);
+      
+      toast.success("Assigned to sub admin");
+      setAssignOfficer(""); // Clear the selection
     } catch (e) {
       console.error(e);
       toast.error("Failed to assign");
@@ -105,7 +113,7 @@ export default function AdminApplicationDetail() {
 
   async function requestMissing(reviewId) {
     try {
-      const items = missingItems.split(/\n|,/).map(s => s.trim()).filter(Boolean);
+      const items = (missingItems[reviewId] || "").split(/\n|,/).map(s => s.trim()).filter(Boolean);
       if (items.length === 0) {
         toast.error("Please list at least one missing item");
         return;
@@ -113,11 +121,11 @@ export default function AdminApplicationDetail() {
       const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
-        body: JSON.stringify({ items, note: missingNote })
+        body: JSON.stringify({ items, note: missingNote[reviewId] || "" })
       });
       if (!res.ok) throw new Error(await res.text());
-      setMissingItems("");
-      setMissingNote("");
+      setMissingItems(prev => ({ ...prev, [reviewId]: "" }));
+      setMissingNote(prev => ({ ...prev, [reviewId]: "" }));
       toast.success("Request sent to student");
     } catch (e) {
       console.error(e);
@@ -144,6 +152,38 @@ export default function AdminApplicationDetail() {
     } catch (e) {
       console.error(e);
       toast.error("Failed to send message", { description: String(e.message || "") });
+    }
+  }
+
+  async function reassignFieldOfficer(reviewId) {
+    try {
+      const newOfficerId = reassignOfficer[reviewId];
+      if (!newOfficerId) {
+        toast.error("Please select a sub admin to reassign");
+        return;
+      }
+
+      const res = await fetch(`${API}/api/field-reviews/${reviewId}/reassign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({ newOfficerUserId: newOfficerId })
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      
+      // Refresh reviews
+      const rres = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
+      const rj = await rres.json();
+      const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
+      setReviews(mine);
+      
+      // Clear selection
+      setReassignOfficer(prev => ({ ...prev, [reviewId]: "" }));
+      
+      toast.success("Sub admin reassigned successfully");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to reassign sub admin");
     }
   }
 
@@ -207,9 +247,257 @@ export default function AdminApplicationDetail() {
         </div>
       </Card>
 
+      {/* Admin Decision Panel */}
+      <Card className="p-6 bg-blue-50 border-2 border-blue-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-blue-800 flex items-center gap-2">
+            👨‍💼 Admin Decision Panel
+          </h3>
+          <Badge variant="outline" className="text-blue-700 border-blue-300">
+            Current Status: {app.status}
+          </Badge>
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Application Status & Notes */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Application Status
+              </label>
+              <select
+                className="w-full rounded-lg border border-blue-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                value={app._status || app.status}
+                onChange={(e) => setApp(prev => ({ ...prev, _status: e.target.value }))}
+              >
+                <option value="PENDING">PENDING</option>
+                <option value="PROCESSING">PROCESSING</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="REJECTED">REJECTED</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Admin Notes
+              </label>
+              <textarea
+                className="w-full rounded-lg border border-blue-300 px-3 py-2 text-sm min-h-[80px] focus:ring-2 focus:ring-blue-500"
+                placeholder="Add your decision notes here..."
+                value={app._notes || app.notes || ""}
+                onChange={(e) => setApp(prev => ({ ...prev, _notes: e.target.value }))}
+              />
+            </div>
+          </div>
+          
+          {/* Quick Actions */}
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Quick Actions
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => {
+                    setApp(prev => ({ 
+                      ...prev, 
+                      _status: "APPROVED",
+                      _notes: (prev._notes || "") + (prev._notes ? "\n" : "") + `Approved by Admin on ${new Date().toLocaleDateString()}`
+                    }));
+                  }}
+                >
+                  ✅ Approve
+                </Button>
+                
+                <Button 
+                  variant="destructive"
+                  onClick={() => {
+                    setApp(prev => ({ 
+                      ...prev, 
+                      _status: "REJECTED",
+                      _notes: (prev._notes || "") + (prev._notes ? "\n" : "") + `Rejected by Admin on ${new Date().toLocaleDateString()}`
+                    }));
+                  }}
+                >
+                  ❌ Reject
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="col-span-2 border-blue-300 text-blue-700"
+                  onClick={() => {
+                    setApp(prev => ({ 
+                      ...prev, 
+                      _status: "PROCESSING",
+                      _notes: (prev._notes || "") + (prev._notes ? "\n" : "") + `Under review by Admin on ${new Date().toLocaleDateString()}`
+                    }));
+                  }}
+                >
+                  🔄 Mark Under Review
+                </Button>
+              </div>
+            </div>
+            
+            {/* Save Changes */}
+            <div className="pt-2 border-t border-blue-300">
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`${API}/api/applications/${app.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", ...authHeader },
+                      body: JSON.stringify({
+                        status: app._status || app.status,
+                        notes: app._notes || app.notes
+                      })
+                    });
+                    
+                    if (!res.ok) {
+                      const errorData = await res.json();
+                      
+                      // Handle document validation error for approval
+                      if (errorData.requiresOverride && errorData.missingDocuments) {
+                        const proceed = window.confirm(
+                          `⚠️ Missing Required Documents:\n\n` +
+                          `${errorData.missingDocuments.join(', ')}\n\n` +
+                          `This application cannot be approved until all required documents are uploaded.\n\n` +
+                          `Click OK to approve anyway (Force Approve)\n` +
+                          `Click Cancel to wait for document upload`
+                        );
+                        
+                        if (proceed) {
+                          // Force approve with override
+                          const forceRes = await fetch(`${API}/api/applications/${app.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json", ...authHeader },
+                            body: JSON.stringify({
+                              status: app._status || app.status,
+                              notes: (app._notes || app.notes) + "\n[FORCE APPROVED despite missing documents]",
+                              forceApprove: true
+                            })
+                          });
+                          
+                          if (!forceRes.ok) throw new Error("Failed to force approve application");
+                          
+                          toast.success("⚠️ Application force approved despite missing documents!");
+                        } else {
+                          // Reset status to previous value
+                          setApp(prev => ({
+                            ...prev,
+                            _status: prev.status,
+                            _notes: prev.notes
+                          }));
+                          return;
+                        }
+                      } else {
+                        throw new Error(errorData.message || "Failed to update application");
+                      }
+                    }
+                    
+                    // Update local state
+                    setApp(prev => ({
+                      ...prev,
+                      status: prev._status || prev.status,
+                      notes: prev._notes || prev.notes
+                    }));
+                    
+                    toast.success("Application updated successfully!");
+                  } catch (error) {
+                    toast.error("Failed to update application: " + error.message);
+                    console.error(error);
+                  }
+                }}
+              >
+                💾 Save Changes
+              </Button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Field Review Summary */}
+        {reviews.length > 0 && reviews[0].status === "COMPLETED" && (
+          <div className="mt-4 pt-4 border-t border-blue-300">
+            <div className="text-sm font-medium text-blue-800 mb-2">
+              📋 Sub Admin Recommendation Summary:
+            </div>
+            <div className="bg-white rounded p-3 border border-blue-200">
+              <div className="flex items-center gap-2 text-sm">
+                <Badge 
+                  className={`${
+                    reviews[0].fielderRecommendation === 'STRONGLY_APPROVE' ? 'bg-green-600' :
+                    reviews[0].fielderRecommendation === 'APPROVE' ? 'bg-blue-600' :
+                    reviews[0].fielderRecommendation === 'CONDITIONAL' ? 'bg-yellow-600' :
+                    'bg-red-600'
+                  } text-white`}
+                >
+                  {reviews[0].fielderRecommendation?.replace('_', ' ')}
+                </Badge>
+                {reviews[0].verificationScore && (
+                  <span className="text-slate-600">Score: {reviews[0].verificationScore}%</span>
+                )}
+                {reviews[0].homeVisitDate && (
+                  <span className="text-slate-600">
+                    Visit: {new Date(reviews[0].homeVisitDate).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+              {reviews[0].adminNotesRequired && (
+                <div className="mt-2 text-sm text-amber-700 bg-amber-100 p-2 rounded border border-amber-300">
+                  <strong>⚠️ Attention Required:</strong> {reviews[0].adminNotesRequired}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
       {/* Documents */}
       <Card className="p-6 space-y-3">
-        <div className="font-medium">Documents ({docs.length})</div>
+        <div className="flex items-center justify-between">
+          <div className="font-medium">Documents ({docs.length})</div>
+          {(() => {
+            const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+            const uploadedTypes = docs.map(d => d.type);
+            const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
+            
+            if (missingDocs.length === 0) {
+              return <Badge className="bg-green-100 text-green-800 text-xs">✅ All Required</Badge>;
+            } else {
+              return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingDocs.length}</Badge>;
+            }
+          })()}
+        </div>
+        
+        {/* Required Documents Status */}
+        {(() => {
+          const REQUIRED_DOCS = [
+            { key: "CNIC", label: "Student CNIC" },
+            { key: "GUARDIAN_CNIC", label: "Guardian CNIC" },
+            { key: "HSSC_RESULT", label: "HSSC Result" }
+          ];
+          const uploadedTypes = docs.map(d => d.type);
+          
+          return (
+            <div className="bg-gray-50 rounded-md p-3 space-y-2">
+              <div className="text-sm font-medium text-gray-700">Required Documents Status:</div>
+              <div className="grid grid-cols-1 gap-1">
+                {REQUIRED_DOCS.map(doc => {
+                  const isUploaded = uploadedTypes.includes(doc.key);
+                  return (
+                    <div key={doc.key} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${isUploaded ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                      <span>{isUploaded ? '✅' : '❌'}</span>
+                      <span className="flex-1">{doc.label}</span>
+                      <span className="text-xs">{isUploaded ? 'Uploaded' : 'Missing'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+        
         {docs.length === 0 ? (
           <div className="text-sm text-slate-600">No documents uploaded.</div>
         ) : (
@@ -227,12 +515,12 @@ export default function AdminApplicationDetail() {
         )}
       </Card>
 
-      {/* Field Officer Assignment & Actions */}
+      {/* Sub Admin Assignment & Actions */}
       <Card className="p-6 space-y-4">
-        <div className="font-medium">Field Officer Review</div>
+        <div className="font-medium">Sub Admin Review</div>
         <div className="grid md:grid-cols-3 gap-2 items-center">
           <select className="rounded-2xl border px-3 py-2 text-sm" value={assignOfficer} onChange={(e)=>setAssignOfficer(e.target.value)}>
-            <option value="">Select field officer…</option>
+            <option value="">Select sub admin…</option>
             {officers.map(o => (
               <option key={o.id} value={o.id}>{o.name || o.email} ({o.role})</option>
             ))}
@@ -240,24 +528,212 @@ export default function AdminApplicationDetail() {
           <Button className="rounded-2xl" onClick={createAssignment}>Assign</Button>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {reviews.map(r => (
-            <div key={r.id} className="border rounded-md p-3 text-sm">
-              <div className="flex items-center justify-between">
-                <div>Review #{r.id.slice(0,6)} — <Badge variant="secondary">{r.status}</Badge> {r.recommendation ? <span className="ml-2">({r.recommendation})</span> : null}</div>
-                <div className="text-slate-500">{new Date(r.createdAt).toLocaleString()}</div>
+            <div key={r.id} className="border rounded-lg p-4 bg-slate-50">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="font-medium">Sub Admin Review #{r.id.slice(0,6)}</div>
+                  <Badge variant={r.status === "COMPLETED" ? "default" : r.status === "IN_PROGRESS" ? "secondary" : "outline"}>
+                    {r.status}
+                  </Badge>
+                  {r.fielderRecommendation && (
+                    <Badge 
+                      className={`text-white ${
+                        r.fielderRecommendation === 'STRONGLY_APPROVE' ? 'bg-green-600' :
+                        r.fielderRecommendation === 'APPROVE' ? 'bg-blue-600' :
+                        r.fielderRecommendation === 'CONDITIONAL' ? 'bg-yellow-600' :
+                        'bg-red-600'
+                      }`}
+                    >
+                      {r.fielderRecommendation.replace('_', ' ')}
+                    </Badge>
+                  )}
+                  {r.verificationScore && (
+                    <Badge variant="outline" className="text-xs">
+                      Score: {r.verificationScore}%
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-slate-500 text-sm">{new Date(r.updatedAt || r.createdAt).toLocaleString()}</div>
               </div>
-              <div className="mt-2 text-slate-700 whitespace-pre-wrap">{r.notes || "No notes yet."}</div>
+
+              {/* Comprehensive Field Verification Display */}
+              {r.status === "COMPLETED" && (
+                <div className="bg-white rounded-lg p-4 mb-3 border">
+                  <h4 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
+                    🏠 Field Verification Report
+                  </h4>
+                  
+                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                    {/* Left Column */}
+                    <div className="space-y-3">
+                      {r.homeVisitDate && (
+                        <div>
+                          <span className="font-medium text-slate-600">Home Visit Date:</span>
+                          <div>{new Date(r.homeVisitDate).toLocaleDateString()}</div>
+                        </div>
+                      )}
+                      
+                      <div className="space-y-1">
+                        <span className="font-medium text-slate-600">Verification Status:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Identity</Badge>}
+                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Documents</Badge>}
+                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Income</Badge>}
+                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Education</Badge>}
+                        </div>
+                      </div>
+                      
+                      {r.deservingnessFactor && (
+                        <div>
+                          <span className="font-medium text-slate-600">Deservingness:</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-slate-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-500 h-2 rounded-full" 
+                                style={{ width: `${(r.deservingnessFactor / 10) * 100}%` }}
+                              />
+                            </div>
+                            <span>{r.deservingnessFactor}/10</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Right Column */}
+                    <div className="space-y-3">
+                      {r.riskFactors && r.riskFactors.length > 0 && (
+                        <div>
+                          <span className="font-medium text-slate-600">Risk Factors:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {r.riskFactors.map((risk, idx) => (
+                              <Badge key={idx} variant="destructive" className="text-xs">
+                                ⚠️ {risk}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {r.additionalDocumentsRequested && r.additionalDocumentsRequested.length > 0 && (
+                        <div>
+                          <span className="font-medium text-slate-600">Additional Docs Needed:</span>
+                          <div className="text-slate-700 text-xs mt-1">
+                            {r.additionalDocumentsRequested.join(", ")}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Detailed Notes */}
+                  <div className="grid md:grid-cols-2 gap-4 mt-4 text-xs">
+                    {r.homeVisitNotes && (
+                      <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                        <div className="font-medium text-blue-800 mb-1">🏠 Home Visit Notes:</div>
+                        <div className="text-blue-700">{r.homeVisitNotes}</div>
+                      </div>
+                    )}
+                    
+                    {r.familyInterviewNotes && (
+                      <div className="bg-purple-50 p-3 rounded border-l-4 border-purple-400">
+                        <div className="font-medium text-purple-800 mb-1">👥 Family Interview:</div>
+                        <div className="text-purple-700">{r.familyInterviewNotes}</div>
+                      </div>
+                    )}
+                    
+                    {r.financialVerificationNotes && (
+                      <div className="bg-green-50 p-3 rounded border-l-4 border-green-400">
+                        <div className="font-medium text-green-800 mb-1">💰 Financial Verification:</div>
+                        <div className="text-green-700">{r.financialVerificationNotes}</div>
+                      </div>
+                    )}
+                    
+                    {r.characterAssessment && (
+                      <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                        <div className="font-medium text-yellow-800 mb-1">⭐ Character Assessment:</div>
+                        <div className="text-yellow-700">{r.characterAssessment}</div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Recommendation Details */}
+                  {(r.recommendationReason || r.adminNotesRequired) && (
+                    <div className="mt-4 pt-3 border-t border-slate-200">
+                      {r.recommendationReason && (
+                        <div className="bg-slate-100 p-3 rounded mb-2">
+                          <div className="font-medium text-slate-800 text-sm mb-1">📝 Recommendation Reason:</div>
+                          <div className="text-slate-700 text-sm">{r.recommendationReason}</div>
+                        </div>
+                      )}
+                      
+                      {r.adminNotesRequired && (
+                        <div className="bg-amber-100 p-3 rounded border border-amber-300">
+                          <div className="font-medium text-amber-800 text-sm mb-1">⚠️ Requires Admin Attention:</div>
+                          <div className="text-amber-700 text-sm font-medium">{r.adminNotesRequired}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Basic Notes for non-completed reviews */}
+              {r.status !== "COMPLETED" && (
+                <div className="mt-2 text-slate-700 whitespace-pre-wrap">{r.notes || "No notes yet."}</div>
+              )}
               <div className="mt-3 grid md:grid-cols-2 gap-2">
-                <textarea className="rounded-2xl border px-3 py-2 text-sm" rows={3} placeholder="Missing items (comma or newline separated)" value={missingItems} onChange={(e)=>setMissingItems(e.target.value)} />
-                <textarea className="rounded-2xl border px-3 py-2 text-sm" rows={3} placeholder="Note to student (optional)" value={missingNote} onChange={(e)=>setMissingNote(e.target.value)} />
+                <textarea 
+                  className="rounded-2xl border px-3 py-2 text-sm" 
+                  rows={3} 
+                  placeholder="Missing items (comma or newline separated)" 
+                  value={missingItems[r.id] || ""} 
+                  onChange={(e)=>setMissingItems(prev => ({ ...prev, [r.id]: e.target.value }))} 
+                />
+                <textarea 
+                  className="rounded-2xl border px-3 py-2 text-sm" 
+                  rows={3} 
+                  placeholder="Note to student (optional)" 
+                  value={missingNote[r.id] || ""} 
+                  onChange={(e)=>setMissingNote(prev => ({ ...prev, [r.id]: e.target.value }))} 
+                />
               </div>
               <div className="mt-2 flex gap-2">
                 <Button variant="outline" className="rounded-2xl" onClick={()=>requestMissing(r.id)}>Request Missing Info</Button>
               </div>
+              
+              {/* Reassignment Section */}
+              <div className="mt-3 pt-3 border-t border-slate-200">
+                <div className="text-sm font-medium text-slate-700 mb-2">Reassign Sub Admin:</div>
+                <div className="flex gap-2">
+                  <select 
+                    className="flex-1 rounded-2xl border px-3 py-2 text-sm" 
+                    value={reassignOfficer[r.id] || ""} 
+                    onChange={(e)=>setReassignOfficer(prev => ({ ...prev, [r.id]: e.target.value }))}
+                  >
+                    <option value="">Select new sub admin...</option>
+                    {officers.map(officer => (
+                      <option key={officer.id} value={officer.id}>
+                        {officer.name || officer.email}
+                      </option>
+                    ))}
+                  </select>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="rounded-2xl" 
+                    onClick={()=>reassignFieldOfficer(r.id)}
+                    disabled={!reassignOfficer[r.id]}
+                  >
+                    Reassign
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
-          {reviews.length === 0 && <div className="text-sm text-slate-600">No field officer assigned yet.</div>}
+          {reviews.length === 0 && <div className="text-sm text-slate-600">No sub admin assigned yet.</div>}
         </div>
       </Card>
 

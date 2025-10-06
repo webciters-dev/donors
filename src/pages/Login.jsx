@@ -6,8 +6,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { Eye, EyeOff } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// Password input component with visibility toggle - moved outside to prevent re-creation
+const PasswordInput = ({ placeholder, value, onChange, autoComplete, showPassword, onToggleVisibility }) => (
+  <div className="relative">
+    <Input
+      type={showPassword ? "text" : "password"}
+      placeholder={placeholder}
+      autoComplete={autoComplete}
+      value={value}
+      onChange={onChange}
+      className="pr-10"
+    />
+    <button
+      type="button"
+      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+      onClick={onToggleVisibility}
+    >
+      {showPassword ? (
+        <EyeOff className="h-4 w-4" />
+      ) : (
+        <Eye className="h-4 w-4" />
+      )}
+    </button>
+  </div>
+);
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,6 +43,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // where to send the user after login
   const redirectFromState = location.state?.redirectTo || null;
@@ -37,6 +64,7 @@ export default function Login() {
   const goHomeByRole = (role) => {
     if (role === "ADMIN") return navigate("/admin/applications", { replace: true });
     if (role === "STUDENT") return navigate("/my-application", { replace: true });
+    if (role === "FIELD_OFFICER") return navigate("/field-officer", { replace: true });
     if (role === "DONOR") return navigate("/marketplace", { replace: true }); // donors land back on marketplace
     return navigate("/", { replace: true });
   };
@@ -115,12 +143,13 @@ export default function Login() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Input
-            type="password"
+          <PasswordInput
             placeholder="Password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            showPassword={showPassword}
+            onToggleVisibility={() => setShowPassword(!showPassword)}
           />
 
           <Button type="submit" disabled={loading} className="w-full rounded-2xl">

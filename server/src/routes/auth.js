@@ -76,7 +76,7 @@ router.post("/login", async (req, res) => {
 
 /* =========================
    STUDENT SELF-REGISTER (used by ApplicationForm)
-   body: { name, email, password, university, program, gender, city, province, gpa, gradYear, needUSD, field }
+   body: { name, email, password, university, program, gender, country, city, province, gpa, gradYear, needUSD, field }
 ========================= */
 router.post("/register-student", async (req, res) => {
   try {
@@ -87,6 +87,7 @@ router.post("/register-student", async (req, res) => {
       university,
       program,
       gender,
+      country,
       city,
       province,
       gpa,
@@ -107,6 +108,7 @@ router.post("/register-student", async (req, res) => {
         university: university ?? undefined,
         program: program ?? undefined,
         gender: gender ?? undefined,
+        country: country ?? undefined,
         city: city ?? undefined,
         province: province ?? undefined,
         gpa: typeof gpa === "number" ? gpa : undefined,
@@ -120,6 +122,7 @@ router.post("/register-student", async (req, res) => {
         university: university ?? "",
         program: program ?? "",
         gender: gender ?? "",
+        country: country ?? "Pakistan",
         city: city ?? "",
         province: province ?? "",
         gpa: typeof gpa === "number" ? gpa : 0,
@@ -153,7 +156,11 @@ router.post("/register-student", async (req, res) => {
     });
   } catch (err) {
     console.error("register-student failed:", err);
-    return res.status(500).json({ error: "Failed to register student" });
+    console.error("Full error details:", err.message, err.stack);
+    return res.status(500).json({ 
+      error: "Failed to register student",
+      details: err.message // Add error details for debugging
+    });
   }
 });
 

@@ -137,9 +137,7 @@ router.get(
               city: true,
               province: true,
               gpa: true,
-              needUSD: true,   // current schema keeps need on Student too
-              needUsd: true,   // tolerant to both
-              needPKR: true,
+              needUSD: true,
               sponsored: true,
             },
           },

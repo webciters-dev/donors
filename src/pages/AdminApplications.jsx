@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,7 @@ export const AdminApplications = () => {
   const [apps, setApps] = useState([]);
   const [query, setQuery] = useState("");
   const [savingId, setSavingId] = useState(null);
+  const [activeTab, setActiveTab] = useState("pending");
 
   // docs state
   const [expandedId, setExpandedId] = useState(null);
@@ -199,7 +201,20 @@ export const AdminApplications = () => {
   // ---------------------------
   const filtered = useMemo(() => {
     const t = query.toLowerCase();
-    return apps.filter((a) => {
+    
+    // First filter by status based on active tab
+    let statusFiltered = apps;
+    if (activeTab === "pending") {
+      statusFiltered = apps.filter(a => a.status === "PENDING");
+    } else if (activeTab === "approved") {
+      statusFiltered = apps.filter(a => a.status === "APPROVED");
+    } else if (activeTab === "rejected") {
+      statusFiltered = apps.filter(a => a.status === "REJECTED");
+    }
+    // "all" tab shows everything
+    
+    // Then filter by search query
+    return statusFiltered.filter((a) => {
       const s = a.student || {};
       return (
         !t ||
@@ -208,7 +223,15 @@ export const AdminApplications = () => {
         a.term?.toLowerCase().includes(t)
       );
     });
-  }, [apps, query]);
+  }, [apps, query, activeTab]);
+
+  // Statistics for tab badges
+  const stats = useMemo(() => ({
+    all: apps.length,
+    pending: apps.filter(a => a.status === "PENDING").length,
+    approved: apps.filter(a => a.status === "APPROVED").length,
+    rejected: apps.filter(a => a.status === "REJECTED").length,
+  }), [apps]);
 
   if (!isAdmin) {
     return (
@@ -221,7 +244,7 @@ export const AdminApplications = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Applications (Admin)</h1>
+        <h1 className="text-2xl font-semibold">Applications Management</h1>
         <Input
           placeholder="Search by student, term, university…"
           className="w-80 rounded-2xl"
@@ -229,6 +252,44 @@ export const AdminApplications = () => {
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            Pending Review
+            {stats.pending > 0 && (
+              <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-800">
+                {stats.pending}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="flex items-center gap-2">
+            Approved
+            {stats.approved > 0 && (
+              <Badge variant="default" className="ml-1 bg-emerald-100 text-emerald-800">
+                {stats.approved}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="rejected" className="flex items-center gap-2">
+            Rejected
+            {stats.rejected > 0 && (
+              <Badge variant="destructive" className="ml-1">
+                {stats.rejected}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            All Applications
+            {stats.all > 0 && (
+              <Badge variant="outline" className="ml-1">
+                {stats.all}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab}>
 
       <Card className="divide-y">
         <div className="grid grid-cols-12 gap-3 px-4 py-3 text-sm font-medium text-slate-600">
@@ -257,10 +318,51 @@ export const AdminApplications = () => {
                   <div className="text-sm text-slate-600">
                     {row.student?.program} · {row.student?.university}
                   </div>
-                  <div className="mt-1">
+                  <div className="mt-1 flex flex-wrap gap-1">
                     <Badge variant="secondary">
                       GPA {row.student?.gpa ?? "-"}
                     </Badge>
+                    
+                    {/* Field Review Status Badge */}
+                    {row.fieldReviews && row.fieldReviews.length > 0 && (
+                      (() => {
+                        const latestReview = row.fieldReviews[0]; // Most recent due to orderBy desc
+                        const status = latestReview.status;
+                        const recommendation = latestReview.fielderRecommendation;
+                        
+                        if (status === "COMPLETED") {
+                          const bgColor = recommendation === "STRONGLY_APPROVE" ? "bg-green-600" :
+                                         recommendation === "APPROVE" ? "bg-blue-600" :
+                                         recommendation === "CONDITIONAL" ? "bg-yellow-600" :
+                                         recommendation === "REJECT" ? "bg-red-600" : "bg-gray-600";
+                          
+                          return (
+                            <Badge className={`text-white text-xs ${bgColor}`}>
+                              🏢 {recommendation?.replace('_', ' ') || 'REVIEWED'}
+                            </Badge>
+                          );
+                        } else if (status === "IN_PROGRESS") {
+                          return (
+                            <Badge className="bg-orange-500 text-white text-xs">
+                              🔄 In Review
+                            </Badge>
+                          );
+                        } else if (status === "PENDING") {
+                          return (
+                            <Badge className="bg-amber-500 text-white text-xs">
+                              ⏳ Assigned
+                            </Badge>
+                          );
+                        }
+                      })()
+                    )}
+                    
+                    {/* No Field Review Badge */}
+                    {(!row.fieldReviews || row.fieldReviews.length === 0) && (
+                      <Badge variant="outline" className="text-xs border-gray-300">
+                        👤 No Sub Admin
+                      </Badge>
+                    )}
                   </div>
                 </div>
 
@@ -411,6 +513,8 @@ export const AdminApplications = () => {
           );
         })}
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

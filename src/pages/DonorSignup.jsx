@@ -4,8 +4,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// Password input component with visibility toggle - moved outside to prevent re-creation
+const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
+  <div className="relative">
+    <Input
+      type={show ? "text" : "password"}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      className="pr-10"
+    />
+    <button
+      type="button"
+      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+      onClick={() => setShow(!show)}
+    >
+      {show ? (
+        <EyeOff className="h-4 w-4" />
+      ) : (
+        <Eye className="h-4 w-4" />
+      )}
+    </button>
+  </div>
+);
 
 export default function DonorSignup() {
   const navigate = useNavigate();
@@ -21,6 +46,8 @@ export default function DonorSignup() {
     confirm: "",
   });
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function submit(e) {
     e.preventDefault();
@@ -74,17 +101,19 @@ export default function DonorSignup() {
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
-          <Input
-            type="password"
+          <PasswordInput
             placeholder="Password"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
+            show={showPassword}
+            setShow={setShowPassword}
           />
-          <Input
-            type="password"
+          <PasswordInput
             placeholder="Confirm password"
             value={form.confirm}
             onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+            show={showConfirmPassword}
+            setShow={setShowConfirmPassword}
           />
 
           <div className="flex gap-2">

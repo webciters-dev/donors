@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { UserPlus, Mail, Shield, Edit2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -55,7 +56,7 @@ export default function AdminOfficers() {
         const t = await res.text();
         throw new Error(t || `HTTP ${res.status}`);
       }
-      toast.success("Field officer created");
+      toast.success("Sub admin created");
       setForm({ name: "", email: "", password: "" });
       load();
     } catch (e) {
@@ -100,50 +101,140 @@ export default function AdminOfficers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Field Officers</h1>
-        <Button variant="outline" className="rounded-2xl" onClick={load} disabled={loading}>{loading ? "Refreshing…" : "Refresh"}</Button>
+        <div>
+          <h1 className="text-2xl font-semibold">Sub Admin Management</h1>
+          <p className="text-slate-600 mt-1">Manage sub admins who review student applications</p>
+        </div>
+        <Button variant="outline" className="rounded-2xl" onClick={load} disabled={loading}>
+          {loading ? "Refreshing…" : "Refresh"}
+        </Button>
       </div>
 
-      <Card className="p-6 space-y-3">
-        <div className="font-medium">Add a field officer</div>
-        <div className="grid md:grid-cols-3 gap-2 items-center">
-          <Input placeholder="Name (optional)" value={form.name} onChange={(e)=>setForm(f=>({ ...f, name: e.target.value }))} />
-          <Input placeholder="Email" value={form.email} onChange={(e)=>setForm(f=>({ ...f, email: e.target.value }))} />
-          <div className="flex gap-2">
-            <Input type="password" placeholder="Password" value={form.password} onChange={(e)=>setForm(f=>({ ...f, password: e.target.value }))} />
-            <Button className="rounded-2xl" onClick={createOfficer} disabled={creating}>{creating ? "Creating…" : "Add"}</Button>
+      {/* Add New Field Officer */}
+      <Card className="border-l-4 border-l-green-500 bg-green-50">
+        <div className="p-6 space-y-4">
+          <div className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-green-600" />
+            <div className="font-semibold text-green-800">Add New Sub Admin</div>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-3 items-end">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <Input 
+                placeholder="Enter full name" 
+                value={form.name} 
+                onChange={(e)=>setForm(f=>({ ...f, name: e.target.value }))} 
+                className="rounded-2xl"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+              <Input 
+                type="email"
+                placeholder="Enter email" 
+                value={form.email} 
+                onChange={(e)=>setForm(f=>({ ...f, email: e.target.value }))} 
+                className="rounded-2xl"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <Input 
+                type="password" 
+                placeholder="Enter password" 
+                value={form.password} 
+                onChange={(e)=>setForm(f=>({ ...f, password: e.target.value }))} 
+                className="rounded-2xl"
+              />
+            </div>
+            <div>
+              <Button 
+                className="w-full rounded-2xl bg-green-600 hover:bg-green-700" 
+                onClick={createOfficer} 
+                disabled={creating || !form.email || !form.password}
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {creating ? "Creating…" : "Create Sub Admin"}
+              </Button>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 p-3 rounded-lg">
+            <Mail className="h-4 w-4" />
+            <span>A welcome email with login credentials will be sent automatically</span>
           </div>
         </div>
-        <div className="text-xs text-slate-500">They will be created with role <Badge variant="secondary">FIELD_OFFICER</Badge>.</div>
       </Card>
 
-      <Card className="divide-y">
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 text-sm font-medium text-slate-600">
-          <div className="col-span-3">Name</div>
-          <div className="col-span-4">Email</div>
-          <div className="col-span-2">Role</div>
-          <div className="col-span-3 text-right pr-2">Actions</div>
-        </div>
-        {editable.map((o) => (
-          <div key={o.id} className="px-4 py-4 grid grid-cols-12 gap-3 items-start">
-            <div className="col-span-3">
-              <Input value={o._name} onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} className="rounded-2xl" />
-            </div>
-            <div className="col-span-4">
-              <Input value={o._email} onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} className="rounded-2xl" />
-            </div>
-            <div className="col-span-2 pt-1">
-              <Badge variant="secondary">{o.role}</Badge>
-            </div>
-            <div className="col-span-3 flex items-center justify-end gap-2 pr-2">
-              <Input type="password" placeholder="New password (optional)" value={o._newPassword} onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} className="rounded-2xl" />
-              <Button className="rounded-2xl" onClick={()=>saveRow(o)}>Save</Button>
-            </div>
+      {/* Existing Field Officers */}
+      <Card>
+        <div className="px-6 py-4 border-b bg-slate-50">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-slate-600" />
+            <h2 className="font-semibold text-slate-800">Existing Sub Admins ({editable.length})</h2>
           </div>
-        ))}
-        {editable.length === 0 && (
-          <div className="px-4 py-6 text-sm text-slate-600">No field officers yet.</div>
-        )}
+        </div>
+        
+        <div className="divide-y">
+          <div className="grid grid-cols-12 gap-3 px-6 py-3 text-sm font-medium text-slate-600 bg-slate-50">
+            <div className="col-span-3">Name</div>
+            <div className="col-span-4">Email</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-3 text-right">Actions</div>
+          </div>
+          {editable.map((o) => (
+            <div key={o.id} className="px-6 py-4 grid grid-cols-12 gap-3 items-center">
+              <div className="col-span-3">
+                <Input 
+                  value={o._name} 
+                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} 
+                  className="rounded-2xl" 
+                  placeholder="Enter name"
+                />
+              </div>
+              <div className="col-span-4">
+                <Input 
+                  value={o._email} 
+                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} 
+                  className="rounded-2xl"
+                  type="email"
+                />
+              </div>
+              <div className="col-span-2">
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  {o.role}
+                </Badge>
+              </div>
+              <div className="col-span-3 flex items-center justify-end gap-2">
+                <Input 
+                  type="password" 
+                  placeholder="New password (optional)" 
+                  value={o._newPassword} 
+                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} 
+                  className="rounded-2xl text-sm"
+                />
+                <Button 
+                  size="sm"
+                  className="rounded-2xl" 
+                  onClick={()=>saveRow(o)}
+                >
+                  <Edit2 className="h-3 w-3 mr-1" />
+                  Save
+                </Button>
+              </div>
+            </div>
+          ))}
+          
+          {editable.length === 0 && (
+            <div className="px-6 py-8 text-center">
+              <Shield className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <div className="text-slate-600 font-medium">No sub admins yet</div>
+              <div className="text-slate-500 text-sm">Create your first sub admin above</div>
+            </div>
+          )}
+        </div>
       </Card>
     </div>
   );

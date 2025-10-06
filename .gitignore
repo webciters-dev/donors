@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local secrets and runtime data
+.env
+server/.env
+**/.env
+server/uploads/

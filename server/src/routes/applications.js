@@ -58,7 +58,26 @@ router.get("/", optionalAuth, async (req, res) => {
               currentCompletionYear: true,
               gpa: true,
               gradYear: true,
+              // Profile completeness fields
+              cnic: true,
+              dateOfBirth: true,
+              guardianName: true,
+              guardianCnic: true,
+              phone: true,
+              address: true,
             },
+          },
+          fieldReviews: {
+            include: {
+              officer: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+            orderBy: { updatedAt: "desc" },
           },
         },
       }),
@@ -154,7 +173,46 @@ router.post("/", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, fxRate, currency, needUSD, needPKR } = req.body;
+    const { status, notes, fxRate, currency, needUSD, needPKR, forceApprove } = req.body;
+
+    // Document validation for APPROVED status
+    if (status === "APPROVED") {
+      const application = await prisma.application.findUnique({
+        where: { id },
+        include: {
+          student: {
+            include: {
+              documents: {
+                select: { type: true }
+              }
+            }
+          }
+        }
+      });
+
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      // Check required documents
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+      const uploadedTypes = application.student.documents.map(doc => doc.type);
+      const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
+
+      if (missingDocs.length > 0 && !forceApprove) {
+        return res.status(400).json({
+          error: "Cannot approve application with missing required documents",
+          missingDocuments: missingDocs,
+          message: `Missing required documents: ${missingDocs.join(', ')}. Use forceApprove=true to override this validation.`,
+          requiresOverride: true
+        });
+      }
+
+      // If force approve is used, log it for audit trail
+      if (forceApprove && missingDocs.length > 0) {
+        console.log(`⚠️ FORCE APPROVE: Application ${id} approved despite missing documents: ${missingDocs.join(', ')}`);
+      }
+    }
 
     // build update payload
     const data = {};
@@ -206,13 +264,52 @@ router.patch("/:id", async (req, res) => {
  */
 router.patch("/:id/status", async (req, res) => {
   try {
-    const { status, notes } = req.body;
+    const { status, notes, forceApprove } = req.body;
 
     if (!["PENDING", "PROCESSING", "APPROVED", "REJECTED"].includes(status)) {
       return res.status(400).json({
         error:
           "Invalid status. Must be PENDING, PROCESSING, APPROVED, or REJECTED",
       });
+    }
+
+    // Document validation for APPROVED status
+    if (status === "APPROVED") {
+      const application = await prisma.application.findUnique({
+        where: { id: req.params.id },
+        include: {
+          student: {
+            include: {
+              documents: {
+                select: { type: true }
+              }
+            }
+          }
+        }
+      });
+
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      // Check required documents
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+      const uploadedTypes = application.student.documents.map(doc => doc.type);
+      const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
+
+      if (missingDocs.length > 0 && !forceApprove) {
+        return res.status(400).json({
+          error: "Cannot approve application with missing required documents",
+          missingDocuments: missingDocs,
+          message: `Missing required documents: ${missingDocs.join(', ')}. Use forceApprove=true to override this validation.`,
+          requiresOverride: true
+        });
+      }
+
+      // If force approve is used, log it for audit trail
+      if (forceApprove && missingDocs.length > 0) {
+        console.log(`⚠️ FORCE APPROVE: Application ${req.params.id} approved despite missing documents: ${missingDocs.join(', ')}`);
+      }
     }
 
     const application = await prisma.application.update({
@@ -232,6 +329,34 @@ router.patch("/:id/status", async (req, res) => {
         },
       },
     });
+
+    // Auto-notify student of status changes
+    const statusMessages = {
+      'PENDING': 'Your application is under initial review.',
+      'PROCESSING': 'Your application is being processed by our team.',
+      'APPROVED': '🎉 Congratulations! Your application has been approved.',
+      'REJECTED': 'We regret to inform you that your application has been rejected.'
+    };
+
+    if (statusMessages[status]) {
+      console.log(`Creating status notification for status: ${status}, studentId: ${application.studentId}`);
+      try {
+        const notification = await prisma.message.create({
+          data: {
+            studentId: application.studentId,
+            applicationId: application.id,
+            text: `Status Update: ${statusMessages[status]}${notes ? ` Note: ${notes}` : ''}`,
+            fromRole: 'admin'
+          }
+        });
+        console.log('Status notification created successfully:', notification.id);
+      } catch (msgError) {
+        console.error('Failed to create status notification:', msgError);
+        // Don't fail the status update if message creation fails
+      }
+    } else {
+      console.log(`No status message defined for status: ${status}`);
+    }
 
     res.json(application);
   } catch (error) {

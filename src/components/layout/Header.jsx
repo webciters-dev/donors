@@ -13,7 +13,6 @@ export const Nav = ({ active, setActive }) => {
   const baseTabs = [
     { key: "home", label: "Landing" },
     { key: "marketplace", label: "Marketplace" },
-    { key: "reports", label: "Reports" },
   ];
 
   const studentTabs = [

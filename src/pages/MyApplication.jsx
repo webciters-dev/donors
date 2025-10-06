@@ -474,6 +474,14 @@ export const MyApplication = () => {
 
   async function submitApplication() {
     try {
+      // Check if application is already submitted for review
+      if (application.status === 'PENDING' || application.status === 'PROCESSING' || application.status === 'APPROVED') {
+        toast.info("Application already submitted", { 
+          description: `Your application is currently ${application.status.toLowerCase()}. No need to submit again.` 
+        });
+        return;
+      }
+      
       const issues = collectSubmissionIssues();
       if (issues.length > 0) {
         toast.error("Please resolve before submission", { description: issues[0] });
@@ -629,6 +637,59 @@ export const MyApplication = () => {
       {/* Documents */}
       <Card className="p-6 space-y-4">
         <h3 className="font-medium">Documents</h3>
+
+        {/* Documents Status Overview */}
+        {(() => {
+          // Combine both basic required docs and current education docs
+          const allRequiredDocTypes = [...REQUIRED_DOCS, ...currentDocChecklist.map(item => item.key)];
+          const missingDocs = allRequiredDocTypes.filter(docType => !haveDocs.has(docType));
+          const completedDocs = allRequiredDocTypes.filter(docType => haveDocs.has(docType));
+          
+          return (
+            <div className="rounded-md border p-3 bg-slate-50">
+              <div className="flex items-center justify-between mb-2">
+                <div className="font-medium text-slate-700">Document Requirements Overview</div>
+                <div className="text-sm text-slate-600">
+                  {completedDocs.length}/{allRequiredDocTypes.length} complete
+                </div>
+              </div>
+              
+              {missingDocs.length > 0 && (
+                <div className="mb-3">
+                  <div className="text-sm font-medium text-amber-700 mb-2">Still needed for complete application:</div>
+                  <div className="grid sm:grid-cols-2 gap-1 text-sm">
+                    {missingDocs.map((docType) => (
+                      <div key={docType} className="flex items-center gap-2 text-amber-700">
+                        <Circle className="h-3 w-3" />
+                        <span>{docType.replaceAll("_", " ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {completedDocs.length > 0 && (
+                <div>
+                  <div className="text-sm font-medium text-emerald-700 mb-2">Completed:</div>
+                  <div className="grid sm:grid-cols-2 gap-1 text-sm">
+                    {completedDocs.map((docType) => (
+                      <div key={docType} className="flex items-center gap-2 text-emerald-700">
+                        <CheckCircle2 className="h-3 w-3" />
+                        <span>{docType.replaceAll("_", " ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {missingDocs.length === 0 && (
+                <div className="text-sm text-emerald-700 font-medium">
+                  ✅ All required documents have been uploaded!
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div id="document-uploader-anchor" />
         <DocumentUploader

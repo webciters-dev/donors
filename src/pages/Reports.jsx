@@ -1,9 +1,27 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BarChart3 } from "lucide-react";
-import { mockData } from "@/data/mockData";
+import { useState, useEffect } from "react";
 
 export const Reports = () => {
+  const [stats, setStats] = useState({
+    studentsSponsored: '—',
+    averageSponsorship: '—',
+    totalDonors: '—',
+    onTimeRepayment: '—'
+  });
+
+  useEffect(() => {
+    // TODO: Fetch real analytics data from API
+    // For now, show clean placeholders until real data is available
+    setStats({
+      studentsSponsored: '0',
+      averageSponsorship: '0',
+      totalDonors: '0',
+      onTimeRepayment: '—'
+    });
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -13,19 +31,19 @@ export const Reports = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">{mockData.kpis.studentsSponsored}</div>
+          <div className="text-2xl font-bold text-emerald-600">{stats.studentsSponsored}</div>
           <div className="text-sm text-slate-600">Students Sponsored</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">${mockData.kpis.averageSponsorship.toLocaleString()}</div>
+          <div className="text-2xl font-bold text-emerald-600">${stats.averageSponsorship}</div>
           <div className="text-sm text-slate-600">Avg Sponsorship</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">{mockData.kpis.totalDonors}</div>
+          <div className="text-2xl font-bold text-emerald-600">{stats.totalDonors}</div>
           <div className="text-sm text-slate-600">Total Donors</div>
         </Card>
         <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">{mockData.kpis.onTimeRepaymentPct}%</div>
+          <div className="text-2xl font-bold text-emerald-600">{stats.onTimeRepayment}</div>
           <div className="text-sm text-slate-600">On-Time Repayment</div>
         </Card>
       </div>

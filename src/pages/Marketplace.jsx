@@ -6,15 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Search,
-  Heart,
-  UserRound,
-  GraduationCap,
-  Building2,
-  DollarSign,
 } from "lucide-react";
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { CURRENCY_META, getCurrencyFromCountry, fmtAmount, getCurrencyFlag } from "@/lib/currency";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -34,127 +30,77 @@ function StudentCard({ student, onSponsored }) {
   const navigate = useNavigate();
   const { user, token } = useAuth();
 
-  const fmt = (n) => Number(n || 0).toLocaleString();
   const remainingNeed = Number(student?.needUsd ?? student?.needUSD ?? 0);
   const isApproved = Boolean(student?.isApproved);
   const isSponsored = remainingNeed <= 0 || Boolean(student?.sponsored);
 
-  async function sponsorStudent() {
-    try {
-      if (!user || user.role !== "DONOR") {
-        // send them to login, then back to marketplace
-        return navigate("/login?redirect=/marketplace");
-      }
-      if (!isApproved) {
-        toast.message("Awaiting approval", {
-          description:
-            "This student must be approved by admin before sponsorship.",
-        });
-        return;
-      }
-      if (isSponsored) return;
+  // Determine display currency based on country
+  const countryCurrency = getCurrencyFromCountry(student?.country);
+  const currency = student?.currency || countryCurrency;
+  const displayAmount = currency === "PKR" ? student?.needPKR || remainingNeed : remainingNeed;
 
-      const amount = remainingNeed; // full remaining need only
-      const studentId = student?.id;
-
-      const res = await fetch(`${API}/api/sponsorships`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // <- REQUIRED
-        },
-        body: JSON.stringify({ studentId, amount }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-
-      await res.json();
-      onSponsored?.(studentId, amount);
-      toast.success(`Sponsorship recorded: $${fmt(amount)} for ${student.name}`);
-    } catch (err) {
-      console.error(err);
-      toast.error(`Failed to sponsor: ${err?.message || "Unknown error"}`);
+  function sponsorStudent() {
+    if (!user || user.role !== "DONOR") {
+      // send them to login, then back to marketplace
+      return navigate("/login", { state: { redirectTo: "/marketplace" } });
     }
+    if (!isApproved) {
+      toast.message("Awaiting approval", {
+        description:
+          "This student must be approved by admin before sponsorship.",
+      });
+      return;
+    }
+    if (isSponsored) return;
+
+    // Navigate to payment page for this student
+    navigate(`/donor/payment/${student.id}`);
   }
 
   return (
-    <Card className="p-5 flex flex-col gap-3">
+    <Card className="p-4 flex flex-col">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-base font-semibold text-slate-900">
-            {student.name}
-          </h3>
-          <p className="text-sm text-slate-600">
-            {student.program} · {student.university}
-          </p>
+          <div className="text-base font-semibold">{student.name}</div>
+          <div className="text-sm text-slate-600">{student.program} · {student.university}</div>
         </div>
-        <button
-          className="rounded-full p-2 text-rose-500 hover:bg-rose-50"
-          aria-label="Add to wishlist"
-        >
-          <Heart className="h-5 w-5" />
-        </button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        {student.gender && (
-          <Badge variant="secondary">
-            <UserRound className="h-3.5 w-3.5 mr-1 inline" />
-            {student.gender}
-          </Badge>
-        )}
-        {student.city && (
-          <Badge variant="secondary">
-            <Building2 className="h-3.5 w-3.5 mr-1 inline" />
-            {student.city}
-          </Badge>
-        )}
-        {Number.isFinite(Number(student.gpa)) && (
-          <Badge variant="default">
-            <GraduationCap className="h-3.5 w-3.5 mr-1 inline" />
-            GPA {student.gpa}
-          </Badge>
-        )}
-
-        {isSponsored ? (
-          <Badge variant="secondary">Sponsored</Badge>
-        ) : isApproved ? (
-          <Badge variant="default">Approved</Badge>
-        ) : (
-          <Badge variant="secondary">Awaiting approval</Badge>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-700">Remaining need (USD):</span>
-          <span className="font-semibold">${fmt(remainingNeed)}</span>
+        <div className="shrink-0 rounded-full bg-amber-500 text-white text-xs font-semibold px-3 py-1 shadow-sm flex items-center gap-1">
+          <span>{getCurrencyFlag(currency)}</span>
+          <span>{fmtAmount(displayAmount, currency)}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 pt-1">
-        <Button
-          variant="outline"
-          className="rounded-2xl w-32"
-          onClick={() =>
-            toast.message(student.name, {
-              description: `${student.program} · ${student.university}`,
-            })
-          }
+      <div className="text-sm text-slate-700 grid grid-cols-[120px,1fr] gap-y-1 items-start min-h-[140px]">
+        <div className="text-slate-600">City</div>
+        <div className="text-right">{student.city || "—"}</div>
+        
+        <div className="text-slate-600">Province</div>
+        <div className="text-right">{student.province || "—"}</div>
+        
+        <div className="text-slate-600">Target</div>
+        <div className="text-right">{student.university}</div>
+        
+        <div className="text-slate-600">Program</div>
+        <div className="text-right">{student.program}</div>
+        
+        <div className="text-slate-600">Latest GPA</div>
+        <div className="text-right">{student.gpa ? Number(student.gpa).toFixed(2) : "—"}</div>
+      </div>
+
+      <div className="pt-2 mt-auto grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <Button 
+          className="rounded-2xl w-full" 
+          onClick={() => navigate(`/students/${student.id}`)}
         >
-          About
+          Student details
         </Button>
-
-        <Button
+        <Button 
+          variant="outline" 
+          className="rounded-2xl w-full"
           disabled={!isApproved || isSponsored}
           onClick={sponsorStudent}
-          className="rounded-2xl flex-1"
         >
-          <DollarSign className="h-4 w-4 mr-1" />
-          {isSponsored ? "Sponsored" : "Sponsor Student (Full)"}
+          {isSponsored ? "Sponsored" : "Sponsor"}
         </Button>
       </div>
     </Card>
@@ -173,129 +119,64 @@ export const Marketplace = () => {
   const [students, setStudents] = useState([]);
   // const [fx, setFx] = useState(null); // reserved for donor-localized display in Phase 1 UI
 
-  // Load APPROVED applications + sponsorships, compute remaining need
+  // Load students - fast approach
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      // Start with empty state - only show real approved students
+      setStudents([]);
+
+      // Try API to get real approved students
       try {
-        // 1) Approved applications (include student)
-        const appsRes = await fetch(
-          `${API}/api/applications?status=APPROVED&limit=500`
-        );
-        if (!appsRes.ok) throw new Error(await appsRes.text());
-        const appsJson = await appsRes.json();
-        const applicationsArr = Array.isArray(appsJson?.applications)
-          ? appsJson.applications
-          : appsJson;
+        const res = await fetch(`${API}/api/students/approved`);
+        
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          const students = Array.isArray(data?.students) ? data.students : [];
+          
+          if (students.length > 0) {
+            // Transform API student data to marketplace format
+            const transformedStudents = students.map(student => ({
+              id: student.id,
+              name: student.name,
+              email: student.email,
+              university: student.university,
+              program: student.program,
+              gpa: student.gpa,
+              gradYear: student.gradYear,
+              city: student.city,
+              province: student.province,
+              gender: student.gender,
+              isApproved: true, // All students from approved endpoint are approved
+              sponsored: student.remainingNeed <= 0,
+              needUsd: student.remainingNeed || 0,
+              needUSD: student.remainingNeed || 0,
+              currency: student.application?.currency || getCurrencyFromCountry(student.country),
+              needPKR: student.application?.needPKR || null,
+              term: student.application?.term || null,
+            }));
 
-        // 2) Sponsorships aggregate to subtract funded amount (public endpoint)
-        const sRes = await fetch(`${API}/api/sponsorships/aggregate`);
-        if (!sRes.ok) throw new Error(await sRes.text());
-        const sJson = await sRes.json();
-        const rows = Array.isArray(sJson?.aggregate) ? sJson.aggregate : [];
-        const fundedByStudent = rows.reduce((acc, r) => {
-          const sid = r.studentId;
-          const amt = Number(r.total || 0);
-          acc[sid] = (acc[sid] || 0) + (Number.isFinite(amt) ? amt : 0);
-          return acc;
-        }, {});
-
-        // 3) Optional: get latest PKR->USD rate for PKR applications missing snapshot
-        let pkrToUsd = 0;
-        try {
-          const fxRes = await fetch(`${API}/api/fx/latest?base=PKR&quote=USD`);
-          if (fxRes.ok) {
-            const fx = await fxRes.json();
-            pkrToUsd = Number(fx?.rate || 0);
+            setStudents(transformedStudents);
           }
-        } catch {}
-
-
-
-
-        // Build student map (largest remaining need wins if multiple apps)
-        const byStudent = new Map();
-        for (const a of applicationsArr) {
-          const s = a.student;
-          if (!s) continue;
-
-          // Determine requested amount in USD
-          let requestedUSD = NaN;
-          const amtBase = a?.amountBaseUSD;
-          const needUsdField = a?.needUSD;
-          const needPkrField = a?.needPKR;
-
-          // Prefer snapshot if present and > 0
-          if (amtBase != null && Number(amtBase) > 0) {
-            requestedUSD = Number(amtBase);
-          }
-
-          // Fallback to legacy USD field if > 0
-          if (!Number.isFinite(requestedUSD) || requestedUSD <= 0) {
-            if (needUsdField != null && Number(needUsdField) > 0) {
-              requestedUSD = Number(needUsdField);
-            }
-          }
-
-          // Fallback to PKR with FX if > 0; if FX missing, show PKR as-is to avoid hiding
-          if (!Number.isFinite(requestedUSD) || requestedUSD <= 0) {
-            const needPKR = Number(needPkrField || 0);
-            if (needPKR > 0) {
-              requestedUSD = pkrToUsd > 0 ? needPKR * pkrToUsd : needPKR;
-            }
-          }
-
-          // Final guard
-          if (!Number.isFinite(requestedUSD) || requestedUSD < 0) {
-            requestedUSD = 0;
-          }
-
-          const remaining = Math.max(0, requestedUSD - Number(fundedByStudent[s.id] || 0));
-
-          const shaped = {
-            id: s.id,
-            name: s.name,
-            email: s.email,
-            university: s.university,
-            program: s.program,
-            gpa: s.gpa,
-            gradYear: s.gradYear,
-            city: s.city,
-            province: s.province,
-            gender: s.gender,
-            isApproved: true,
-            sponsored: remaining <= 0,
-            needUsd: remaining,
-            needUSD: remaining,
-          };
-
-          const existing = byStudent.get(s.id);
-          if (!existing || shaped.needUsd > existing.needUsd) {
-            byStudent.set(s.id, shaped);
-          }
-        }
-
-        if (!cancelled) {
-          setStudents(Array.from(byStudent.values()));
         }
       } catch (err) {
-        console.error(err);
-        if (!cancelled) {
-          // fallback to mock data (mark approved)
+        console.error("Marketplace API failed:", err);
+        // Only use mock data as fallback if API is completely unreachable
+        if (!cancelled && err.message.includes('Failed to fetch')) {
+          console.log("API unreachable, using mock data as fallback");
           setStudents(
-  (mockData.students || []).map((s) => {
-    const rem = Number(s?.needUsd ?? s?.needUSD ?? 0);
-    return {
-      ...s,
-      isApproved: true,
-      needUsd: rem,
-      needUSD: rem,
-      sponsored: rem <= 0, // derive from remaining need only
-    };
-  })
-);
-
+            mockData.students.map((s) => ({
+              ...s,
+              isApproved: true,
+              needUsd: s.needUsd || 0,
+              needUSD: s.needUsd || 0,
+              sponsored: s.sponsored || false,
+              currency: s.currency || getCurrencyFromCountry(s.country),
+              needPKR: s.needPKR || null,
+              term: "Mock Data",
+            }))
+          );
         }
       }
     }
@@ -327,14 +208,12 @@ export const Marketplace = () => {
 
   // SHOW ONLY approved + not fully sponsored
   const filtered = useMemo(() => {
-    const list = students?.length ? students : mockData.students;
     const t = q.toLowerCase();
 
-    return list
-  .filter((s) => s.isApproved)
-  .filter((s) => !s.sponsored) // <- add this
-  .filter((s) => Number(s?.needUsd ?? s?.needUSD ?? 0) > 0)
-  .filter((s) => {
+    return students
+      .filter((s) => s.isApproved) // Only show admin-approved students
+      .filter((s) => !s.sponsored && (s.remainingNeed > 0 || s.needUsd > 0 || s.needUSD > 0)) // Only show unsponsored students
+      .filter((s) => {
         const textMatch =
           !t ||
           s.name?.toLowerCase().includes(t) ||
@@ -433,7 +312,7 @@ export const Marketplace = () => {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((student) => (
           <StudentCard
             key={student.id}

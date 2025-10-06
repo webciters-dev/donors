@@ -3,6 +3,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
 import bcrypt from "bcryptjs";
+import { sendFieldOfficerWelcomeEmail } from "../lib/emailService.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -39,6 +40,19 @@ router.post("/field-officers", requireAuth, onlyRoles("ADMIN"), async (req, res)
       data: { name: name || null, email, passwordHash, role: "FIELD_OFFICER" },
       select: { id: true, name: true, email: true, role: true }
     });
+
+    // Send welcome email to new field officer (async, don't block response)
+    sendFieldOfficerWelcomeEmail({
+      email: email,
+      name: name || 'Field Officer',
+      password: password, // Send the original password since it's their first login
+      applicationId: 'N/A - General Access',
+      studentName: 'You will be assigned applications by administrators'
+    }).catch(emailError => {
+      console.error('Failed to send sub admin welcome email:', emailError);
+      // Don't fail the request if email fails
+    });
+
     return res.status(201).json({ user });
   } catch (e) {
     console.error("POST /api/users/field-officers failed:", e);

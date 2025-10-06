@@ -18,6 +18,7 @@ import fxRouter from "./routes/fx.js";
 import fieldReviewsRouter from "./routes/fieldReviews.js";
 import usersRouter from "./routes/users.js";
 import requestsRouter from "./routes/requests.js";
+import exportRouter from "./routes/export.js";
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ const allowedOrigins = Array.from(
     "http://localhost:5173",
     "http://localhost:8080",
     "http://localhost:8081",
+    "http://localhost:8082",
   ])
 ).filter(Boolean);
 
@@ -88,11 +90,13 @@ app.use("/api/donors", donorsRouter);
 app.use("/api/applications", applicationsRouter);
 app.use("/api/sponsorships", sponsorshipsRouter);
 app.use("/api/disbursements", disbursementsRouter);
+app.use("/api/messages", messagesRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/fx", fxRouter);
 app.use("/api/field-reviews", fieldReviewsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);
+app.use("/api/export", exportRouter);
 
 // ⬇️ NEW for uploads
 app.use("/api/uploads", uploadsRouter);     // handles file upload API

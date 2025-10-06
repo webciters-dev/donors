@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -41,6 +42,7 @@ function formatCNIC(raw = "") {
 
 export default function StudentProfile() {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
   const [form, setForm] = useState({
@@ -169,6 +171,12 @@ export default function StudentProfile() {
       if (!res.ok) throw new Error(await res.text());
 
       toast.success("Profile updated");
+      
+      // Redirect to My Application after successful profile save
+      setTimeout(() => {
+        navigate('/my-application');
+      }, 1000); // Small delay to let user see the success message
+      
     } catch (e) {
       console.error(e);
       toast.error("Failed to save profile");

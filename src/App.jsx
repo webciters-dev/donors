@@ -29,10 +29,8 @@ import { DonorDashboard } from "@/pages/DonorDashboard";
 import { DonorPreferences } from "@/pages/DonorPreferences";
 import { DonorReceipts } from "@/pages/DonorReceipts";
 import DonorBrowse from "@/pages/DonorBrowse";
-import DonorPaymentDemo from "@/pages/DonorPaymentDemo";
-import DonorProgressDemo from "@/pages/DonorProgressDemo";
-import DonorRepaymentDemo from "@/pages/DonorRepaymentDemo";
-import DonorStudentDetailsDemo from "@/pages/DonorStudentDetailsDemo";
+import DonorPortal from "@/pages/DonorPortal";
+import DonorPayment from "@/pages/DonorPayment";
 import { ApplicationForm } from "@/pages/ApplicationForm";
 import { Reports } from "@/pages/Reports";
 import { SponsorshipMatrix } from "@/pages/SponsorshipMatrix";
@@ -43,7 +41,10 @@ import { Clock } from "lucide-react";
 // ⬇️ NEW
 import { AdminApplications } from "@/pages/AdminApplications";
 import AdminApplicationDetail from "@/pages/AdminApplicationDetail";
+import SubAdminApplicationDetail from "@/pages/SubAdminApplicationDetail";
 import { MyApplication } from "@/pages/MyApplication";
+import FieldOfficerDashboard from "@/pages/FieldOfficerDashboard";
+import StudentDashboard from "@/pages/StudentDashboard";
 import { AuthProvider } from "@/lib/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
@@ -55,15 +56,18 @@ const pathFromKey = {
   home: "/",
   marketplace: "/marketplace",
   donor: "/donor",
-  donor_demo: "/donor/demo",
+  donor_portal: "/donor/portal",
+
   preferences: "/preferences",
   receipts: "/receipts",
   apply: "/apply",
   admin: "/admin",
   officers: "/admin/officers",
+  fieldofficer: "/field-officer",
   reports: "/reports",
   matrix: "/matrix",
   update: "/update",
+  studentdashboard: "/student/dashboard",
   myapplication: "/my-application",
   studentprofile: "/student/profile",
 };
@@ -71,10 +75,13 @@ const pathFromKey = {
 function keyFromPath(pathname) {
   if (pathname === "/" || pathname === "/#/" || pathname === "") return "home";
   if (pathname.startsWith("/students/")) return "student";
+  if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
   if (pathname.startsWith("/my-application")) return "myapplication";
   if (pathname.startsWith("/student/profile")) return "studentprofile"; // ✅ ensure tab highlight
   if (pathname.startsWith("/admin")) return "admin";
-  if (pathname.startsWith("/donor/demo")) return "donor_demo";
+  if (pathname.startsWith("/field-officer")) return "fieldofficer";
+  if (pathname.startsWith("/donor/portal")) return "donor_portal";
+
   const match = Object.entries(pathFromKey).find(([, p]) => p === pathname);
   return match?.[0] ?? "home";
 }
@@ -84,8 +91,8 @@ function StudentDetailRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
   if (!id) return <Navigate to="/admin" replace />;
-  const numericId = Number(id);
-  return <StudentDetail id={numericId} goBack={() => navigate(-1)} />;
+  // Keep ID as string since we're using CUIDs, not numeric IDs
+  return <StudentDetail id={id} goBack={() => navigate(-1)} />;
 }
 
 /* ---------- shell that wires nav to router ---------- */
@@ -129,13 +136,16 @@ function Shell() {
           <Routes>
             {/* PUBLIC */}
             <Route path="/" element={<Landing go={setActive} />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            {/* Public demo donor screens (static) */}
-            <Route path="/donor/demo" element={<DonorBrowse />} />
-            <Route path="/donor/demo/student/:id" element={<DonorStudentDetailsDemo />} />
-            <Route path="/donor/demo/pay/:id" element={<DonorPaymentDemo />} />
-            <Route path="/donor/demo/progress/:id" element={<DonorProgressDemo />} />
-            <Route path="/donor/demo/repayment/:id" element={<DonorRepaymentDemo />} />
+            {/* MARKETPLACE - Protected for authenticated donors */}
+            <Route 
+              path="/marketplace" 
+              element={
+                <ProtectedRoute roles={["DONOR"]}>
+                  <Marketplace />
+                </ProtectedRoute>
+              } 
+            />
+
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
 
@@ -151,6 +161,14 @@ function Shell() {
             <Route path="/students/:id" element={<StudentDetailRoute />} />
 
             {/* PROTECTED: STUDENT */}
+            <Route
+              path="/student/dashboard"
+              element={
+                <ProtectedRoute roles={["STUDENT"]}>
+                  <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/my-application"
               element={
@@ -177,6 +195,22 @@ function Shell() {
     </ProtectedRoute>
   }
 />
+            <Route
+              path="/donor/portal"
+              element={
+                <ProtectedRoute roles={['DONOR']}>
+                  <DonorPortal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/donor/payment/:studentId"
+              element={
+                <ProtectedRoute roles={['DONOR']}>
+                  <DonorPayment />
+                </ProtectedRoute>
+              }
+            />
 
             <Route path="/preferences" element={<DonorPreferences />} />
             <Route path="/receipts" element={<DonorReceipts />} />
@@ -204,6 +238,24 @@ function Shell() {
               element={
                 <ProtectedRoute roles={["ADMIN"]}>
                   <AdminApplicationDetail />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* PROTECTED: FIELD_OFFICER */}
+            <Route
+              path="/field-officer"
+              element={
+                <ProtectedRoute roles={["FIELD_OFFICER"]}>
+                  <FieldOfficerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/field-officer/review/:reviewId"
+              element={
+                <ProtectedRoute roles={["FIELD_OFFICER"]}>
+                  <SubAdminApplicationDetail />
                 </ProtectedRoute>
               }
             />

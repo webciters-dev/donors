@@ -18,6 +18,7 @@ async function main() {
         gpa: 3.8,
         gradYear: 2025,
         city: 'Lahore',
+        country: 'Pakistan',
         province: 'Punjab',
         needUSD: 2500
       }
@@ -33,6 +34,7 @@ async function main() {
         gpa: 3.6,
         gradYear: 2024,
         city: 'Islamabad',
+        country: 'Pakistan',
         province: 'Islamabad',
         needUSD: 3000
       }
@@ -48,6 +50,7 @@ async function main() {
         gpa: 3.9,
         gradYear: 2026,
         city: 'Karachi',
+        country: 'Pakistan',
         province: 'Sindh',
         needUSD: 4500
       }
@@ -63,6 +66,7 @@ async function main() {
         gpa: 3.7,
         gradYear: 2025,
         city: 'Karachi',
+        country: 'Pakistan',
         province: 'Sindh',
         needUSD: 2000
       }
@@ -78,6 +82,7 @@ async function main() {
         gpa: 3.5,
         gradYear: 2024,
         city: 'Lahore',
+        country: 'Pakistan',
         province: 'Punjab',
         needUSD: 2800
       }

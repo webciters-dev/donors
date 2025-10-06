@@ -41,8 +41,16 @@ export const DonorDashboard = () => {
           return;
         }
 
-        if (!pRes.ok) throw new Error(await pRes.text());
-        if (!sRes.ok) throw new Error(await sRes.text());
+        if (!pRes.ok) {
+          const errorText = await pRes.text();
+          console.error("Profile API error:", errorText);
+          throw new Error(`Profile API failed (${pRes.status}): ${errorText}`);
+        }
+        if (!sRes.ok) {
+          const errorText = await sRes.text();
+          console.error("Sponsorships API error:", errorText);
+          throw new Error(`Sponsorships API failed (${sRes.status}): ${errorText}`);
+        }
 
         const p = await pRes.json();
         const s = await sRes.json();
@@ -51,7 +59,7 @@ export const DonorDashboard = () => {
           setSponsorships(Array.isArray(s?.sponsorships) ? s.sponsorships : []);
         }
       } catch (e) {
-        console.error(e);
+        console.error("Donor dashboard error:", e);
         if (!dead) {
           toast.error("Failed to load donor dashboard");
           setProfile(null);

@@ -8,6 +8,99 @@ import { studentProfileAcademicSchema } from "../validation/studentProfileAcadem
 const router = express.Router();
 
 /**
+ * GET /api/students/approved/:id
+ * - Get specific approved student details (donor-safe information)
+ * - Only shows information relevant for sponsorship decisions
+ * - Does not expose sensitive personal information
+ */
+router.get("/approved/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const student = await prisma.student.findFirst({
+      where: {
+        id,
+        applications: {
+          some: { status: "APPROVED" },
+        },
+      },
+      include: {
+        applications: {
+          where: { status: "APPROVED" },
+          orderBy: { submittedAt: "desc" },
+          take: 1,
+          select: {
+            id: true,
+            term: true,
+            needUSD: true,
+            needPKR: true,
+            currency: true,
+            status: true,
+            submittedAt: true,
+            notes: true,
+          },
+        },
+        sponsorships: {
+          select: { 
+            amount: true,
+            date: true,
+            donor: {
+              select: { name: true, organization: true }
+            }
+          },
+        },
+      },
+    });
+
+    if (!student) {
+      return res.status(404).json({ error: "Student not found or not approved" });
+    }
+
+    const app = student.applications[0] || null;
+    const totalSponsored = student.sponsorships.reduce(
+      (sum, sp) => sum + Number(sp.amount || 0),
+      0
+    );
+    const remainingNeed = Math.max(0, Number(app?.needUSD || 0) - totalSponsored);
+
+    // Return donor-safe information only
+    const donorSafeData = {
+      id: student.id,
+      name: student.name,
+      university: student.university,
+      program: student.program,
+      gpa: student.gpa,
+      gradYear: student.gradYear,
+      city: student.city,
+      province: student.province,
+      gender: student.gender,
+      // Financial information
+      needUSD: app?.needUSD || 0,
+      needPKR: app?.needPKR || 0,
+      currency: app?.currency || "USD",
+      totalSponsored,
+      remainingNeed,
+      // Application info
+      application: app ? {
+        id: app.id,
+        term: app.term,
+        status: app.status,
+        submittedAt: app.submittedAt,
+      } : null,
+      // Sponsorship summary (no donor details for privacy)
+      sponsorshipCount: student.sponsorships.length,
+      isApproved: true,
+      sponsored: remainingNeed <= 0,
+    };
+
+    res.json({ student: donorSafeData });
+  } catch (error) {
+    console.error("GET /students/approved/:id error:", error);
+    res.status(500).json({ error: "Failed to fetch student details" });
+  }
+});
+
+/**
  * GET /api/students/approved
  * - Students who have at least one APPROVED application
  * - For each student, return the most recent APPROVED application (submittedAt desc)

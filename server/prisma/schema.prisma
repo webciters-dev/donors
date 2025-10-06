@@ -21,8 +21,9 @@ model Student {
   program    String
   gpa        Float
   gradYear   Int
-  city       String
-  province   String
+  city       String?
+  country    String
+  province   String?
   needUSD    Int
   sponsored  Boolean  @default(false)
   createdAt  DateTime @default(now())
@@ -133,6 +134,11 @@ model Sponsorship {
   amount    Int
   date      DateTime @default(now())
   status    String   @default("active")
+  
+  // Payment information
+  paymentFrequency       String?  // "one-time", "monthly", "quarterly", "bi-annually", "annually"
+  stripePaymentIntentId  String?  // Stripe payment intent ID
+  stripeSubscriptionId   String?  // Stripe subscription ID for recurring payments
 
   // --- Phase 1 multi-currency snapshot fields (optional) ---
   amountOriginal   Int?
@@ -285,6 +291,25 @@ model FieldReview {
   status         String   @default("PENDING") // PENDING | IN_PROGRESS | COMPLETED
   notes          String?
   recommendation String? // APPROVE | REJECT | REQUEST_INFO
+  
+  // Comprehensive field verification data
+  homeVisitDate              DateTime?
+  homeVisitNotes             String?
+  familyInterviewNotes       String?
+  financialVerificationNotes String?
+  characterAssessment        String?
+  deservingnessFactor        Int? // 1-10 scale
+  documentsVerified          Boolean  @default(false)
+  identityVerified           Boolean  @default(false)
+  familyIncomeVerified       Boolean  @default(false)
+  educationVerified          Boolean  @default(false)
+  recommendationReason       String?
+  additionalDocumentsRequested String[]
+  riskFactors               String[]
+  verificationScore         Int? // Overall score 1-100
+  fielderRecommendation     String? // STRONGLY_APPROVE | APPROVE | CONDITIONAL | REJECT
+  adminNotesRequired        String? // What admin should pay attention to
+  
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
