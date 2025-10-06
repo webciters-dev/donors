@@ -522,7 +522,7 @@ export default function AdminApplicationDetail() {
           <select className="rounded-2xl border px-3 py-2 text-sm" value={assignOfficer} onChange={(e)=>setAssignOfficer(e.target.value)}>
             <option value="">Select sub admin…</option>
             {officers.map(o => (
-              <option key={o.id} value={o.id}>{o.name || o.email} ({o.role})</option>
+              <option key={o.id} value={o.id}>{o.name || o.email}</option>
             ))}
           </select>
           <Button className="rounded-2xl" onClick={createAssignment}>Assign</Button>

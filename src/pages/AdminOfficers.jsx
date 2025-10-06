@@ -204,7 +204,7 @@ export default function AdminOfficers() {
               <div className="col-span-2">
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Shield className="h-3 w-3" />
-                  {o.role}
+                  Sub Admin
                 </Badge>
               </div>
               <div className="col-span-3 flex items-center justify-end gap-2">
