@@ -23,7 +23,6 @@ const fmtPKR = (n) =>
 // Which profile fields matter for “completeness”
 const REQUIRED_PROFILE_KEYS = [
   "cnic",
-  "dateOfBirth",
   "guardianName",
   "guardianCnic",
   "phone",
