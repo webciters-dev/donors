@@ -76,26 +76,29 @@ export const ApplicationForm = () => {
     }
   }, [location.search, user]);
 
-  const [form, setForm] = useState(() => ({
-    // Step 1 — identity + credentials
-    name: user?.name || "",
-    email: user?.email || "",
-    password: "",
-    confirm: "",
-    gender: "",
-    // Step 2 — education basics
-    country: "", // Country where university is located (required)
-    university: "",
-    customUniversity: "", // For "Other" option
-    program: "",
-    term: "", // User enters their own program start term
-    gpa: "",
-    gradYear: "",
-    // Currency (auto-selected based on country)
-    currency: "PKR", // Default to PKR for our primary market
-    // Step 3 — requested amount
-    amount: "",
-  }));
+  const [form, setForm] = useState(() => {
+    console.log("🏗️ Initializing form state with user:", user?.name);
+    return {
+      // Step 1 — identity + credentials
+      name: user?.name || "",
+      email: user?.email || "",
+      password: "",
+      confirm: "",
+      gender: "",
+      // Step 2 — education basics
+      country: "", // Country where university is located (required)
+      university: "",
+      customUniversity: "", // For "Other" option
+      program: "",
+      term: "", // User enters their own program start term
+      gpa: "",
+      gradYear: "",
+      // Currency (auto-selected based on country)
+      currency: "PKR", // Default to PKR for our primary market
+      // Step 3 — requested amount
+      amount: "",
+    };
+  });
 
   // Debug form state
   useEffect(() => {
@@ -104,16 +107,29 @@ export const ApplicationForm = () => {
     console.log("🔍 Debug - user?.name:", user?.name);
   }, [user, form.name]);
 
-  // Update form when user data loads
+  // Update form when user data loads or changes
   useEffect(() => {
-    if (user?.name) {
+    if (user?.name && user.name !== form.name) {
+      console.log("🔄 Updating form with user data:", user.name);
       setForm(prev => ({
         ...prev,
         name: user.name,
         email: user.email || prev.email
       }));
     }
-  }, [user?.name, user?.email]);
+  }, [user?.name, user?.email, form.name]);
+
+  // Initialize form for returning users when component mounts
+  useEffect(() => {
+    if (user && step > 1) {
+      console.log("🔄 Initializing form for returning user at step", step);
+      setForm(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email
+      }));
+    }
+  }, [user, step]);
 
   // Handle Student Registration at Step 1
   const handleStep1Registration = async () => {
@@ -338,29 +354,8 @@ export const ApplicationForm = () => {
     try {
       setLoading(true);
 
-      // Create APPLICATION with currency + amount
       const finalUniversity = form.university === "Other" ? form.customUniversity : form.university;
       
-      const payload = {
-        studentId: currentStudentId, // Use current user ID
-        term: form.term || "Not specified",
-        currency: form.currency,
-        country: form.country,
-        university: finalUniversity.trim(),
-        program: form.program.trim(),
-        gpa: form.gpa ? Number(form.gpa) : undefined,
-        gradYear: form.gradYear ? Number(form.gradYear) : undefined,
-      };
-      
-      // Add amount based on currency
-      if (form.currency === "PKR") {
-        payload.needPKR = amountNum;
-      } else {
-        payload.needUSD = amountNum;
-      }
-
-      console.log("Submitting application with payload:", payload); // Debug log
-
       const headers = {
         "Content-Type": "application/json"
       };
@@ -373,10 +368,50 @@ export const ApplicationForm = () => {
       console.log("🔑 Auth token present:", !!token);
       console.log("👤 User ID:", currentStudentId);
 
+      // Step 1: Update student profile with educational details
+      const studentUpdatePayload = {
+        university: finalUniversity.trim(),
+        program: form.program.trim(),
+        gpa: Number(form.gpa),
+        gradYear: Number(form.gradYear),
+        field: form.program.trim() // Using program as field for now
+        // Note: country field needs to be added to backend PATCH route
+      };
+
+      console.log("📚 Updating student profile:", studentUpdatePayload);
+
+      const studentRes = await fetch(`${API}/api/students/${currentStudentId}`, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(studentUpdatePayload),
+      });
+
+      if (!studentRes.ok) {
+        const studentError = await studentRes.json();
+        console.error("❌ Student update failed:", studentError);
+        throw new Error(studentError.error || "Failed to update student profile");
+      }
+
+      // Step 2: Create application with financial details
+      const applicationPayload = {
+        studentId: currentStudentId,
+        term: form.term || "Not specified",
+        currency: form.currency,
+      };
+      
+      // Add amount based on currency
+      if (form.currency === "PKR") {
+        applicationPayload.needPKR = amountNum;
+      } else {
+        applicationPayload.needUSD = amountNum;
+      }
+
+      console.log("� Creating application:", applicationPayload);
+
       const appRes = await fetch(`${API}/api/applications`, {
         method: "POST",
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(applicationPayload),
       });
 
       if (!appRes.ok) {
@@ -626,7 +661,14 @@ export const ApplicationForm = () => {
 
         {/* STEP 3 — currency + amount + review + submit */}
         {step === 3 && (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            {/* Debug info - will show in console */}
+            {console.log("📊 Step 3 Debug:", { 
+              "user?.name": user?.name, 
+              "form.name": form.name, 
+              "user object": user 
+            })}
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid md:grid-cols-3 gap-4 items-center">
               {/* Currency selector */}
               <div className="space-y-1">
@@ -677,6 +719,7 @@ export const ApplicationForm = () => {
               </Button>
             </div>
           </form>
+          </div>
         )}
       </Card>
     </div>
