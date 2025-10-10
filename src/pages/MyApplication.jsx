@@ -455,16 +455,13 @@ export const MyApplication = () => {
     if (completeness.percent < 100) {
       issues.push(`Complete your profile fields: ${completeness.missing.join(", ")}`);
     }
-    // current education minimal fields
-    const s = application?.student || {};
-    if (!s.currentInstitution || !s.currentCity || !s.currentCompletionYear) {
-      issues.push("Fill Current Education: institution, city, completion year");
-    }
-    // required docs
-    for (const d of REQUIRED_DOCS) {
-      if (!haveDocs.has(d)) issues.push(`Upload required document: ${d.replaceAll("_"," ")}`);
-    }
-    // requested items addressed
+    // current education minimal fields - these are now included in profile completeness above
+    // so we don't need to double-check them here anymore
+    
+    // Documents are OPTIONAL - removed document requirement check
+    // Students can submit without documents if they choose to
+    
+    // requested items addressed (admin-requested items still required)
     const openReq = requestedItems.filter((r) => !r.addressed);
     if (openReq.length > 0) {
       issues.push(`Address requested items: ${openReq.map((r) => r.label).join(", ")}`);

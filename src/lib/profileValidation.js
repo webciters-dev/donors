@@ -13,6 +13,10 @@ const REQUIRED_KEYS = [
   "program",
   "gpa",
   "gradYear",
+  // Current Education fields (the 3 missing fields from the screenshot)
+  "currentInstitution",
+  "currentCity", 
+  "currentCompletionYear",
 ];
 
 /**
@@ -69,7 +73,11 @@ export function getReadableFieldNames(missingFields = []) {
     university: "University",
     program: "Program",
     gpa: "GPA",
-    gradYear: "Graduation Year"
+    gradYear: "Graduation Year",
+    // Current Education fields
+    currentInstitution: "Current Institution",
+    currentCity: "Current City",
+    currentCompletionYear: "Completion Year"
   };
 
   return missingFields.map(field => fieldNameMap[field] || field);
