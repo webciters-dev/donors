@@ -34,17 +34,39 @@ const REQUIRED_PROFILE_KEYS = [
   "program",
   "gpa",
   "gradYear",
+  // Current Education fields
+  "currentInstitution",
+  "currentCity", 
+  "currentCompletionYear",
 ];
 
-function computeProfileCompleteness(student) {
-  if (!student) return { percent: 0, missing: REQUIRED_PROFILE_KEYS };
-  const missing = REQUIRED_PROFILE_KEYS.filter((k) => {
+// Required documents that affect profile completion percentage
+const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
+
+function computeProfileCompleteness(student, uploadedDocs = new Set()) {
+  if (!student) return { percent: 0, missing: REQUIRED_PROFILE_KEYS, missingDocs: REQUIRED_DOCS };
+  
+  // Check profile fields
+  const missingFields = REQUIRED_PROFILE_KEYS.filter((k) => {
     const v = student?.[k];
     return v === null || v === undefined || v === "" || Number.isNaN(v);
   });
-  const filled = REQUIRED_PROFILE_KEYS.length - missing.length;
-  const percent = Math.round((filled / REQUIRED_PROFILE_KEYS.length) * 100);
-  return { percent, missing };
+  
+  // Check documents
+  const missingDocs = REQUIRED_DOCS.filter(doc => !uploadedDocs.has(doc));
+  
+  // Calculate total completeness (fields + documents)
+  const totalRequiredItems = REQUIRED_PROFILE_KEYS.length + REQUIRED_DOCS.length;
+  const completedItems = (REQUIRED_PROFILE_KEYS.length - missingFields.length) + (REQUIRED_DOCS.length - missingDocs.length);
+  const percent = Math.round((completedItems / totalRequiredItems) * 100);
+  
+  return { 
+    percent, 
+    missing: missingFields, 
+    missingDocs,
+    fieldCompletion: Math.round(((REQUIRED_PROFILE_KEYS.length - missingFields.length) / REQUIRED_PROFILE_KEYS.length) * 100),
+    docCompletion: Math.round(((REQUIRED_DOCS.length - missingDocs.length) / REQUIRED_DOCS.length) * 100)
+  };
 }
 
 export const MyApplication = () => {
@@ -447,19 +469,14 @@ export const MyApplication = () => {
   }
 
   // --- Submission ---
-  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
-
   function collectSubmissionIssues() {
     const issues = [];
-    // profile completeness
-    if (completeness.percent < 100) {
+    
+    // Only check that PROFILE FIELDS are complete (not documents)
+    // Documents affect the completion percentage but don't block submission
+    if (completeness.fieldCompletion < 100) {
       issues.push(`Complete your profile fields: ${completeness.missing.join(", ")}`);
     }
-    // current education minimal fields - these are now included in profile completeness above
-    // so we don't need to double-check them here anymore
-    
-    // Documents are OPTIONAL - removed document requirement check
-    // Students can submit without documents if they choose to
     
     // requested items addressed (admin-requested items still required)
     const openReq = requestedItems.filter((r) => !r.addressed);
@@ -508,8 +525,8 @@ export const MyApplication = () => {
   // --- completeness memo
   const profile = application?.student || null;
   const completeness = useMemo(
-    () => computeProfileCompleteness(profile),
-    [profile]
+    () => computeProfileCompleteness(profile, haveDocs),
+    [profile, haveDocs]
   );
   const showBanner =
     showProfileBanner &&
