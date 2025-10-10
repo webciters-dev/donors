@@ -311,7 +311,7 @@ export default function StudentProfile() {
               value={form.address}
               onChange={(e) => setVal("address", e.target.value)}
               className="w-full rounded-2xl border px-3 py-2 text-sm"
-              placeholder="Street, City"
+              placeholder="House number, Street name/number, name of area"
             />
             {errors.address && (
               <p className="text-xs text-rose-600 mt-1">{errors.address}</p>
@@ -373,7 +373,7 @@ export default function StudentProfile() {
 
           {/* GPA */}
           <div>
-            <label className="block text-sm mb-1">GPA (0.00–4.00)</label>
+            <label className="block text-sm mb-1">GPA (4.00 scale only)</label>
             <Input
               type="number"
               step="0.01"
@@ -382,7 +382,9 @@ export default function StudentProfile() {
               value={form.gpa}
               onChange={(e) => setVal("gpa", e.target.value)}
               className="rounded-2xl"
+              placeholder="e.g., 3.4 (convert from percentage if needed)"
             />
+            <p className="text-xs text-slate-500 mt-1">Use 4.00 scale format. Need help converting? 85% ≈ 3.4, 90% ≈ 3.6</p>
             {errors.gpa ? (
               <p className="text-xs text-rose-600 mt-1">{errors.gpa}</p>
             ) : (

@@ -6,7 +6,7 @@ const createTransporter = () => {
   // For development, use Ethereal Email (test service)
   // In production, replace with your actual email service (Gmail, SendGrid, etc.)
   if (process.env.NODE_ENV === 'production') {
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       service: 'gmail', // or your email service
       auth: {
         user: process.env.EMAIL_USER,
@@ -16,7 +16,7 @@ const createTransporter = () => {
   } else {
     // Development: Use Ethereal Email for testing
     // Create account at https://ethereal.email/ or use environment variables
-    return nodemailer.createTransporter({
+    return nodemailer.createTransport({
       host: 'smtp.ethereal.email',
       port: 587,
       secure: false,

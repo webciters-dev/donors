@@ -65,6 +65,7 @@ model Application {
   // Currency support (optional; if null, treat as USD)
   currency Currency?
   needPKR  Int?
+  needGBP  Int?
 
   // --- Phase 1 multi-currency snapshot fields (optional for backward-compat) ---
   // Amount as provided by the student in their local/original currency
@@ -255,6 +256,7 @@ enum DocumentType {
 enum Currency {
   USD
   PKR
+  GBP
 }
 
 // --- FX rates table (Phase 1) ---

@@ -34,10 +34,35 @@ function StudentCard({ student, onSponsored }) {
   const isApproved = Boolean(student?.isApproved);
   const isSponsored = remainingNeed <= 0 || Boolean(student?.sponsored);
 
-  // Determine display currency based on country
+  // Determine display currency based on university location or country
+  const getUniversityCurrency = (university) => {
+    if (!university) return null;
+    const uni = university.toLowerCase();
+    
+    // UK Universities
+    if (uni.includes('oxford') || uni.includes('cambridge') || 
+        uni.includes('london') || uni.includes('edinburgh') ||
+        uni.includes('manchester') || uni.includes('bristol') ||
+        uni.includes('birmingham') || uni.includes('leeds') ||
+        uni.includes('glasgow') || uni.includes('warwick') ||
+        uni.includes('durham') || uni.includes('exeter') ||
+        uni.includes('bath') || uni.includes('york') ||
+        uni.includes('imperial college') || uni.includes('kings college') ||
+        uni.includes('ucl') || uni.includes('lse')) {
+      return 'GBP';
+    }
+    
+    return null;
+  };
+  
+  const universityCurrency = getUniversityCurrency(student?.university);
   const countryCurrency = getCurrencyFromCountry(student?.country);
-  const currency = student?.currency || countryCurrency;
+  const currency = student?.application?.currency || universityCurrency || countryCurrency;
   const displayAmount = currency === "PKR" ? student?.needPKR || remainingNeed : remainingNeed;
+  
+  // Privacy controls: non-logged-in users see basic info only, no names/personal details
+  const isLoggedIn = Boolean(user && token);
+  const displayName = isLoggedIn ? student.name : "Student Profile";
 
   function sponsorStudent() {
     if (!user || user.role !== "DONOR") {
@@ -61,7 +86,7 @@ function StudentCard({ student, onSponsored }) {
     <Card className="p-4 flex flex-col">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-base font-semibold">{student.name}</div>
+          <div className="text-base font-semibold">{displayName}</div>
           <div className="text-sm text-slate-600">{student.program} · {student.university}</div>
         </div>
         <div className="shrink-0 rounded-full bg-amber-500 text-white text-xs font-semibold px-3 py-1 shadow-sm flex items-center gap-1">
@@ -71,11 +96,15 @@ function StudentCard({ student, onSponsored }) {
       </div>
 
       <div className="text-sm text-slate-700 grid grid-cols-[120px,1fr] gap-y-1 items-start min-h-[140px]">
-        <div className="text-slate-600">City</div>
-        <div className="text-right">{student.city || "—"}</div>
-        
-        <div className="text-slate-600">Province</div>
-        <div className="text-right">{student.province || "—"}</div>
+        {isLoggedIn && (
+          <>
+            <div className="text-slate-600">City</div>
+            <div className="text-right">{student.city || "—"}</div>
+            
+            <div className="text-slate-600">Province</div>
+            <div className="text-right">{student.province || "—"}</div>
+          </>
+        )}
         
         <div className="text-slate-600">Target</div>
         <div className="text-right">{student.university}</div>
@@ -83,25 +112,39 @@ function StudentCard({ student, onSponsored }) {
         <div className="text-slate-600">Program</div>
         <div className="text-right">{student.program}</div>
         
-        <div className="text-slate-600">Latest GPA</div>
-        <div className="text-right">{student.gpa ? Number(student.gpa).toFixed(2) : "—"}</div>
+        {isLoggedIn && (
+          <>
+            <div className="text-slate-600">Latest GPA</div>
+            <div className="text-right">{student.gpa ? Number(student.gpa).toFixed(2) : "—"}</div>
+          </>
+        )}
+        
+        {!isLoggedIn && (
+          <>
+            <div className="text-slate-600">Status</div>
+            <div className="text-right text-emerald-600 font-medium">Approved for Support</div>
+          </>
+        )}
       </div>
 
-      <div className="pt-2 mt-auto grid grid-cols-1 sm:grid-cols-3 gap-2">
-        <Button 
-          className="rounded-2xl w-full" 
-          onClick={() => navigate(`/students/${student.id}`)}
-        >
-          Student details
-        </Button>
-        <Button 
-          variant="outline" 
-          className="rounded-2xl w-full"
-          disabled={!isApproved || isSponsored}
-          onClick={sponsorStudent}
-        >
-          {isSponsored ? "Sponsored" : "Sponsor"}
-        </Button>
+      <div className="pt-2 mt-auto">
+        {isLoggedIn ? (
+          <Button 
+            className="rounded-2xl w-full" 
+            onClick={() => navigate(`/students/${student.id}`)}
+          >
+            Student details
+          </Button>
+        ) : (
+          <Button 
+            variant="default"
+            className="rounded-2xl w-full"
+            disabled={!isApproved || isSponsored}
+            onClick={sponsorStudent}
+          >
+            {isSponsored ? "Sponsored" : "Login to Sponsor"}
+          </Button>
+        )}
       </div>
     </Card>
   );
@@ -150,6 +193,7 @@ export const Marketplace = () => {
               gender: student.gender,
               isApproved: true, // All students from approved endpoint are approved
               sponsored: student.remainingNeed <= 0,
+              remainingNeed: student.remainingNeed || 0, // 🔧 FIX: Add missing field
               needUsd: student.remainingNeed || 0,
               needUSD: student.remainingNeed || 0,
               currency: student.application?.currency || getCurrencyFromCountry(student.country),
@@ -160,7 +204,6 @@ export const Marketplace = () => {
             setStudents(transformedStudents);
           } else {
             // No real students in database, keep empty
-            console.log("No approved students in database - showing empty state");
             setStudents([]);
           }
         }
@@ -168,7 +211,6 @@ export const Marketplace = () => {
         console.error("Marketplace API failed:", err);
         // Keep empty on API failure - no demo data fallback
         if (!cancelled) {
-          console.log("API failed, showing empty state");
           setStudents([]);
         }
       }

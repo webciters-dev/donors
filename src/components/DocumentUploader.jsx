@@ -23,24 +23,24 @@ export default function DocumentUploader({ studentId, applicationId, onUploaded,
   const [progress, setProgress] = useState(0);
 
   const TYPES = [
-    "CNIC",
-    "GUARDIAN_CNIC",
-    "PHOTO",
-    "SSC_RESULT",
-    "HSSC_RESULT",
-    "UNIVERSITY_CARD",
-    "FEE_INVOICE",
-    "INCOME_CERTIFICATE",
-    "UTILITY_BILL",
-    "TRANSCRIPT",
-    "DEGREE_CERTIFICATE",
-    "ENROLLMENT_CERTIFICATE",
-    "OTHER",
+    { key: "CNIC", label: "CNIC" },
+    { key: "GUARDIAN_CNIC", label: "GUARDIAN CNIC" },
+    { key: "PHOTO", label: "PHOTO" },
+    { key: "SSC_RESULT", label: "SSC RESULT" },
+    { key: "HSSC_RESULT", label: "HSSC RESULT" },
+    { key: "UNIVERSITY_CARD", label: "UNIVERSITY/COLLEGE CARD" },
+    { key: "FEE_INVOICE", label: "FEE INVOICE" },
+    { key: "INCOME_CERTIFICATE", label: "INCOME CERTIFICATE" },
+    { key: "UTILITY_BILL", label: "UTILITY BILL" },
+    { key: "TRANSCRIPT", label: "TRANSCRIPT" },
+    { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
+    { key: "ENROLLMENT_CERTIFICATE", label: "ENROLLMENT CERTIFICATE" },
+    { key: "OTHER", label: "OTHER" },
   ];
 
   // If a preferred type is suggested by parent (e.g., from a request), adopt it when it changes.
   useEffect(() => {
-    if (preferredType && TYPES.includes(preferredType)) {
+    if (preferredType && TYPES.some(t => t.key === preferredType)) {
       setType(preferredType);
     }
   }, [preferredType]);
@@ -97,8 +97,8 @@ export default function DocumentUploader({ studentId, applicationId, onUploaded,
           onChange={(e) => setType(e.target.value)}
         >
           {TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t.replaceAll("_", " ")}
+            <option key={t.key} value={t.key}>
+              {t.label}
             </option>
           ))}
         </select>

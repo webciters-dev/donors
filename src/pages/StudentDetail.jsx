@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +7,7 @@ import { ArrowLeft, GraduationCap, DollarSign, FileText, Users, MapPin, Calendar
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { getCurrencyFromCountry } from "@/lib/currency";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -28,6 +30,7 @@ const SecondaryButton = ({ onClick, icon: Icon, children }) => (
 
 export const StudentDetail = ({ id, goBack }) => {
   const { user, token } = useAuth();
+  const navigate = useNavigate();
   const [student, setStudent] = useState(null);
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +49,27 @@ export const StudentDetail = ({ id, goBack }) => {
   };
 
   const flag = (cur) => (cur === 'PKR' ? '🇵🇰' : cur === 'USD' ? '🇺🇸' : cur === 'GBP' ? '🇬🇧' : '');
+
+  // UK university detection (matching Marketplace.jsx logic)
+  const detectUKUniversity = (university) => {
+    if (!university) return false;
+    const uni = university.toLowerCase();
+    
+    // UK Universities
+    if (uni.includes('oxford') || uni.includes('cambridge') || 
+        uni.includes('london') || uni.includes('edinburgh') ||
+        uni.includes('manchester') || uni.includes('bristol') ||
+        uni.includes('birmingham') || uni.includes('leeds') ||
+        uni.includes('glasgow') || uni.includes('warwick') ||
+        uni.includes('durham') || uni.includes('exeter') ||
+        uni.includes('bath') || uni.includes('york') ||
+        uni.includes('imperial college') || uni.includes('kings college') ||
+        uni.includes('ucl') || uni.includes('lse')) {
+      return true;
+    }
+    
+    return false;
+  };
 
   useEffect(() => {
     async function loadStudent() {
@@ -121,8 +145,24 @@ export const StudentDetail = ({ id, goBack }) => {
     );
   }
 
-  // Determine currency and amounts
-  const currency = application?.currency || student?.currency || "USD";
+  // Determine currency and amounts (matching Marketplace.jsx logic)
+  let currency = application?.currency || student?.currency;
+  
+  // If no explicit currency, detect from university or country
+  if (!currency) {
+    // Check for UK universities first
+    if (detectUKUniversity(student?.university)) {
+      currency = 'GBP';
+    } 
+    // Then check country
+    else if (student?.country) {
+      currency = getCurrencyFromCountry(student.country);
+    }
+    // Default fallback
+    else {
+      currency = 'USD';
+    }
+  }
   const needUSD = Number(student?.needUsd || student?.needUSD || application?.needUSD || 0);
   const needPKR = Number(student?.needPKR || application?.needPKR || 0);
   const displayAmount = currency === "PKR" ? needPKR : needUSD;
@@ -286,11 +326,12 @@ export const StudentDetail = ({ id, goBack }) => {
                     toast.error("Please log in as a donor to sponsor students");
                     return;
                   }
-                  // Navigate to payment page using the student ID from URL or component
-                  if (typeof id === 'string' || typeof id === 'number') {
-                    window.location.href = `/donor/payment/${id}`;
+                  // Navigate to payment page using React Router
+                  const studentId = id || student.id;
+                  if (studentId) {
+                    navigate(`/donor/payment/${studentId}`);
                   } else {
-                    window.location.href = `/donor/payment/${student.id}`;
+                    toast.error("Student ID not found");
                   }
                 }}
               >

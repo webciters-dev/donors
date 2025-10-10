@@ -66,7 +66,7 @@ async function debugMarketplace() {
     
     // 3. Check required documents for approved students
     console.log('\n3️⃣ Checking document completeness for approved students:');
-    const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT'];
+    const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT', 'PHOTO', 'FEE_INVOICE', 'INCOME_CERTIFICATE', 'UTILITY_BILL', 'UNIVERSITY_CARD', 'ENROLLMENT_CERTIFICATE', 'TRANSCRIPT'];
     
     for (const student of marketplaceStudents) {
       const docs = await prisma.document.findMany({

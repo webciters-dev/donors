@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -458,61 +459,39 @@ export default function AdminApplicationDetail() {
         <div className="flex items-center justify-between">
           <div className="font-medium">Documents ({docs.length})</div>
           {(() => {
-            const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+            const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
             const uploadedTypes = docs.map(d => d.type);
-            const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
+            const missingRequired = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
             
-            if (missingDocs.length === 0) {
+            if (missingRequired.length === 0) {
               return <Badge className="bg-green-100 text-green-800 text-xs">✅ All Required</Badge>;
             } else {
-              return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingDocs.length}</Badge>;
+              return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingRequired.length}</Badge>;
             }
           })()}
         </div>
         
-        {/* Required Documents Status */}
-        {(() => {
-          const REQUIRED_DOCS = [
-            { key: "CNIC", label: "Student CNIC" },
-            { key: "GUARDIAN_CNIC", label: "Guardian CNIC" },
-            { key: "HSSC_RESULT", label: "HSSC Result" }
-          ];
-          const uploadedTypes = docs.map(d => d.type);
-          
-          return (
-            <div className="bg-gray-50 rounded-md p-3 space-y-2">
-              <div className="text-sm font-medium text-gray-700">Required Documents Status:</div>
-              <div className="grid grid-cols-1 gap-1">
-                {REQUIRED_DOCS.map(doc => {
-                  const isUploaded = uploadedTypes.includes(doc.key);
-                  return (
-                    <div key={doc.key} className={`flex items-center gap-2 text-sm px-2 py-1 rounded ${isUploaded ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                      <span>{isUploaded ? '✅' : '❌'}</span>
-                      <span className="flex-1">{doc.label}</span>
-                      <span className="text-xs">{isUploaded ? 'Uploaded' : 'Missing'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-        
-        {docs.length === 0 ? (
-          <div className="text-sm text-slate-600">No documents uploaded.</div>
-        ) : (
-          <ul className="space-y-2">
-            {docs.map(d => (
-              <li key={d.id} className="flex items-center justify-between text-sm border rounded-md p-2">
-                <div>
-                  <div className="font-medium">{d.type.replaceAll("_"," ")}</div>
-                  <a href={`${API}${d.url}`} target="_blank" rel="noreferrer" className="text-emerald-700 hover:underline">{d.originalName || d.url}</a>
+        <div className="grid md:grid-cols-2 gap-4">
+          {docs.length === 0 ? (
+            <div className="text-sm text-slate-600">No documents uploaded yet</div>
+          ) : (
+            docs.map((doc, idx) => (
+              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  <a
+                    href={`${API}${doc.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                  >
+                    📁 {doc.originalName || doc.type.replaceAll("_", " ")}
+                  </a>
                 </div>
-                <span className="text-slate-500">{(d.size||0).toLocaleString()} bytes</span>
-              </li>
-            ))}
-          </ul>
-        )}
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       {/* Sub Admin Assignment & Actions */}
@@ -535,6 +514,12 @@ export default function AdminApplicationDetail() {
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="font-medium">Sub Admin Review #{r.id.slice(0,6)}</div>
+                  {/* Show assigned sub admin name */}
+                  {r.officerUserId && (
+                    <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                      👤 {officers.find(o => o.id === r.officerUserId)?.name || officers.find(o => o.id === r.officerUserId)?.email || 'Unknown Sub Admin'}
+                    </Badge>
+                  )}
                   <Badge variant={r.status === "COMPLETED" ? "default" : r.status === "IN_PROGRESS" ? "secondary" : "outline"}>
                     {r.status}
                   </Badge>

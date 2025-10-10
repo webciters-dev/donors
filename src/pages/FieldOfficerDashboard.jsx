@@ -30,7 +30,42 @@ export default function FieldOfficerDashboard() {
       const res = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setReviews(Array.isArray(data?.reviews) ? data.reviews : []);
+      const reviewsList = Array.isArray(data?.reviews) ? data.reviews : [];
+      
+      // Enrich student data with CNIC information
+      const enrichedReviews = await Promise.all(
+        reviewsList.map(async (review) => {
+          if (review.applicationId) {
+            try {
+              // Fetch application with full student data to get CNIC
+              const appRes = await fetch(`${API}/api/applications/${review.applicationId}`, { headers: { ...authHeader } });
+              if (appRes.ok) {
+                const appData = await appRes.json();
+                console.log("Fetched student data:", appData.student?.name, "CNIC:", appData.student?.cnic);
+                if (appData.student) {
+                  return {
+                    ...review,
+                    student: {
+                      ...review.student,
+                      name: appData.student.name || review.student?.name,
+                      cnic: appData.student.cnic || review.student?.cnic,
+                      program: appData.student.program || review.student?.program,
+                      university: appData.student.university || review.student?.university,
+                      email: appData.student.email || review.student?.email,
+                      gpa: appData.student.gpa || review.student?.gpa
+                    }
+                  };
+                }
+              }
+            } catch (e) {
+              console.log("Could not fetch student data for application", review.applicationId);
+            }
+          }
+          return review;
+        })
+      );
+      
+      setReviews(enrichedReviews);
     } catch (e) {
       console.error(e);
       toast.error("Failed to load assigned reviews");
@@ -109,6 +144,31 @@ export default function FieldOfficerDashboard() {
     setRecommendation(review.recommendation || "");
   }
 
+  // Reopen completed review for editing
+  async function reopenReview(reviewId) {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({ status: "IN_PROGRESS" })
+      });
+      
+      if (!res.ok) throw new Error("Failed to reopen review");
+      
+      toast.success("Review reopened for editing");
+      loadReviews(); // Refresh to show updated status
+      
+      // Navigate to edit the review
+      navigate(`/field-officer/review/${reviewId}`);
+    } catch (e) {
+      console.error("Reopen failed:", e);
+      toast.error("Failed to reopen review");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const pendingReviews = reviews.filter(r => r.status === "PENDING" || r.status === "IN_PROGRESS");
   const completedReviews = reviews.filter(r => r.status === "COMPLETED");
 
@@ -179,7 +239,7 @@ export default function FieldOfficerDashboard() {
                           📚 {review.student?.name || 'Student'}
                         </Badge>
                         <span className="text-xs text-slate-500">
-                          App ID: {review.applicationId?.slice(-6)}
+                          CNIC: {review.student?.cnic || 'Not provided'}
                         </span>
                       </div>
                       <p className="text-slate-800 text-sm font-medium">
@@ -235,7 +295,7 @@ export default function FieldOfficerDashboard() {
                     {review.student?.program} · {review.student?.university}
                   </div>
                   <div className="text-sm text-slate-600">
-                    Application ID: {review.applicationId.slice(0, 8)}...
+                    👤 {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button 
@@ -332,6 +392,14 @@ export default function FieldOfficerDashboard() {
                       >
                         Review Details
                       </Button>
+                      <Button 
+                        size="sm" 
+                        className="rounded-2xl text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                        onClick={() => reopenReview(review.id)}
+                        disabled={loading}
+                      >
+                        ✏️ Edit Review
+                      </Button>
                       
                       <Badge variant="outline" className="text-xs justify-center">
                         {review.application?.status || 'Pending Admin'}
@@ -347,113 +415,296 @@ export default function FieldOfficerDashboard() {
 
       {/* Review Modal */}
       {selectedReview && (
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Review Application</h3>
-            <Button variant="ghost" onClick={() => setSelectedReview(null)}>×</Button>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm font-medium text-slate-700">Student Information</div>
-              <div className="text-sm text-slate-600 mt-1">
-                <div><strong>Name:</strong> {selectedReview.student?.name}</div>
-                <div><strong>Email:</strong> {selectedReview.student?.email}</div>
-                <div><strong>Program:</strong> {selectedReview.student?.program}</div>
-                <div><strong>University:</strong> {selectedReview.student?.university}</div>
-                <div><strong>GPA:</strong> {selectedReview.student?.gpa}</div>
-              </div>
-            </div>
-            
-            <div>
-              <div className="text-sm font-medium text-slate-700">Application Details</div>
-              <div className="text-sm text-slate-600 mt-1">
-                <div><strong>Application ID:</strong> {selectedReview.applicationId}</div>
-                <div><strong>Status:</strong> {selectedReview.application?.status}</div>
-                <div><strong>Term:</strong> {selectedReview.application?.term}</div>
-                <div><strong>Amount:</strong> {selectedReview.application?.currency === "PKR" 
-                  ? `₨${Number(selectedReview.application?.needPKR || 0).toLocaleString()}`
-                  : `$${Number(selectedReview.application?.needUSD || 0).toLocaleString()}`}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium text-slate-700">Review Notes</label>
-              <textarea 
-                className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm" 
-                rows={4}
-                placeholder="Enter your review notes..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-700">Recommendation</label>
-              <select 
-                className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm"
-                value={recommendation}
-                onChange={(e) => setRecommendation(e.target.value)}
-              >
-                <option value="">Select recommendation...</option>
-                <option value="APPROVE">APPROVE</option>
-                <option value="REJECT">REJECT</option>
-                <option value="REQUEST_INFO">REQUEST MORE INFO</option>
-              </select>
-            </div>
-
-            {recommendation === "REQUEST_INFO" && (
-              <div className="border-l-4 border-amber-400 bg-amber-50 p-4 space-y-3">
-                <div className="text-sm font-medium text-amber-800">Request Missing Information</div>
-                <div>
-                  <textarea 
-                    className="w-full rounded-2xl border px-3 py-2 text-sm" 
-                    rows={3}
-                    placeholder="List missing items (comma or newline separated)..."
-                    value={missingItems}
-                    onChange={(e) => setMissingItems(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <textarea 
-                    className="w-full rounded-2xl border px-3 py-2 text-sm" 
-                    rows={2}
-                    placeholder="Additional note to student (optional)..."
-                    value={missingNote}
-                    onChange={(e) => setMissingNote(e.target.value)}
-                  />
-                </div>
-                <Button 
-                  className="rounded-2xl" 
-                  onClick={() => requestMissingInfo(selectedReview.id)}
-                >
-                  Send Missing Info Request
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button 
-              className="rounded-2xl" 
-              onClick={() => updateReview(selectedReview.id)}
-              disabled={!notes.trim() || !recommendation}
-            >
-              Complete Review
-            </Button>
-            <Button 
-              variant="outline" 
-              className="rounded-2xl" 
-              onClick={() => setSelectedReview(null)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </Card>
+        <ReviewModal 
+          selectedReview={selectedReview} 
+          setSelectedReview={setSelectedReview}
+          notes={notes}
+          setNotes={setNotes}
+          recommendation={recommendation}
+          setRecommendation={setRecommendation}
+          missingItems={missingItems}
+          setMissingItems={setMissingItems}
+          missingNote={missingNote}
+          setMissingNote={setMissingNote}
+          updateReview={updateReview}
+          requestMissingInfo={requestMissingInfo}
+          authHeader={authHeader}
+        />
       )}
     </div>
+  );
+}
+
+// Separate component for the review modal to handle document loading
+function ReviewModal({ 
+  selectedReview, 
+  setSelectedReview, 
+  notes, 
+  setNotes, 
+  recommendation, 
+  setRecommendation, 
+  missingItems, 
+  setMissingItems, 
+  missingNote, 
+  setMissingNote, 
+  updateReview, 
+  requestMissingInfo,
+  authHeader 
+}) {
+  const [docs, setDocs] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  // Load documents when modal opens
+  useEffect(() => {
+    async function loadDocs() {
+      if (!selectedReview?.applicationId) return;
+      
+      try {
+        setLoadingDocs(true);
+        const url = new URL(`${API}/api/uploads`);
+        url.searchParams.set("studentId", selectedReview.studentId);
+        url.searchParams.set("applicationId", selectedReview.applicationId);
+        const res = await fetch(url, { headers: { ...authHeader } });
+        const data = await res.json();
+        setDocs(Array.isArray(data?.documents) ? data.documents : []);
+      } catch (e) {
+        console.error("Failed to load documents:", e);
+        toast.error("Failed to load documents");
+      } finally {
+        setLoadingDocs(false);
+      }
+    }
+    
+    loadDocs();
+  }, [selectedReview?.applicationId, selectedReview?.studentId, authHeader]);
+
+  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
+  const OPTIONAL_DOCS = ["TRANSCRIPT", "DEGREE_CERTIFICATE", "ENROLLMENT_CERTIFICATE"];
+  
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Review Application</h3>
+        <Button variant="ghost" onClick={() => setSelectedReview(null)}>×</Button>
+      </div>
+      
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <div className="text-sm font-medium text-slate-700">Student Information</div>
+          <div className="text-sm text-slate-600 mt-1">
+            <div><strong>Name:</strong> {selectedReview.student?.name}</div>
+            <div><strong>Email:</strong> {selectedReview.student?.email}</div>
+            <div><strong>Program:</strong> {selectedReview.student?.program}</div>
+            <div><strong>University:</strong> {selectedReview.student?.university}</div>
+            <div><strong>GPA:</strong> {selectedReview.student?.gpa}</div>
+          </div>
+        </div>
+        
+        <div>
+          <div className="text-sm font-medium text-slate-700">Application Details</div>
+          <div className="text-sm text-slate-600 mt-1">
+            <div><strong>Student:</strong> {selectedReview.student?.name} • CNIC: {selectedReview.student?.cnic || 'Not provided'}</div>
+            <div><strong>Status:</strong> {selectedReview.application?.status}</div>
+            <div><strong>Term:</strong> {selectedReview.application?.term}</div>
+            <div><strong>Amount:</strong> {selectedReview.application?.currency === "PKR" 
+              ? `₨${Number(selectedReview.application?.needPKR || 0).toLocaleString()}`
+              : `$${Number(selectedReview.application?.needUSD || 0).toLocaleString()}`}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Documents Section */}
+      <Card className="p-4 bg-slate-50">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-slate-900">📄 Student Documents</h4>
+            <div className="text-sm text-slate-600">
+              {docs.length} uploaded • {REQUIRED_DOCS.filter(d => docs.some(doc => doc.type === d)).length}/{REQUIRED_DOCS.length} required
+            </div>
+          </div>
+          
+          {loadingDocs ? (
+            <div className="text-sm text-slate-500">Loading documents...</div>
+          ) : docs.length === 0 ? (
+            <div className="text-sm text-slate-500">No documents uploaded yet.</div>
+          ) : (
+            <div className="space-y-2">
+              {/* Required Documents */}
+              <div className="text-sm font-medium text-slate-700">Required Documents:</div>
+              {REQUIRED_DOCS.map((docType) => {
+                const uploaded = docs.find(d => d.type === docType);
+                const isUploaded = !!uploaded;
+                
+                return (
+                  <div
+                    key={docType}
+                    className={`flex items-center justify-between rounded-md border p-2 text-sm ${
+                      isUploaded ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isUploaded ? (
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                      )}
+                      {isUploaded ? (
+                        <a
+                          href={`${API}${uploaded.url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                        >
+                          📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                        </a>
+                      ) : (
+                        <span className="font-medium text-red-600">{docType.replaceAll("_", " ")} - Missing</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Optional Documents */}
+              {docs.some(d => OPTIONAL_DOCS.includes(d.type)) && (
+                <>
+                  <div className="text-sm font-medium text-slate-700 mt-3">Optional Documents:</div>
+                  {OPTIONAL_DOCS.map((docType) => {
+                    const uploaded = docs.find(d => d.type === docType);
+                    if (!uploaded) return null;
+                    
+                    return (
+                      <div
+                        key={docType}
+                        className="flex items-center justify-between rounded-md border p-2 text-sm bg-blue-50 border-blue-200"
+                      >
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                          <a
+                            href={`${API}${uploaded.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-blue-700 hover:text-blue-900 hover:underline font-medium"
+                          >
+                            📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Additional Documents */}
+              {(() => {
+                const knownTypes = new Set([...REQUIRED_DOCS, ...OPTIONAL_DOCS]);
+                const additionalDocs = docs.filter(d => !knownTypes.has(d.type));
+                
+                if (additionalDocs.length === 0) return null;
+                
+                return (
+                  <>
+                    <div className="text-sm font-medium text-slate-700 mt-3">Additional Documents:</div>
+                    {additionalDocs.map((d) => (
+                      <div
+                        key={d.id}
+                        className="flex items-center justify-between rounded-md border p-2 text-sm bg-gray-50 border-gray-200"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-gray-600" />
+                          <a
+                            href={`${API}${d.url}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-gray-700 hover:text-gray-900 hover:underline font-medium"
+                          >
+                            📁 {d.originalName || d.type.replaceAll("_", " ")}
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div className="space-y-3">
+        <div>
+          <label className="text-sm font-medium text-slate-700">Review Notes</label>
+          <textarea 
+            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm" 
+            rows={4}
+            placeholder="Enter your review notes..."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-700">Recommendation</label>
+          <select 
+            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm"
+            value={recommendation}
+            onChange={(e) => setRecommendation(e.target.value)}
+          >
+            <option value="">Select recommendation...</option>
+            <option value="APPROVE">APPROVE</option>
+            <option value="REJECT">REJECT</option>
+            <option value="REQUEST_INFO">REQUEST MORE INFO</option>
+          </select>
+        </div>
+
+        {recommendation === "REQUEST_INFO" && (
+          <div className="border-l-4 border-amber-400 bg-amber-50 p-4 space-y-3">
+            <div className="text-sm font-medium text-amber-800">Request Missing Information</div>
+            <div>
+              <textarea 
+                className="w-full rounded-2xl border px-3 py-2 text-sm" 
+                rows={3}
+                placeholder="List missing items (comma or newline separated)..."
+                value={missingItems}
+                onChange={(e) => setMissingItems(e.target.value)}
+              />
+            </div>
+            <div>
+              <textarea 
+                className="w-full rounded-2xl border px-3 py-2 text-sm" 
+                rows={2}
+                placeholder="Additional note to student (optional)..."
+                value={missingNote}
+                onChange={(e) => setMissingNote(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="rounded-2xl" 
+              onClick={() => requestMissingInfo(selectedReview.id)}
+            >
+              Send Missing Info Request
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-2 pt-4">
+        <Button 
+          className="rounded-2xl" 
+          onClick={() => updateReview(selectedReview.id)}
+          disabled={!notes.trim() || !recommendation}
+        >
+          Complete Review
+        </Button>
+        <Button 
+          variant="outline" 
+          className="rounded-2xl" 
+          onClick={() => setSelectedReview(null)}
+        >
+          Cancel
+        </Button>
+      </div>
+    </Card>
   );
 }

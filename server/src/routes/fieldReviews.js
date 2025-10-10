@@ -180,8 +180,8 @@ router.patch("/:id", requireAuth, onlyRoles("FIELD_OFFICER", "ADMIN"), async (re
           data: {
             studentId: reviewWithDetails.studentId,
             applicationId: reviewWithDetails.applicationId,
-            text: `Field verification completed by Sub Admin ${reviewWithDetails.officer?.name || 'Officer'}. ${recommendationText}. Your application is now under Admin review.`,
-            fromRole: 'field_officer'
+            text: `Awake: Verification completed by ${reviewWithDetails.officer?.name || 'our team'}. ${recommendationText}. Your application is now under review.`,
+            fromRole: 'admin'
           }
         });
       } catch (msgError) {
@@ -209,18 +209,18 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("FIELD_OFFICER", "ADM
     const student = await prisma.student.findUnique({ where: { id: review.studentId } });
     if (!student) return res.status(404).json({ error: "Student not found" });
 
-    const body = `Dear ${student.name},\n\nPlease provide the following missing information/documents:\n- ${items.join("\n- ")}\n\nNote: ${note}\n\nThank you.`;
+    const body = `Dear ${student.name},\n\nTo proceed with your application, please upload the following documents:\n\n- ${items.join("\n- ")}\n\n${note}\n\nPlease log into your Awake Connect account to upload these documents.\n\nBest regards,\nAwake Team`;
 
     // Placeholder: send email (for dev we log to console; plug SMTP here later)
     console.log("[EMAIL to]", student.email, "\n[SUBJECT] Request for Missing Information\n[BODY]\n" + body);
 
-    // Log as a message on the application (fromRole: "field_officer")
+    // Log as a message on the application
     await prisma.message.create({
       data: {
         studentId: review.studentId,
         applicationId: review.applicationId,
-        text: `Missing info requested: ${items.join(", ")}. ${note ? "Note: " + note : ""}`,
-        fromRole: "field_officer",
+        text: `Awake: Additional documents required - ${items.join(", ")}. ${note ? note : "Please upload these documents to proceed with your application."}`,
+        fromRole: "admin",
       },
     });
 

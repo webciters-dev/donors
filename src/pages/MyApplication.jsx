@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card as UiCard } from "@/components/ui/card";
 import { toast } from "sonner";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, MessageCircle, User } from "lucide-react";
 import DocumentUploader from "@/components/DocumentUploader";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -258,7 +258,7 @@ export const MyApplication = () => {
     if (!Array.isArray(docs) || docs.length === 0) return;
 
     const have = new Set(docs.map((d) => d.type));
-    const must = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"]; // adjust if you use SSC_RESULT
+    const must = REQUIRED_DOCS; // Use the main required docs list
     const missing = must.filter((m) => !have.has(m));
 
     if (missing.length > 0) {
@@ -447,7 +447,7 @@ export const MyApplication = () => {
   }
 
   // --- Submission ---
-  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
 
   function collectSubmissionIssues() {
     const issues = [];
@@ -519,9 +519,69 @@ export const MyApplication = () => {
     user?.role === "STUDENT" &&
     completeness.percent < 100;
 
+// ...existing code...
+
+  
+  // REPLACE THIS SECTION (around line 101-103):
   if (!application) {
-    return <p className="text-slate-600">No application found.</p>;
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold">My Application</h1>
+        
+        {/* Welcome Message for New Students */}
+        <Card className="p-6 bg-green-50 border-green-200">
+          <div className="flex items-start space-x-3">
+            <User className="h-6 w-6 text-green-600 mt-0.5" />
+            <div>
+              <h3 className="font-medium text-green-900">
+                Welcome, {user?.name || "Student"}!
+              </h3>
+              <p className="text-sm text-green-700 mt-1">
+                Your account has been created successfully. Complete your application to apply for funding.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Complete Application Call-to-Action */}
+        <Card className="p-6">
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <MessageCircle className="h-8 w-8 text-blue-600" />
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">
+                Complete Your Application
+              </h3>
+              <p className="text-gray-600 mt-2">
+                You've successfully created your account! Now complete your application 
+                with your academic details and funding requirements.
+              </p>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <Button 
+                onClick={() => navigate("/apply?step=2")}  
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Complete Application
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/student/profile")}
+              >
+                Update Profile
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
   }
+
+// ...existing code...
 
   const isPKR = application.currency === "PKR";
   const needText = isPKR
@@ -634,134 +694,309 @@ export const MyApplication = () => {
         </div>
       </Card>
 
-      {/* Documents */}
-      <Card className="p-6 space-y-4">
-        <h3 className="font-medium">Documents</h3>
-
-        {/* Documents Status Overview */}
-        {(() => {
-          // Combine both basic required docs and current education docs
-          const allRequiredDocTypes = [...REQUIRED_DOCS, ...currentDocChecklist.map(item => item.key)];
-          const missingDocs = allRequiredDocTypes.filter(docType => !haveDocs.has(docType));
-          const completedDocs = allRequiredDocTypes.filter(docType => haveDocs.has(docType));
-          
-          return (
-            <div className="rounded-md border p-3 bg-slate-50">
-              <div className="flex items-center justify-between mb-2">
-                <div className="font-medium text-slate-700">Document Requirements Overview</div>
-                <div className="text-sm text-slate-600">
-                  {completedDocs.length}/{allRequiredDocTypes.length} complete
+      {/* Enhanced Messages Section */}
+      <Card className="p-6 space-y-4 border-l-4 border-blue-400 bg-blue-50">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-blue-800">💬 Messages from Awake</h3>
+          {rawMessages.length > 0 && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+              {rawMessages.length} message{rawMessages.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </div>
+        
+        {rawMessages.length === 0 ? (
+          <div className="text-center py-8 text-slate-500">
+            <MessageCircle className="mx-auto h-12 w-12 mb-3 opacity-50" />
+            <p className="text-sm">No messages yet</p>
+            <p className="text-xs mt-1">Messages from admins will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {rawMessages.map((message, idx) => (
+              <div
+                key={message.id || idx}
+                className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">
+                        {message.fromRole === 'admin' || message.fromRole === 'field_officer' ? 'Admin' : 'Student'}
+                      </span>
+                      <span>•</span>
+                      <span>{message.createdAt ? new Date(message.createdAt).toLocaleDateString() : 'Recent'}</span>
+                      {(message.fromRole === 'admin' || message.fromRole === 'field_officer') && (
+                        <Badge variant="outline" className="ml-2 text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          Official
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                      {message.text}
+                    </p>
+                  </div>
                 </div>
               </div>
-              
-              {missingDocs.length > 0 && (
-                <div className="mb-3">
-                  <div className="text-sm font-medium text-amber-700 mb-2">Still needed for complete application:</div>
-                  <div className="grid sm:grid-cols-2 gap-1 text-sm">
-                    {missingDocs.map((docType) => (
-                      <div key={docType} className="flex items-center gap-2 text-amber-700">
-                        <Circle className="h-3 w-3" />
-                        <span>{docType.replaceAll("_", " ")}</span>
-                      </div>
-                    ))}
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Action Required - Requests from Admin/Sub Admin */}
+      {requestedItems.length > 0 && (
+        <Card className="p-6 space-y-4 border-l-4 border-amber-400 bg-amber-50">
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-amber-800 animate-pulse">⚠️ Action Required - Requests from Admin/Sub Admin</h3>
+            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+              {requestedItems.length} request{requestedItems.length !== 1 ? 's' : ''}
+            </Badge>
+          </div>
+          
+          <div className="space-y-3">
+            {requestedItems.map((item) => (
+              <div
+                key={item.id}
+                className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow border-l-4 border-l-amber-300"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <User className="h-4 w-4" />
+                      <span className="font-medium">Admin Request</span>
+                      <Badge variant="outline" className="ml-2 text-xs bg-amber-50 border-amber-200 text-amber-700">
+                        Urgent
+                      </Badge>
+                    </div>
+                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
+                      {item.label}
+                    </p>
+                    {item.description && (
+                      <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">
+                        {item.description}
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
-              
-              {completedDocs.length > 0 && (
-                <div>
-                  <div className="text-sm font-medium text-emerald-700 mb-2">Completed:</div>
-                  <div className="grid sm:grid-cols-2 gap-1 text-sm">
-                    {completedDocs.map((docType) => (
-                      <div key={docType} className="flex items-center gap-2 text-emerald-700">
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>{docType.replaceAll("_", " ")}</span>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Documents */}
+      <Card className="p-6 space-y-4">
+        {(() => {
+          // Combine all document types: required + optional
+          const allRequiredDocTypes = [...REQUIRED_DOCS, ...currentDocChecklist.map(item => item.key)];
+          const completedRequiredDocs = allRequiredDocTypes.filter(docType => haveDocs.has(docType));
+          const totalDocs = docs.length;
+          
+          return (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">Documents</h3>
+                <div className="text-sm text-slate-600">
+                  {completedRequiredDocs.length}/{allRequiredDocTypes.length} required • {totalDocs} total uploaded
                 </div>
-              )}
-              
-              {missingDocs.length === 0 && (
-                <div className="text-sm text-emerald-700 font-medium">
-                  ✅ All required documents have been uploaded!
-                </div>
-              )}
+              </div>
+
+              <div id="document-uploader-anchor" />
+              <DocumentUploader
+                studentId={application.studentId}
+                applicationId={application.id}
+                preferredType={preferredUploadType || undefined}
+                onUploaded={(doc) => {
+                  setDocs((prev) => [doc, ...prev]);
+                  setPreferredUploadType(null);
+                }}
+              />
+
+              {/* Unified Document List */}
+              <div className="space-y-2">
+                {loadingDocs ? (
+                  <p className="text-sm text-slate-500">Loading documents…</p>
+                ) : (
+                  <>
+                    {/* Required Documents */}
+                    <div className="text-sm font-medium text-slate-700 mb-2">Required Documents</div>
+                    {REQUIRED_DOCS.map((docType) => {
+                      const uploaded = docs.find(d => d.type === docType);
+                      const isUploaded = !!uploaded;
+                      
+                      return (
+                        <div
+                          key={docType}
+                          className="flex items-center justify-between rounded-md border p-3 text-sm bg-white"
+                        >
+                          <div className="flex items-center gap-3">
+                            {isUploaded ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                            )}
+                            <div className="flex-1">
+                              <div className="font-medium">{docType.replaceAll("_", " ")}</div>
+                              {isUploaded ? (
+                                <a
+                                  href={`${API}${uploaded.url}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-700 hover:underline text-xs"
+                                >
+                                  📄 {uploaded.originalName || 'Download'}
+                                </a>
+                              ) : (
+                                <span className="text-amber-600 text-xs">⚠️ Required - Please upload</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {!isUploaded && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => {
+                                  setPreferredUploadType(docType);
+                                  const anchor = document.getElementById("document-uploader-anchor");
+                                  if (anchor) {
+                                    anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  }
+                                }}
+                              >
+                                Upload
+                              </Button>
+                            )}
+                            {isUploaded && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => deleteDoc(uploaded.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Optional Documents */}
+                    <div className="text-sm font-medium text-slate-700 mb-2 mt-4">Optional Documents</div>
+                    {currentDocChecklist.map((item) => {
+                      const uploaded = docs.find(d => d.type === item.key);
+                      const isUploaded = !!uploaded;
+                      
+                      return (
+                        <div
+                          key={item.key}
+                          className="flex items-center justify-between rounded-md border p-3 text-sm bg-slate-50"
+                        >
+                          <div className="flex items-center gap-3">
+                            {isUploaded ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                            ) : (
+                              <Circle className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                            )}
+                            <div className="flex-1">
+                              <div className="font-medium">{item.label}</div>
+                              {isUploaded ? (
+                                <a
+                                  href={`${API}${uploaded.url}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-emerald-700 hover:underline text-xs"
+                                >
+                                  📄 {uploaded.originalName || 'Download'}
+                                </a>
+                              ) : (
+                                <span className="text-slate-500 text-xs">Optional document</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            {!isUploaded && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => {
+                                  setPreferredUploadType(item.key);
+                                  const anchor = document.getElementById("document-uploader-anchor");
+                                  if (anchor) {
+                                    anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+                                  }
+                                }}
+                              >
+                                Upload
+                              </Button>
+                            )}
+                            {isUploaded && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => deleteDoc(uploaded.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Additional Uploaded Documents (not in required/optional lists) */}
+                    {(() => {
+                      const knownTypes = new Set([...REQUIRED_DOCS, ...currentDocChecklist.map(item => item.key)]);
+                      const additionalDocs = docs.filter(d => !knownTypes.has(d.type));
+                      
+                      if (additionalDocs.length === 0) return null;
+                      
+                      return (
+                        <>
+                          <div className="text-sm font-medium text-slate-700 mb-2 mt-4">Additional Documents</div>
+                          {additionalDocs.map((d) => (
+                            <div
+                              key={d.id}
+                              className="flex items-center justify-between rounded-md border p-3 text-sm bg-blue-50"
+                            >
+                              <div className="flex items-center gap-3">
+                                <CheckCircle2 className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">{d.type.replaceAll("_", " ")}</div>
+                                  <a
+                                    href={`${API}${d.url}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-blue-700 hover:underline text-xs"
+                                  >
+                                    📄 {d.originalName || 'Download'}
+                                  </a>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-2xl"
+                                onClick={() => deleteDoc(d.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
             </div>
           );
         })()}
-
-        <div id="document-uploader-anchor" />
-        <DocumentUploader
-          studentId={application.studentId}
-          applicationId={application.id}
-          preferredType={preferredUploadType || undefined}
-          onUploaded={(doc) => {
-            setDocs((prev) => [doc, ...prev]);
-            // When upload matches a requested type, clear the preferred type and let UI reflect as addressed.
-            setPreferredUploadType(null);
-          }}
-        />
-
-        {/* Current education checklist */}
-        <div className="rounded-md border p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="font-medium">Current Education Checklist</div>
-            <div className="text-sm text-slate-600">{checklistDone}/{currentDocChecklist.length} complete</div>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-2 text-sm">
-            {currentDocChecklist.map((item) => {
-              const done = haveDocs.has(item.key);
-              return (
-                <div key={item.key} className="flex items-center gap-2">
-                  {done ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  ) : (
-                    <Circle className="h-4 w-4 text-slate-400" />
-                  )}
-                  <span className={done ? "text-slate-800" : "text-slate-600"}>{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          {loadingDocs ? (
-            <p className="text-sm text-slate-500">Loading documents…</p>
-          ) : docs.length === 0 ? (
-            <p className="text-sm text-slate-500">No documents uploaded yet.</p>
-          ) : (
-            docs.map((d) => (
-              <div
-                key={d.id}
-                className="flex items-center justify-between rounded-md border p-2 text-sm"
-              >
-                <div className="space-y-0.5">
-                  <div className="font-medium">
-                    {d.type.replaceAll("_", " ")}
-                  </div>
-                  <a
-                    href={`${API}${d.url}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-emerald-700 hover:underline"
-                  >
-                    {d.originalName || d.url}
-                  </a>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-2xl"
-                  onClick={() => deleteDoc(d.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            ))
-          )}
-        </div>
       </Card>
 
       {/* Current Education Details */}
@@ -795,31 +1030,8 @@ export const MyApplication = () => {
         </div>
       </Card>
 
-      {/* Messages */}
-      <Card className="p-6 space-y-4">
-        <h3 className="font-medium">Messages</h3>
-        <div className="space-y-2 max-h-48 overflow-y-auto border p-3 rounded-md text-sm">
-          {messages.map((m, idx) => (
-            <div key={idx} className={m.from === "student" ? "text-right" : "text-left"}>
-              <span className="font-semibold">
-                {m.from === "student" ? "You" : m.from}:
-              </span>{" "}
-              {m.text}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Type your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <Button onClick={sendMessage}>Send</Button>
-        </div>
-      </Card>
-
-      {/* Requests from Admin/Field Officer */}
-      <Card className="p-6 space-y-4">
+      {/* Old section removed - now using enhanced Action Required section above */}
+      {false && <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-medium">Requests from Admin/Field Officer</h3>
           <div className="flex items-center gap-2">
@@ -875,7 +1087,7 @@ export const MyApplication = () => {
         {requestedItems.__lastRequestText && (
           <div className="text-xs text-slate-500">Last request message: {requestedItems.__lastRequestText}</div>
         )}
-      </Card>
+      </Card>}
 
       {/* Submit */}
       <Card className="p-6 space-y-3">

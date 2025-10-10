@@ -53,12 +53,52 @@ router.post('/create-payment-intent', async (req, res) => {
     const totalNeed = student.needUSD;
     const providedAmount = parseFloat(amount);
     
-    if (providedAmount !== totalNeed) {
-      return res.status(400).json({ 
-        error: 'Total sponsorship amount must match the full educational need', 
-        required: totalNeed, 
-        provided: providedAmount
-      });
+    // Handle currency conversion for validation
+    // Check if this is a UK university (should be GBP but stored as USD)
+    const isUKUniversity = student.university && 
+      (student.university.toLowerCase().includes('oxford') ||
+       student.university.toLowerCase().includes('cambridge') ||
+       student.university.toLowerCase().includes('london') ||
+       student.university.toLowerCase().includes('edinburgh') ||
+       student.university.toLowerCase().includes('manchester') ||
+       student.university.toLowerCase().includes('imperial college') ||
+       student.university.toLowerCase().includes('ucl') ||
+       student.university.toLowerCase().includes('lse'));
+    
+    let expectedAmount = totalNeed;
+    
+    // If UK university, convert GBP to USD for comparison (approximate rate: 1 GBP = 1.27 USD)
+    if (isUKUniversity) {
+      // The provided amount is in GBP, convert to USD for comparison
+      const gbpToUsdRate = 1.27;
+      const providedAmountInUSD = providedAmount * gbpToUsdRate;
+      
+      // Allow some tolerance for exchange rate fluctuations (within 5%)
+      const tolerance = totalNeed * 0.05;
+      const diff = Math.abs(providedAmountInUSD - totalNeed);
+      
+      if (diff > tolerance) {
+        return res.status(400).json({ 
+          error: 'Total sponsorship amount must match the full educational need', 
+          required: totalNeed, 
+          provided: providedAmount,
+          providedInUSD: Math.round(providedAmountInUSD),
+          paymentFrequency: paymentFrequency,
+          isUKUniversity: true,
+          conversionRate: gbpToUsdRate
+        });
+      }
+    } else {
+      // For non-UK universities, require exact match
+      if (providedAmount !== totalNeed) {
+        return res.status(400).json({ 
+          error: 'Total sponsorship amount must match the full educational need', 
+          required: totalNeed, 
+          provided: providedAmount,
+          paymentFrequency: paymentFrequency,
+          isUKUniversity: false
+        });
+      }
     }
 
     // Create or get existing Stripe customer

@@ -48,7 +48,7 @@ async function checkDatabase() {
         console.log(`   No documents uploaded`);
       }
       
-      const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT'];
+      const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT', 'PHOTO', 'FEE_INVOICE', 'INCOME_CERTIFICATE', 'UTILITY_BILL', 'UNIVERSITY_CARD', 'ENROLLMENT_CERTIFICATE', 'TRANSCRIPT'];
       const uploadedTypes = student.documents.map(d => d.type);
       const missing = requiredDocs.filter(req => !uploadedTypes.includes(req));
       

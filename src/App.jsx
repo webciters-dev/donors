@@ -4,6 +4,9 @@ import DonorSignup from "@/pages/DonorSignup";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import StudentProfile from "@/pages/StudentProfile";
+// ADD THESE NEW IMPORTS
+import StudentRegister from "@/pages/StudentRegister";
+import DonorRegister from "@/pages/DonorRegister";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -79,7 +82,7 @@ function keyFromPath(pathname) {
   if (pathname.startsWith("/students/")) return "student";
   if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
   if (pathname.startsWith("/my-application")) return "myapplication";
-  if (pathname.startsWith("/student/profile")) return "studentprofile"; // ✅ ensure tab highlight
+  if (pathname.startsWith("/student/profile")) return "studentprofile";
   if (pathname.startsWith("/admin")) return "admin";
   if (pathname.startsWith("/field-officer")) return "fieldofficer";
   if (pathname.startsWith("/donor/portal")) return "donor_portal";
@@ -93,7 +96,6 @@ function StudentDetailRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
   if (!id) return <Navigate to="/admin" replace />;
-  // Keep ID as string since we're using CUIDs, not numeric IDs
   return <StudentDetail id={id} goBack={() => navigate(-1)} />;
 }
 
@@ -125,7 +127,8 @@ function Shell() {
   // decide where to show the footer info strip
   const p = location.pathname || "";
   const showFooterInfo =
-    p === "/" || p === "/marketplace" || p === "/apply" || p === "/login";
+    p === "/" || p === "/marketplace" || p === "/apply" || p === "/login" || 
+    p === "/student-register" || p === "/donor-register";
 
   return (
     <>
@@ -138,6 +141,7 @@ function Shell() {
           <Routes>
             {/* PUBLIC */}
             <Route path="/" element={<Landing go={setActive} />} />
+            
             {/* MARKETPLACE - Protected for authenticated donors */}
             <Route 
               path="/marketplace" 
@@ -150,6 +154,10 @@ function Shell() {
 
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
+            
+            {/* ADD NEW REGISTRATION ROUTES */}
+            <Route path="/student-register" element={<StudentRegister />} />
+            <Route path="/donor-register" element={<DonorRegister />} />
             
             {/* Public browse page for potential donors */}
             <Route path="/browse" element={<DonorBrowse />} />
@@ -193,13 +201,13 @@ function Shell() {
 
             {/* PROTECTED: DONOR */}
             <Route
-  path="/donor"
-  element={
-    <ProtectedRoute roles={['DONOR']}>
-      <DonorDashboard />
-    </ProtectedRoute>
-  }
-/>
+              path="/donor"
+              element={
+                <ProtectedRoute roles={['DONOR']}>
+                  <DonorDashboard />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/donor/portal"
               element={
@@ -278,18 +286,18 @@ function Shell() {
         </main>
 
         <footer className="border-t border-slate-200 bg-white">
-  <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600 flex items-center justify-between">
-    <span>© {new Date().getFullYear()} Akhuwat · AWAKE Connect</span>
-    <a
-      href="https://webciters.com"
-      target="_blank"
-      rel="noreferrer"
-      className="text-emerald-700 hover:underline"
-    >
-      Powered by WebCiters
-    </a>
-  </div>
-</footer>
+          <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600 flex items-center justify-between">
+            <span>© {new Date().getFullYear()} Akhuwat · AWAKE Connect</span>
+            <a
+              href="https://webciters.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-emerald-700 hover:underline"
+            >
+              Powered by WebCiters
+            </a>
+          </div>
+        </footer>
 
       </div>
     </>

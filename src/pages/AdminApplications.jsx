@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +27,10 @@ export const AdminApplications = () => {
   const [expandedId, setExpandedId] = useState(null);
   const [docsByRow, setDocsByRow] = useState({}); // app.id -> documents[]
   const [loadingDocsId, setLoadingDocsId] = useState(null);
+
+  // sub admin assignment state
+  const [officers, setOfficers] = useState([]);
+  const [assigningId, setAssigningId] = useState(null);
 
   // --- helpers ---
   const fmtUSD = (n) =>
@@ -72,10 +77,20 @@ export const AdminApplications = () => {
         const withLocal = list.map((a) => ({
           ...a,
           _status: a.status,
-          _fxRate: a.fxRate ?? "",
           _notes: a.notes ?? "",
         }));
         if (!dead) setApps(withLocal);
+
+        // Load officers list (for sub admin assignment)
+        try {
+          const ofRes = await fetch(`${API}/api/users?role=FIELD_OFFICER`, { headers: { ...authHeader } });
+          if (ofRes.ok) {
+            const ofData = await ofRes.json();
+            if (!dead) setOfficers(Array.isArray(ofData?.users) ? ofData.users : []);
+          }
+        } catch (e) {
+          console.error("Failed to load officers:", e);
+        }
       } catch (e) {
         console.error(e);
         if (!dead) setApps([]);
@@ -123,7 +138,6 @@ export const AdminApplications = () => {
                 ...a,
                 ...updated,
                 _status: updated.status,
-                _fxRate: updated.fxRate ?? "",
                 _notes: updated.notes ?? "",
               }
             : a
@@ -138,24 +152,32 @@ export const AdminApplications = () => {
     }
   }
 
-  function saveEdits(row) {
-    const payload = {
-      status: row._status,
-      notes: row._notes || null,
-      fxRate:
-        row._fxRate === "" || row._fxRate === null
-          ? null
-          : Number(row._fxRate),
-    };
-    save(row.id, payload);
-  }
+  // ---------------------------
+  // Assign Sub Admin
+  // ---------------------------
+  async function assignSubAdmin(applicationId, studentId, officerId) {
+    try {
+      setAssigningId(applicationId);
+      const res = await fetch(`${API}/api/field-reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({ applicationId, studentId, officerUserId: officerId })
+      });
 
-  function approve(row) {
-    save(row.id, { status: "APPROVED", notes: row._notes || null });
-  }
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
 
-  function reject(row) {
-    save(row.id, { status: "REJECTED", notes: row._notes || null });
+      toast.success("Sub Admin assigned successfully!");
+      // Refresh the applications to show updated status
+      // The load function will run again due to polling
+    } catch (err) {
+      console.error(err);
+      toast.error(`Assignment failed: ${err.message}`);
+    } finally {
+      setAssigningId(null);
+    }
   }
 
   // ---------------------------
@@ -292,17 +314,15 @@ export const AdminApplications = () => {
         <TabsContent value={activeTab}>
 
       <Card className="divide-y">
-        <div className="grid grid-cols-12 gap-3 px-4 py-3 text-sm font-medium text-slate-600">
-          <div className="col-span-3">Student</div>
-          <div className="col-span-2">Term</div>
-          <div className="col-span-2">Need</div>
-          <div className="col-span-3">Status / Notes</div>
-          <div className="col-span-1">FX</div>
-          <div className="col-span-1 text-right pr-2">Actions</div>
+        <div className="grid grid-cols-1 lg:grid-cols-11 gap-3 px-4 py-3 text-sm font-medium text-slate-600">
+          <div className="lg:col-span-3">Student</div>
+          <div className="lg:col-span-2 hidden lg:block">Term</div>
+          <div className="lg:col-span-2 hidden lg:block">Need</div>
+          <div className="lg:col-span-3 hidden lg:block">Status / Notes</div>
+          <div className="lg:col-span-1 hidden lg:block text-right pr-2">Actions</div>
         </div>
 
         {filtered.map((row) => {
-          const busy = savingId === row.id;
           const isPKR = row.currency === "PKR";
           const needText = isPKR
             ? `₨ ${fmtPKR(row.needPKR)}`
@@ -311,9 +331,9 @@ export const AdminApplications = () => {
 
           return (
             <div key={row.id} className="px-4 py-4">
-              <div className="grid grid-cols-12 gap-3 items-start">
+              <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 lg:gap-3 items-start">
                 {/* Student */}
-                <div className="col-span-3">
+                <div className="col-span-1 lg:col-span-3">
                   <div className="font-medium">{row.student?.name}</div>
                   <div className="text-sm text-slate-600">
                     {row.student?.program} · {row.student?.university}
@@ -338,7 +358,7 @@ export const AdminApplications = () => {
                           
                           return (
                             <Badge className={`text-white text-xs ${bgColor}`}>
-                              🏢 {recommendation?.replace('_', ' ') || 'REVIEWED'}
+                              🏢 {recommendation?.replace('_', ' ') || 'APPROVED'}
                             </Badge>
                           );
                         } else if (status === "IN_PROGRESS") {
@@ -357,23 +377,48 @@ export const AdminApplications = () => {
                       })()
                     )}
                     
-                    {/* No Field Review Badge */}
+                    {/* Sub Admin Assignment */}
                     {(!row.fieldReviews || row.fieldReviews.length === 0) && (
-                      <Badge variant="outline" className="text-xs border-gray-300">
-                        👤 No Sub Admin
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <select 
+                          className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                          disabled={assigningId === row.id}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              assignSubAdmin(row.id, row.studentId, e.target.value);
+                              e.target.value = ""; // Reset selection
+                            }
+                          }}
+                        >
+                          <option value="">👤 Assign Sub Admin...</option>
+                          {officers.map(officer => (
+                            <option key={officer.id} value={officer.id}>
+                              {officer.name || officer.email}
+                            </option>
+                          ))}
+                        </select>
+                        {assigningId === row.id && (
+                          <span className="text-xs text-slate-500">Assigning...</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
 
                 {/* Term */}
-                <div className="col-span-2 pt-1">{row.term}</div>
+                <div className="lg:col-span-2 pt-1">
+                  <span className="lg:hidden font-medium text-slate-700">Term: </span>
+                  {row.term}
+                </div>
 
                 {/* Need */}
-                <div className="col-span-2 pt-1">{needText}</div>
+                <div className="lg:col-span-2 pt-1">
+                  <span className="lg:hidden font-medium text-slate-700">Need: </span>
+                  {needText}
+                </div>
 
                 {/* Status & Notes */}
-                <div className="col-span-3 space-y-2">
+                <div className="lg:col-span-3 space-y-2">
                   <select
                     className="w-full rounded-2xl border px-3 py-2 text-sm"
                     value={row._status}
@@ -406,60 +451,18 @@ export const AdminApplications = () => {
                   />
                 </div>
 
-                {/* FX */}
-                <div className="col-span-1">
-                  <Input
-                    placeholder="e.g. 278.50"
-                    value={row._fxRate}
-                    onChange={(e) =>
-                      setApps((prev) =>
-                        prev.map((a) =>
-                          a.id === row.id ? { ...a, _fxRate: e.target.value } : a
-                        )
-                      )
-                    }
-                    className="rounded-2xl"
-                  />
-                </div>
-
                 {/* Actions */}
-                <div className="col-span-1 flex flex-col gap-2 items-end pr-2">
+                <div className="col-span-1 lg:col-span-1 flex flex-col gap-2 items-stretch justify-start mt-3 lg:mt-0 lg:ml-2 lg:mr-2">
                   <Button
-                    variant="secondary"
-                    onClick={() => saveEdits(row)}
-                    disabled={busy}
-                    className="rounded-2xl"
-                  >
-                    {busy ? "Saving…" : "Save"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="rounded-2xl text-emerald-700"
+                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 font-medium text-sm w-full"
                     onClick={() => navigate(`/admin/applications/${row.id}`)}
                   >
-                    View full profile
+                    View Profile
                   </Button>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => reject(row)}
-                      disabled={busy}
-                      className="rounded-2xl"
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => approve(row)}
-                      disabled={busy}
-                      className="rounded-2xl"
-                    >
-                      Approve
-                    </Button>
-                  </div>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => toggleDocs(row)}
-                    className="rounded-2xl text-emerald-700"
+                    className="rounded-2xl border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-2 font-medium text-sm w-full"
                   >
                     {expandedId === row.id ? "Hide Docs" : "Docs"}
                     {loadingDocsId === row.id
@@ -481,31 +484,26 @@ export const AdminApplications = () => {
                       No documents uploaded.
                     </p>
                   ) : (
-                    <ul className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {docs.map((d) => (
-                        <li
+                        <div
                           key={d.id}
-                          className="flex items-center justify-between text-sm bg-white border rounded-md px-3 py-2"
+                          className="bg-white border rounded-lg p-3 hover:shadow-sm transition-shadow"
                         >
-                          <div>
-                            <div className="font-medium">
-                              {d.type.replaceAll("_", " ")}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                             <a
                               href={docHref(d.url)}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-emerald-700 hover:underline"
+                              className="text-emerald-700 hover:underline font-medium text-sm"
                             >
-                              {d.originalName || d.url}
+                              📁 {d.originalName || d.url}
                             </a>
                           </div>
-                          <span className="text-slate-500">
-                            {(d.size || 0).toLocaleString()} bytes
-                          </span>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </div>
               )}

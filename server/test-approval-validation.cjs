@@ -95,7 +95,8 @@ async function testApprovalValidation() {
     });
     
     // Add required documents
-    const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT'];
+    const requiredDocs = ['CNIC', 'GUARDIAN_CNIC', 'HSSC_RESULT', 'PHOTO', 'FEE_INVOICE', 'INCOME_CERTIFICATE', 'UTILITY_BILL', 'UNIVERSITY_CARD', 'ENROLLMENT_CERTIFICATE', 'TRANSCRIPT'];
+    const uploadedTypes = student.documents.map(d => d.type);
     for (const docType of requiredDocs) {
       await prisma.document.create({
         data: {

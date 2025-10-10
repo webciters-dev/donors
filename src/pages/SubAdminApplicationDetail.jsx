@@ -97,6 +97,9 @@ export default function SubAdminApplicationDetail() {
           recommendation: currentReview.recommendation || ""
         });
 
+        // Set submitted state based on review status
+        setSubmitted(currentReview.status === "COMPLETED");
+
         // Load messages
         const msgRes = await fetch(`${API}/api/messages?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
           headers: authHeader
@@ -137,6 +140,13 @@ export default function SubAdminApplicationDetail() {
       }
     };
   }, []);
+
+  // Watch for review status changes to update submitted state
+  useEffect(() => {
+    if (review) {
+      setSubmitted(review.status === "COMPLETED");
+    }
+  }, [review?.status]);
 
   async function saveFieldVerification(isSubmitting = false) {
     try {
@@ -199,6 +209,42 @@ export default function SubAdminApplicationDetail() {
     } catch (error) {
       console.error("Save failed:", error);
       toast.error("Failed to save field verification");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Request missing documents from student
+  async function requestMissingDocuments() {
+    try {
+      setSaving(true);
+      
+      // Get checked additional documents
+      const checkedDocs = fieldVerification.additionalDocumentsRequested || [];
+      if (checkedDocs.length === 0) {
+        toast.error("Please select at least one additional document to request");
+        return;
+      }
+
+      // The checked docs are already in readable format from the UI
+      const docNames = checkedDocs;
+
+      const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({ 
+          items: docNames,
+          note: "These documents are required to complete your field verification process."
+        })
+      });
+      
+      if (!res.ok) throw new Error("Failed to request missing documents");
+      
+      toast.success(`Document request sent to student: ${docNames.join(', ')}`);
+      
+    } catch (error) {
+      console.error("Request missing docs failed:", error);
+      toast.error("Failed to send document request");
     } finally {
       setSaving(false);
     }
@@ -524,14 +570,27 @@ export default function SubAdminApplicationDetail() {
             <div className="text-sm text-slate-600">No documents uploaded yet</div>
           ) : (
             documents.map((doc, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium text-sm">{doc.type.replace('_', ' ')}</div>
-                  <div className="text-xs text-slate-500">{doc.originalName}</div>
+              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-2">
+                  {doc.url ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <a
+                        href={`${API}${doc.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                      >
+                        📁 {doc.originalName || doc.type.replace('_', ' ')}
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <span className="font-medium text-red-600">{doc.type.replace('_', ' ')} - Missing</span>
+                    </>
+                  )}
                 </div>
-                <Badge variant="outline" size="sm">
-                  {doc.url ? "Uploaded" : "Missing"}
-                </Badge>
               </div>
             ))
           )}
@@ -576,6 +635,23 @@ export default function SubAdminApplicationDetail() {
                 </label>
               ))}
             </div>
+            
+            {/* Send Document Request Button */}
+            {fieldVerification.additionalDocumentsRequested.length > 0 && (
+              <div className="mt-3">
+                <Button
+                  variant="outline"
+                  onClick={requestMissingDocuments}
+                  disabled={saving}
+                  className="text-amber-700 border-amber-300 hover:bg-amber-50"
+                >
+                  📧 Send Document Request to Student
+                </Button>
+                <p className="text-xs text-slate-500 mt-1">
+                  This will notify the student via email and message about the required documents
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </Card>

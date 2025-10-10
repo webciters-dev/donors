@@ -33,10 +33,27 @@ const upload = multer({ storage });
  * - STUDENT -> only if req.user.studentId === studentId
  * - DONOR -> no (unless you decide otherwise later)
  */
-function canAccessStudentDocs(user, studentId) {
+async function canAccessStudentDocs(user, studentId, applicationId = null) {
   if (!user) return false;
   if (user.role === "ADMIN") return true;
   if (user.role === "STUDENT" && user.studentId === studentId) return true;
+  
+  // FIELD_OFFICER (Sub Admin) can access documents for applications they are assigned to review
+  if (user.role === "FIELD_OFFICER" && applicationId) {
+    try {
+      const review = await prisma.fieldReview.findFirst({
+        where: {
+          applicationId: applicationId,
+          officerUserId: user.id
+        }
+      });
+      return !!review; // Return true if they have a review for this application
+    } catch (e) {
+      console.error("Error checking field officer access:", e);
+      return false;
+    }
+  }
+  
   return false;
 }
 
@@ -51,7 +68,7 @@ router.post("/", requireAuth, upload.single("file"), async (req, res) => {
     if (!studentId || !req.file) {
       return res.status(400).json({ error: "studentId and file required" });
     }
-    if (!canAccessStudentDocs(req.user, studentId)) {
+    if (!(await canAccessStudentDocs(req.user, studentId, applicationId))) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -87,7 +104,7 @@ router.get("/", requireAuth, async (req, res) => {
     if (!studentId) {
       return res.status(400).json({ error: "studentId required" });
     }
-    if (!canAccessStudentDocs(req.user, studentId)) {
+    if (!(await canAccessStudentDocs(req.user, studentId, applicationId))) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -119,7 +136,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
     const existing = await prisma.document.findUnique({ where: { id } });
     if (!existing) return res.status(404).json({ error: "Not found" });
 
-    if (!canAccessStudentDocs(req.user, existing.studentId)) {
+    if (!(await canAccessStudentDocs(req.user, existing.studentId, existing.applicationId))) {
       return res.status(403).json({ error: "Forbidden" });
     }
 

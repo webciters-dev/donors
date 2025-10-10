@@ -195,7 +195,7 @@ router.patch("/:id", async (req, res) => {
       }
 
       // Check required documents
-      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
       const uploadedTypes = application.student.documents.map(doc => doc.type);
       const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
 
@@ -293,7 +293,7 @@ router.patch("/:id/status", async (req, res) => {
       }
 
       // Check required documents
-      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT"];
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
       const uploadedTypes = application.student.documents.map(doc => doc.type);
       const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
 
