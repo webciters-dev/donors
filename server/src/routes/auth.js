@@ -63,10 +63,25 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(String(password), String(user.passwordHash || ""));
     if (!ok) return res.status(401).json({ error: "Invalid credentials." });
 
+    // Get name from the appropriate profile record
+    let userName = user.name; // Default to user.name (for backwards compatibility)
+    
+    if (user.role === "STUDENT" && user.studentId) {
+      const student = await prisma.student.findUnique({ where: { id: user.studentId } });
+      if (student?.name) {
+        userName = student.name;
+      }
+    } else if (user.role === "DONOR" && user.donorId) {
+      const donor = await prisma.donor.findUnique({ where: { id: user.donorId } });
+      if (donor?.name) {
+        userName = donor.name;
+      }
+    }
+
     const token = signToken({ sub: user.id, role: user.role, email: user.email });
     res.json({
       token,
-      user: { id: user.id, email: user.email, role: user.role, studentId: user.studentId, donorId: user.donorId },
+      user: { id: user.id, name: userName, email: user.email, role: user.role, studentId: user.studentId, donorId: user.donorId },
     });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
@@ -134,20 +149,30 @@ router.post("/register-student", async (req, res) => {
 
     // 2) Ensure User exists for this student (role: STUDENT)
     const passwordHash = await bcrypt.hash(String(password), 10);
-    await prisma.user.upsert({
-      where: { email },
-      update: {
-        passwordHash,
-        role: "STUDENT",
-        studentId: student.id,
-      },
-      create: {
-        email,
-        passwordHash,
-        role: "STUDENT",
-        studentId: student.id,
-      },
-    });
+    
+    // Check if user already exists - don't update password for existing users
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    
+    if (existingUser) {
+      // Update user to link to this student record, but keep existing password
+      await prisma.user.update({
+        where: { email },
+        data: {
+          role: "STUDENT",
+          studentId: student.id,
+        },
+      });
+    } else {
+      // Create new user with provided password
+      await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          role: "STUDENT",
+          studentId: student.id,
+        },
+      });
+    }
 
     return res.status(201).json({
       ok: true,

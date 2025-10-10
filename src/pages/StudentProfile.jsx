@@ -7,22 +7,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
+import { 
+  calculateProfileCompleteness, 
+  getCompletionMessage, 
+  isProfileReadyForSubmission 
+} from "@/lib/profileValidation";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-
-const REQUIRED_KEYS = [
-  "cnic",
-  "guardianName",
-  "guardianCnic",
-  "phone",
-  "address",
-  "city",
-  "province",
-  "university",
-  "program",
-  "gpa",
-  "gradYear",
-];
 
 // Helpers
 function onlyDigits(s = "") {
@@ -186,13 +177,7 @@ export default function StudentProfile() {
   }
 
   const completeness = useMemo(() => {
-    const missing = REQUIRED_KEYS.filter((k) => {
-      const v = form?.[k];
-      return v === null || v === undefined || v === "" || Number.isNaN(v);
-    });
-    const filled = REQUIRED_KEYS.length - missing.length;
-    const percent = Math.round((filled / REQUIRED_KEYS.length) * 100);
-    return { percent, missing };
+    return calculateProfileCompleteness(form);
   }, [form]);
 
   if (loading) {
@@ -203,15 +188,12 @@ export default function StudentProfile() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">My Profile</h1>
 
-      <Card className="p-4 bg-slate-50 border-slate-200">
+      <Card className={`p-4 border ${completeness.isComplete && !completeness.hasValidationErrors ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="text-sm text-slate-800">
           Profile completeness: <strong>{completeness.percent}%</strong>
-          {completeness.percent < 100 && (
-            <span className="text-slate-600">
-              {" "}
-              — Missing: {completeness.missing.join(", ")}
-            </span>
-          )}
+          <div className="mt-1 text-slate-600">
+            {getCompletionMessage(completeness)}
+          </div>
         </div>
       </Card>
 

@@ -57,7 +57,7 @@ export const ApplicationForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRegistered, setIsRegistered] = useState(!!user); // If user exists, they're registered
-  const [studentId, setStudentId] = useState(user?.id || null); // Use existing user ID
+  const [studentId, setStudentId] = useState(user?.studentId || null); // Use existing student ID
 
   // Debug logging
   useEffect(() => {
@@ -72,7 +72,7 @@ export const ApplicationForm = () => {
     if (user && urlStep === 2) {
       setStep(2);
       setIsRegistered(true);
-      setStudentId(user.id);
+      setStudentId(user.studentId);
     }
   }, [location.search, user]);
 
@@ -95,10 +95,14 @@ export const ApplicationForm = () => {
       gradYear: "",
       // Currency (auto-selected based on country)
       currency: "PKR", // Default to PKR for our primary market
-      // Step 3 — requested amount
-      amount: "",
+      // Step 3 — financial details
+      totalExpense: "",
+      scholarshipAmount: "0", // Default to 0
+      amount: "", // This will be auto-calculated (totalExpense - scholarshipAmount)
     };
   });
+
+
 
   // Debug form state
   useEffect(() => {
@@ -109,7 +113,7 @@ export const ApplicationForm = () => {
 
   // Update form when user data loads or changes
   useEffect(() => {
-    if (user?.name && user.name !== form.name) {
+    if (user?.name) {
       console.log("🔄 Updating form with user data:", user.name);
       setForm(prev => ({
         ...prev,
@@ -117,19 +121,21 @@ export const ApplicationForm = () => {
         email: user.email || prev.email
       }));
     }
-  }, [user?.name, user?.email, form.name]);
+  }, [user?.name, user?.email]);
 
-  // Initialize form for returning users when component mounts
+  // Force form sync when user logs in and has name
   useEffect(() => {
-    if (user && step > 1) {
-      console.log("🔄 Initializing form for returning user at step", step);
+    if (user && user.name && !form.name) {
+      console.log("🔄 Force syncing user data to form:", user.name);
       setForm(prev => ({
         ...prev,
-        name: user.name || prev.name,
+        name: user.name,
         email: user.email || prev.email
       }));
     }
-  }, [user, step]);
+  }, [user, form.name]);
+
+
 
   // Handle Student Registration at Step 1
   const handleStep1Registration = async () => {
@@ -146,15 +152,25 @@ export const ApplicationForm = () => {
     try {
       setLoading(true);
 
-      // Register student using the correct endpoint
-      const regRes = await fetch(`${API}/api/auth/register`, {
+      // Register student using the student-specific endpoint
+      const regRes = await fetch(`${API}/api/auth/register-student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
           email: form.email.trim().toLowerCase(),
           password: form.password,
-          role: "STUDENT" // This is key!
+          gender: form.gender,
+          // These fields will be updated later in Step 2 & 3, but we need defaults
+          university: "",
+          program: "",
+          country: "Pakistan",
+          city: "",
+          province: "",
+          gpa: 0,
+          gradYear: new Date().getFullYear() + 1,
+          needUSD: 0,
+          field: ""
         }),
       });
 
@@ -180,7 +196,8 @@ export const ApplicationForm = () => {
           const loginJson = await loginRes.json();
           if (loginJson?.token && loginJson?.user) {
             login({ token: loginJson.token, user: loginJson.user });
-            setStudentId(loginJson.user.id);
+            // Use the studentId from the user object if it exists
+            setStudentId(loginJson.user.studentId || loginJson.user.id);
           }
         }
       } catch (loginError) {
@@ -258,6 +275,102 @@ export const ApplicationForm = () => {
       "University of Montreal",
       "University of Calgary",
       "Simon Fraser University"
+    ],
+    "Germany": [
+      "Technical University of Munich (TUM)",
+      "Ludwig Maximilian University of Munich",
+      "Heidelberg University",
+      "Humboldt University of Berlin",
+      "University of Freiburg",
+      "RWTH Aachen University",
+      "Free University of Berlin",
+      "University of Göttingen",
+      "University of Hamburg",
+      "Karlsruhe Institute of Technology (KIT)"
+    ],
+    "France": [
+      "Sorbonne University",
+      "École Normale Supérieure (ENS Paris)",
+      "École Polytechnique",
+      "University of Paris-Saclay",
+      "Sciences Po Paris",
+      "HEC Paris",
+      "INSEAD",
+      "École Centrale Paris",
+      "University of Strasbourg",
+      "Grenoble Alpes University"
+    ],
+    "Italy": [
+      "Bocconi University",
+      "University of Bologna",
+      "Sapienza University of Rome",
+      "University of Milan",
+      "Politecnico di Milano",
+      "University of Padua",
+      "University of Florence",
+      "University of Turin",
+      "University of Pisa",
+      "Ca' Foscari University of Venice"
+    ],
+    "Spain": [
+      "IE University",
+      "Universidad Autónoma de Madrid",
+      "University of Barcelona",
+      "Universidad Complutense de Madrid",
+      "Universidad Politécnica de Madrid",
+      "University of Valencia",
+      "Universidad de Sevilla",
+      "Universidad de Granada",
+      "ESADE Business School",
+      "Universidad Carlos III de Madrid"
+    ],
+    "Netherlands": [
+      "University of Amsterdam",
+      "Delft University of Technology",
+      "Utrecht University",
+      "Leiden University",
+      "Erasmus University Rotterdam",
+      "University of Groningen",
+      "Eindhoven University of Technology",
+      "VU Amsterdam",
+      "Wageningen University & Research",
+      "Tilburg University"
+    ],
+    "Belgium": [
+      "KU Leuven",
+      "Ghent University",
+      "Université catholique de Louvain",
+      "Vrije Universiteit Brussel",
+      "University of Antwerp",
+      "Université libre de Bruxelles",
+      "University of Liège",
+      "Hasselt University",
+      "University of Mons",
+      "Solvay Brussels School"
+    ],
+    "Austria": [
+      "University of Vienna",
+      "Vienna University of Technology",
+      "University of Innsbruck",
+      "University of Graz",
+      "Vienna University of Economics and Business",
+      "University of Salzburg",
+      "Johannes Kepler University Linz",
+      "Medical University of Vienna",
+      "University of Klagenfurt",
+      "Montanuniversität Leoben"
+    ],
+    "Australia": [
+      "University of Melbourne",
+      "Australian National University",
+      "University of Sydney",
+      "University of New South Wales",
+      "University of Queensland",
+      "Monash University",
+      "University of Western Australia",
+      "University of Adelaide",
+      "University of Technology Sydney",
+      "Macquarie University"
     ]
   };
 
@@ -314,9 +427,47 @@ export const ApplicationForm = () => {
     });
   };
 
+  // Calculate required amount (Total Expense - Scholarship)
+  const calculateRequiredAmount = (totalExpense, scholarshipAmount) => {
+    const total = Number(totalExpense || 0);
+    const scholarship = Number(scholarshipAmount || 0);
+    return Math.max(0, total - scholarship); // Ensure non-negative
+  };
+
+  // Handle total expense change
+  const handleTotalExpenseChange = (value) => {
+    const newAmount = calculateRequiredAmount(value, form.scholarshipAmount);
+    setForm({
+      ...form,
+      totalExpense: value,
+      amount: newAmount.toString()
+    });
+  };
+
+  // Handle scholarship amount change
+  const handleScholarshipChange = (value) => {
+    const total = Number(form.totalExpense || 0);
+    const scholarship = Number(value || 0);
+    
+    // Prevent scholarship from being greater than total expense
+    if (scholarship > total && total > 0) {
+      toast.error("Scholarship amount cannot be greater than total expense.");
+      return;
+    }
+    
+    const newAmount = calculateRequiredAmount(form.totalExpense, value);
+    setForm({
+      ...form,
+      scholarshipAmount: value,
+      amount: newAmount.toString()
+    });
+  };
+
   // Final Application Submission (Step 3)
   async function handleSubmit(e) {
     e.preventDefault();
+
+
 
     // Validation
     if (!form.university || !form.program || !form.country || !form.gpa || !form.gradYear) {
@@ -337,16 +488,36 @@ export const ApplicationForm = () => {
       toast.error("Please specify when your program starts (e.g., Spring 2025, Fall 2025).");
       return;
     }
-    const amountNum = Number(form.amount || 0);
-    if (!amountNum || amountNum <= 0) {
-      toast.error("Please enter a valid requested amount.");
+
+    // Validate financial fields
+    const totalExpenseNum = Number(form.totalExpense || 0);
+    const scholarshipNum = Number(form.scholarshipAmount || 0);
+    const requiredAmountNum = Number(form.amount || 0);
+
+    if (!totalExpenseNum || totalExpenseNum <= 0) {
+      toast.error("Please enter a valid total expense amount.");
       return;
     }
 
-    // Ensure we have a valid studentId
-    const currentStudentId = user?.id || studentId;
+    if (scholarshipNum >= totalExpenseNum) {
+      toast.error("Your scholarship covers your full expenses. You don't need additional funding!");
+      return;
+    }
+
+    if (!requiredAmountNum || requiredAmountNum <= 0) {
+      toast.error("Required amount must be greater than 0.");
+      return;
+    }
+
+    // Ensure we have a valid studentId - use the student record ID, not user ID
+    const currentStudentId = user?.studentId || studentId;
     if (!currentStudentId) {
-      toast.error("Unable to identify student. Please log in again.");
+      console.error("❌ No studentId found:", { 
+        "user?.studentId": user?.studentId, 
+        "studentId": studentId,
+        "user": user 
+      });
+      toast.error("Unable to identify student profile. Please log in again.");
       navigate("/login");
       return;
     }
@@ -387,26 +558,46 @@ export const ApplicationForm = () => {
       });
 
       if (!studentRes.ok) {
-        const studentError = await studentRes.json();
-        console.error("❌ Student update failed:", studentError);
-        throw new Error(studentError.error || "Failed to update student profile");
+        let studentError;
+        try {
+          studentError = await studentRes.json();
+        } catch (parseError) {
+          console.error("❌ Failed to parse student update error:", parseError);
+          throw new Error(`Student update failed: HTTP ${studentRes.status}`);
+        }
+        
+        console.error("❌ Student update failed:", {
+          status: studentRes.status,
+          statusText: studentRes.statusText,
+          error: studentError,
+          payload: studentUpdatePayload,
+          studentId: currentStudentId,
+          hasToken: !!token
+        });
+        
+        throw new Error(studentError.error || studentError.message || "Failed to update student profile");
       }
+
+      console.log("✅ Student profile updated successfully");
 
       // Step 2: Create application with financial details
       const applicationPayload = {
         studentId: currentStudentId,
         term: form.term || "Not specified",
         currency: form.currency,
+        // Add the new financial breakdown
+        totalExpense: totalExpenseNum,
+        scholarshipAmount: scholarshipNum,
       };
       
-      // Add amount based on currency
+      // Add amount based on currency (this is the required amount after scholarship)
       if (form.currency === "PKR") {
-        applicationPayload.needPKR = amountNum;
+        applicationPayload.needPKR = requiredAmountNum;
       } else {
-        applicationPayload.needUSD = amountNum;
+        applicationPayload.needUSD = requiredAmountNum;
       }
 
-      console.log("� Creating application:", applicationPayload);
+      console.log("💰 Creating application:", applicationPayload);
 
       const appRes = await fetch(`${API}/api/applications`, {
         method: "POST",
@@ -668,53 +859,156 @@ export const ApplicationForm = () => {
               "form.name": form.name, 
               "user object": user 
             })}
-            <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4 items-center">
-              {/* Currency selector */}
-              <div className="space-y-1">
-                <select
-                  className="w-full rounded-2xl border px-3 py-2 text-sm"
-                  value={form.currency}
-                  onChange={(e) => setForm({ ...form, currency: e.target.value })}
-                >
-                  <option value="USD">🇺🇸 USD - US Dollar</option>
-                  <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                  <option value="GBP">🇬🇧 GBP - British Pound</option>
-                  <option value="EUR">🇪🇺 EUR - Euro</option>
-                  <option value="PKR">🇵🇰 PKR - Pakistani Rupee</option>
-                </select>
-                {form.country && (
-                  <p className="text-xs text-green-600">
-                    ✓ Auto-selected based on {form.country}
-                  </p>
-                )}
+            <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Currency Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Currency</label>
+              <select
+                className="w-full md:w-1/2 rounded-2xl border px-3 py-2 text-sm"
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value })}
+              >
+                <option value="USD">🇺🇸 USD - US Dollar</option>
+                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+                <option value="GBP">🇬🇧 GBP - British Pound</option>
+                <option value="EUR">🇪🇺 EUR - Euro</option>
+                <option value="PKR">🇵🇰 PKR - Pakistani Rupee</option>
+              </select>
+              {form.country && (
+                <p className="text-xs text-green-600">
+                  ✓ Auto-selected based on {form.country}
+                </p>
+              )}
+            </div>
+
+            {/* Financial Breakdown */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-slate-800">Financial Details</h3>
+              
+              {/* Total Expense */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Total Program Expense ({form.currency})
+                </label>
+                <Input
+                  placeholder={`Total cost of your program (${form.currency})`}
+                  type="number"
+                  min="0"
+                  value={form.totalExpense}
+                  onChange={(e) => handleTotalExpenseChange(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-slate-500">
+                  Include tuition, living expenses, books, and other costs
+                </p>
               </div>
 
-              {/* Amount field */}
-              <Input
-                placeholder={`Requested Amount (${form.currency})`}
-                type="number"
-                value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              />
+              {/* Scholarship Amount */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Scholarship/Financial Aid Amount ({form.currency})
+                </label>
+                <Input
+                  placeholder={`Scholarship amount you already have (${form.currency})`}
+                  type="number"
+                  min="0"
+                  max={form.totalExpense || undefined}
+                  value={form.scholarshipAmount}
+                  onChange={(e) => handleScholarshipChange(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-slate-500">
+                  Amount you've already secured from scholarships, family, or other sources
+                </p>
+              </div>
+
+              {/* Required Amount (Auto-calculated) */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Required Amount ({form.currency})
+                </label>
+                <div className="relative">
+                  <Input
+                    placeholder={`Amount you need (${form.currency})`}
+                    type="number"
+                    value={form.amount}
+                    readOnly
+                    className="bg-gray-50 cursor-not-allowed"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <span className="text-xs text-green-600 font-medium">Auto-calculated</span>
+                  </div>
+                </div>
+                <p className="text-xs text-green-600">
+                  ✓ This amount is automatically calculated: Total Expense - Scholarship
+                </p>
+              </div>
+
+              {/* Financial Summary Card */}
+              {form.totalExpense && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Financial Summary</h4>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <span>Total Expense:</span>
+                      <span className="font-medium">{Number(form.totalExpense || 0).toLocaleString()} {form.currency}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Scholarship:</span>
+                      <span className="font-medium text-green-600">-{Number(form.scholarshipAmount || 0).toLocaleString()} {form.currency}</span>
+                    </div>
+                    <hr className="border-blue-300" />
+                    <div className="flex justify-between font-semibold">
+                      <span>Required Amount:</span>
+                      <span className="text-blue-800">{Number(form.amount || 0).toLocaleString()} {form.currency}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="rounded-lg border p-4 text-sm">
-              <p className="mb-2 text-slate-600">Please review your application before submitting.</p>
-              <p><strong>Name:</strong> {user?.name || form.name || "[Your Name]"}</p>
-              <p><strong>Email:</strong> {user?.email || form.email || "[Your Email]"}</p>
-              <p><strong>Country:</strong> {form.country || "[University Country]"}</p>
-              <p><strong>University:</strong> {form.university === "Other" ? form.customUniversity : form.university || "[Your University]"}</p>
-              <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
-              <p><strong>Term:</strong> {form.term || "[Term]"}</p>
-              <p><strong>Amount:</strong> {form.amount || "[Amount]"} {form.currency}</p>
+            {/* Application Review */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-slate-800">Application Review</h3>
+              <div className="rounded-lg border p-4 text-sm space-y-2">
+                <p className="mb-3 text-slate-600 font-medium">Please review your application before submitting.</p>
+                
+                {/* Personal Information */}
+                <div className="space-y-1">
+                  <h4 className="font-medium text-slate-700 text-base">Personal Information</h4>
+                  <p><strong>Name:</strong> {user?.name || form.name || "[Your Name]"}</p>
+                  <p><strong>Email:</strong> {user?.email || form.email || "[Your Email]"}</p>
+                </div>
+
+                {/* Academic Information */}
+                <div className="space-y-1 pt-2">
+                  <h4 className="font-medium text-slate-700 text-base">Academic Information</h4>
+                  <p><strong>Country:</strong> {form.country || "[University Country]"}</p>
+                  <p><strong>University:</strong> {form.university === "Other" ? form.customUniversity : form.university || "[Your University]"}</p>
+                  <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
+                  <p><strong>Term:</strong> {form.term || "[Term]"}</p>
+                </div>
+
+                {/* Financial Information */}
+                <div className="space-y-1 pt-2">
+                  <h4 className="font-medium text-slate-700 text-base">Financial Information</h4>
+                  <p><strong>Total Expense:</strong> {form.totalExpense ? `${Number(form.totalExpense).toLocaleString()} ${form.currency}` : "[Total Expense]"}</p>
+                  <p><strong>Scholarship:</strong> {form.scholarshipAmount ? `${Number(form.scholarshipAmount).toLocaleString()} ${form.currency}` : "0 " + form.currency}</p>
+                  <p><strong>Required Amount:</strong> <span className="text-blue-600 font-semibold">{form.amount ? `${Number(form.amount).toLocaleString()} ${form.currency}` : "[Required Amount]"}</span></p>
+                </div>
+              </div>
             </div>
+
+
 
             <div className="flex justify-between">
               <Button type="button" variant="outline" onClick={back}>
                 Back
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button 
+                type="submit" 
+                disabled={loading}
+              >
                 {loading ? "Submitting..." : "Submit Application"}
               </Button>
             </div>

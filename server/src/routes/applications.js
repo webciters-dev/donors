@@ -121,6 +121,7 @@ router.post("/", async (req, res) => {
     const data = {
       studentId,
       term: String(term),
+      status: "DRAFT", // Fix: Create applications as DRAFT instead of default PENDING
       notes: notes ?? null,
       fxRate:
         fxRate === undefined || fxRate === null || fxRate === ""

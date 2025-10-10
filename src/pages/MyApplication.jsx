@@ -1096,13 +1096,29 @@ export const MyApplication = () => {
             <div className="font-medium">Submit Application</div>
             <div className="text-sm text-slate-600">We’ll check your profile, required documents, and any requested items before sending it for review.</div>
           </div>
-          <Button className="rounded-2xl" onClick={submitApplication}>Submit for Review</Button>
+          <Button 
+            className={`rounded-2xl ${completeness.percent < 100 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={completeness.percent < 100 ? undefined : submitApplication}
+            disabled={completeness.percent < 100}
+          >
+            Submit for Review
+          </Button>
         </div>
         <ul className="text-sm text-slate-600 list-disc pl-5">
           <li>Profile complete: {completeness.percent}%</li>
           <li>Required documents: {REQUIRED_DOCS.filter(d=>haveDocs.has(d)).length}/{REQUIRED_DOCS.length}</li>
           <li>Open requests: {requestedItems.filter(r=>!r.addressed).length}</li>
         </ul>
+        
+        {completeness.percent < 100 && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="text-sm text-yellow-800 font-medium">Profile Incomplete</div>
+            <div className="text-xs text-yellow-700 mt-1">
+              Complete your profile in "My Profile" section before submitting for review.
+              <br />Missing: {completeness.missing.join(", ")}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

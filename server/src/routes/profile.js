@@ -145,6 +145,14 @@ router.post(
   requireAuth,
   onlyRoles("STUDENT"),
   async (req, res) => {
+    // 🚨 DISABLED: This endpoint was automatically creating applications without user consent
+    // Applications should only be created when the student explicitly submits via ApplicationForm.jsx
+    console.log("⚠️  Blocked automatic application creation attempt");
+    return res.status(400).json({ 
+      error: "Application creation disabled. Applications should only be submitted through the main application form." 
+    });
+    
+    /*
     try {
       const student = await getAuthedStudent(req);
       if (!student) {
@@ -241,6 +249,7 @@ router.post(
       console.error("POST /api/profile/application failed:", err);
       res.status(500).json({ error: "Failed to save application." });
     }
+    */
   }
 );
 
