@@ -177,3 +177,72 @@ export async function sendStudentNotificationEmail({
     throw error;
   }
 }
+
+export async function sendDocumentUploadNotification({ 
+  email, 
+  name, 
+  studentName,
+  documentName,
+  applicationId 
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@awakeconnect.org>',
+      to: email,
+      subject: '📄 New Document Uploaded - AWAKE Connect',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #059669; margin: 0; font-size: 24px;">📄 Document Uploaded</h1>
+            </div>
+            
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hello ${name},</p>
+            
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+              <strong>${studentName}</strong> has uploaded a new document for review:
+            </p>
+            
+            <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
+              <p style="margin: 0; font-weight: bold; color: #0369a1; font-size: 16px;">
+                📎 ${documentName}
+              </p>
+            </div>
+            
+            <p style="font-size: 16px; color: #374151; margin-bottom: 30px;">
+              Please log in to your dashboard to review the uploaded document and continue the field verification process.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}/field-officer/review/${applicationId}" 
+                 style="background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                Review Document
+              </a>
+            </div>
+            
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Document upload notification sent to ${email}:`, info.messageId);
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('Failed to send document upload notification:', error);
+    // Don't throw error - we don't want document upload to fail if email fails
+    return { success: false, error: error.message };
+  }
+}

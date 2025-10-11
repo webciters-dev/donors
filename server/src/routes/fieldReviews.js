@@ -42,6 +42,21 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       return res.status(400).json({ error: "applicationId, studentId, officerUserId required" });
     }
 
+    // Check for existing assignment to prevent duplicates
+    const existingReview = await prisma.fieldReview.findFirst({
+      where: {
+        applicationId: applicationId,
+        officerUserId: officerUserId
+      }
+    });
+
+    if (existingReview) {
+      return res.status(400).json({ 
+        error: "Application is already assigned to this field officer",
+        existingReviewId: existingReview.id 
+      });
+    }
+
     // Get field officer details
     const fieldOfficer = await prisma.user.findUnique({
       where: { id: officerUserId },
@@ -315,6 +330,49 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
   } catch (e) {
     console.error("PATCH /field-reviews/:id/reassign failed:", e);
     res.status(500).json({ error: "Failed to reassign field officer" });
+  }
+});
+
+// Unassign/Delete field review (admin only)
+router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Get review details before deletion for logging
+    const review = await prisma.fieldReview.findUnique({
+      where: { id },
+      include: { 
+        application: { include: { student: true } },
+        officer: { select: { name: true, email: true } }
+      }
+    });
+
+    if (!review) {
+      return res.status(404).json({ error: "Review assignment not found" });
+    }
+
+    // Delete the field review
+    await prisma.fieldReview.delete({
+      where: { id }
+    });
+
+    // Log the unassignment as a message
+    await prisma.message.create({
+      data: {
+        studentId: review.studentId,
+        applicationId: review.applicationId,
+        text: `Assignment removed from ${review.officer.name || review.officer.email}. Application is now unassigned.`,
+        fromRole: "admin"
+      }
+    });
+
+    res.json({ 
+      success: true, 
+      message: `Application successfully unassigned from ${review.officer.name || review.officer.email}` 
+    });
+  } catch (e) {
+    console.error("DELETE /field-reviews/:id failed:", e);
+    res.status(500).json({ error: "Failed to unassign field officer" });
   }
 });
 

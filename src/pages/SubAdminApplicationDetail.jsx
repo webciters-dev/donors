@@ -30,6 +30,59 @@ export default function SubAdminApplicationDetail() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [customDocumentName, setCustomDocumentName] = useState("");
+
+  // Helper function to check if document is newly uploaded
+  const isDocumentNew = (uploadedAt, documentType) => {
+    if (!uploadedAt) return false;
+    
+    try {
+      const uploadDate = new Date(uploadedAt);
+      const now = new Date();
+      
+      // Check if the date is valid
+      if (isNaN(uploadDate.getTime())) {
+        return false;
+      }
+      
+      const hoursAgo = (now - uploadDate) / (1000 * 60 * 60);
+      
+      // Only consider documents as "new" if uploaded within last 2 hours
+      // This prevents old documents from showing as new
+      const isRecent = hoursAgo <= 2;
+      
+      // Also check if it's uploaded today
+      const uploadDay = uploadDate.toDateString();
+      const today = now.toDateString();
+      const isToday = uploadDay === today;
+      
+      // Document is "new" only if uploaded within last 2 hours AND today
+      return isRecent && isToday;
+    } catch (error) {
+      console.error('Error checking document age:', error);
+      return false;
+    }
+  };
+
+  // Helper function to check if message is about document upload
+  const isDocumentUploadMessage = (messageText) => {
+    const documentKeywords = [
+      'document', 'uploaded', 'file', 'certificate', 'transcript', 
+      'invoice', 'CNIC', 'photo', 'utility', 'income', 'fee'
+    ];
+    const text = messageText.toLowerCase();
+    return documentKeywords.some(keyword => text.includes(keyword)) && 
+           (text.includes('uploaded') || text.includes('document'));
+  };
+
+  // Helper function to check if message is recent (within last 24 hours)
+  const isMessageRecent = (createdAt) => {
+    if (!createdAt) return false;
+    const messageDate = new Date(createdAt);
+    const now = new Date();
+    const hoursAgo = (now - messageDate) / (1000 * 60 * 60);
+    return hoursAgo <= 24; // Consider "recent" if created within last 24 hours
+  };
 
   // Field verification form state
   const [fieldVerification, setFieldVerification] = useState({
@@ -226,8 +279,19 @@ export default function SubAdminApplicationDetail() {
         return;
       }
 
-      // The checked docs are already in readable format from the UI
-      const docNames = checkedDocs;
+      // Validate "Other" document has custom name
+      if (checkedDocs.includes('Other') && !customDocumentName.trim()) {
+        toast.error("Please specify what document is required for 'Other'");
+        return;
+      }
+
+      // Handle "Other" document - replace with custom name
+      const docNames = checkedDocs.map(doc => {
+        if (doc === 'Other') {
+          return customDocumentName.trim();
+        }
+        return doc;
+      });
 
       const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
         method: "POST",
@@ -264,6 +328,14 @@ export default function SubAdminApplicationDetail() {
         ? prev[field].filter(item => item !== value)
         : [...prev[field], value]
     }));
+    
+    // Clear custom document name when "Other" is unchecked
+    if (field === 'additionalDocumentsRequested' && value === 'Other') {
+      const isCurrentlySelected = fieldVerification[field].includes(value);
+      if (isCurrentlySelected) {
+        setCustomDocumentName("");
+      }
+    }
   }
 
   async function sendMessage() {
@@ -284,7 +356,7 @@ export default function SubAdminApplicationDetail() {
       if (!res.ok) throw new Error("Failed to send message");
       
       const msg = await res.json();
-      setMessages(prev => [...prev, msg]);
+      setMessages(prev => [msg, ...prev]); // Add new message at the beginning
       setNewMessage("");
       toast.success("Message sent");
       
@@ -569,30 +641,42 @@ export default function SubAdminApplicationDetail() {
           {documents.length === 0 ? (
             <div className="text-sm text-slate-600">No documents uploaded yet</div>
           ) : (
-            documents.map((doc, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-shadow">
-                <div className="flex items-center gap-2">
-                  {doc.url ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <a
-                        href={`${API}${doc.url}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-green-700 hover:text-green-900 hover:underline font-medium"
-                      >
-                        📁 {doc.originalName || doc.type.replace('_', ' ')}
-                      </a>
-                    </>
-                  ) : (
-                    <>
-                      <AlertTriangle className="h-4 w-4 text-red-600" />
-                      <span className="font-medium text-red-600">{doc.type.replace('_', ' ')} - Missing</span>
-                    </>
-                  )}
+            documents.map((doc, idx) => {
+              const isNew = doc.uploadedAt && isDocumentNew(doc.uploadedAt, doc.type);
+              const newDocumentClasses = isNew 
+                ? "bg-blue-50 border-blue-300 shadow-lg ring-2 ring-blue-200" 
+                : "border-gray-200";
+              
+              return (
+                <div key={idx} className={`flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-all ${newDocumentClasses}`}>
+                  <div className="flex items-center gap-2">
+                    {doc.url ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <a
+                          href={`${API}${doc.url}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                        >
+                          📁 {doc.originalName || doc.type.replace('_', ' ')}
+                        </a>
+                        {isNew && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            ✨ New
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="font-medium text-red-600">{doc.type.replace('_', ' ')} - Missing</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </Card>
@@ -635,6 +719,22 @@ export default function SubAdminApplicationDetail() {
                 </label>
               ))}
             </div>
+            
+            {/* Custom Document Input for "Other" */}
+            {fieldVerification.additionalDocumentsRequested.includes('Other') && (
+              <div className="mt-3">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Specify Other Document Required:
+                </label>
+                <input
+                  type="text"
+                  value={customDocumentName}
+                  onChange={(e) => setCustomDocumentName(e.target.value)}
+                  placeholder="e.g., Bank Statement, Property Documents, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
             
             {/* Send Document Request Button */}
             {fieldVerification.additionalDocumentsRequested.length > 0 && (
@@ -728,20 +828,37 @@ export default function SubAdminApplicationDetail() {
             <div className="text-center py-4 text-slate-600">No messages yet</div>
           ) : (
             <div className="space-y-3 max-h-60 overflow-y-auto">
-              {messages.map((msg, idx) => (
-                <div key={idx} className="p-3 rounded-lg bg-slate-50">
-                  <div className="flex items-center justify-between mb-1">
-                    <Badge variant="secondary" size="sm">
-                      {msg.fromRole === 'student' ? '👤 Student' : 
-                       msg.fromRole === 'field_officer' ? '🏢 Sub Admin' : '👨‍💼 Admin'}
-                    </Badge>
-                    <span className="text-xs text-slate-500">
-                      {new Date(msg.createdAt).toLocaleString()}
-                    </span>
+              {messages.map((msg, idx) => {
+                const isDocumentMsg = isDocumentUploadMessage(msg.text);
+                const isRecent = isMessageRecent(msg.createdAt);
+                const shouldHighlight = isDocumentMsg && isRecent;
+                
+                const messageClasses = shouldHighlight
+                  ? "p-3 rounded-lg bg-green-50 border-2 border-green-200 shadow-lg"
+                  : "p-3 rounded-lg bg-slate-50";
+                
+                return (
+                  <div key={idx} className={messageClasses}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" size="sm">
+                          {msg.fromRole === 'student' ? '👤 Student' : 
+                           msg.fromRole === 'field_officer' ? '🏢 Sub Admin' : '👨‍💼 Admin'}
+                        </Badge>
+                        {shouldHighlight && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            📄 New Upload
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {new Date(msg.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-slate-800">{msg.text}</div>
                   </div>
-                  <div className="text-slate-800">{msg.text}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           

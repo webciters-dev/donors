@@ -165,16 +165,127 @@ export const AdminApplications = () => {
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
+        const errorData = await res.text();
+        let errorMessage = errorData;
+        
+        // Handle specific duplicate assignment error
+        if (res.status === 400 && errorData.includes("already assigned")) {
+          errorMessage = "This application is already assigned to the selected field officer.";
+        }
+        
+        throw new Error(errorMessage || `HTTP ${res.status}`);
       }
 
       toast.success("Sub Admin assigned successfully!");
-      // Refresh the applications to show updated status
-      // The load function will run again due to polling
+      
+      // Immediately update the local state to reflect assignment
+      const assignedOfficer = officers.find(o => o.id === officerId);
+      setApps((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? { 
+                ...app, 
+                fieldReviews: [
+                  ...app.fieldReviews,
+                  {
+                    id: `temp-${Date.now()}`, // Temporary ID until next refresh
+                    officerUserId: officerId,
+                    status: "PENDING",
+                    applicationId,
+                    studentId
+                  }
+                ]
+              }
+            : app
+        )
+      );
     } catch (err) {
       console.error(err);
-      toast.error(`Assignment failed: ${err.message}`);
+      // Show more user-friendly error messages
+      if (err.message.includes("already assigned")) {
+        toast.warning("Application Already Assigned", {
+          description: "This application is already assigned to the selected field officer."
+        });
+      } else {
+        toast.error(`Assignment failed: ${err.message}`);
+      }
+    } finally {
+      setAssigningId(null);
+    }
+  }
+
+  // ---------------------------
+  // Reassign Sub Admin
+  // ---------------------------
+  async function reassignSubAdmin(reviewId, newOfficerId, applicationId) {
+    try {
+      setAssigningId(`reassign-${reviewId}`);
+      const res = await fetch(`${API}/api/field-reviews/${reviewId}/reassign`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeader },
+        body: JSON.stringify({ newOfficerUserId: newOfficerId })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        throw new Error(errorData || `HTTP ${res.status}`);
+      }
+
+      const newOfficer = officers.find(o => o.id === newOfficerId);
+      toast.success(`Application reassigned to ${newOfficer?.name || newOfficer?.email}!`);
+      
+      // Immediately update the local state to reflect reassignment
+      setApps((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? { 
+                ...app, 
+                fieldReviews: app.fieldReviews.map(fr => 
+                  fr.id === reviewId 
+                    ? { ...fr, officerUserId: newOfficerId, status: "PENDING" }
+                    : fr
+                )
+              }
+            : app
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error(`Reassignment failed: ${err.message}`);
+    } finally {
+      setAssigningId(null);
+    }
+  }
+
+  // ---------------------------
+  // Unassign Sub Admin
+  // ---------------------------
+  async function unassignSubAdmin(reviewId, applicationId) {
+    try {
+      setAssigningId(applicationId);
+      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: { ...authHeader }
+      });
+
+      if (!res.ok) {
+        const errorData = await res.text();
+        throw new Error(errorData || `HTTP ${res.status}`);
+      }
+
+      toast.success("Application unassigned successfully!");
+      
+      // Immediately update the local state to reflect unassignment
+      setApps((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? { ...app, fieldReviews: [] } // Clear field reviews to show unassigned
+            : app
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error(`Unassignment failed: ${err.message}`);
     } finally {
       setAssigningId(null);
     }
@@ -378,7 +489,7 @@ export const AdminApplications = () => {
                     )}
                     
                     {/* Sub Admin Assignment */}
-                    {(!row.fieldReviews || row.fieldReviews.length === 0) && (
+                    {(!row.fieldReviews || row.fieldReviews.length === 0) ? (
                       <div className="flex items-center gap-2">
                         <select 
                           className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
@@ -400,6 +511,50 @@ export const AdminApplications = () => {
                         {assigningId === row.id && (
                           <span className="text-xs text-slate-500">Assigning...</span>
                         )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="text-xs text-slate-600">
+                          Assigned to: {row.fieldReviews.map(fr => {
+                            const officer = officers.find(o => o.id === fr.officerUserId);
+                            return officer?.name || officer?.email || 'Unknown Officer';
+                          }).join(', ')}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {/* Reassign Dropdown */}
+                          <select 
+                            className="text-xs border border-gray-300 rounded px-1 py-0.5 bg-white"
+                            disabled={assigningId === row.id || assigningId === `reassign-${row.fieldReviews[0]?.id}`}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                reassignSubAdmin(row.fieldReviews[0].id, e.target.value, row.id);
+                                e.target.value = ""; // Reset selection
+                              }
+                            }}
+                          >
+                            <option value="">🔄 Reassign...</option>
+                            {officers.filter(o => o.id !== row.fieldReviews[0]?.officerUserId).map(officer => (
+                              <option key={officer.id} value={officer.id}>
+                                {officer.name || officer.email}
+                              </option>
+                            ))}
+                          </select>
+                          
+                          {/* Unassign Button */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs px-2 py-0.5 h-6"
+                            disabled={assigningId === row.id || assigningId === `reassign-${row.fieldReviews[0]?.id}`}
+                            onClick={() => unassignSubAdmin(row.fieldReviews[0].id, row.id)}
+                          >
+                            ❌ Unassign
+                          </Button>
+                          
+                          {(assigningId === row.id || assigningId === `reassign-${row.fieldReviews[0]?.id}`) && (
+                            <span className="text-xs text-slate-500">Processing...</span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { CheckCircle2, Circle, MessageCircle, User } from "lucide-react";
 import DocumentUploader from "@/components/DocumentUploader";
 import { useAuth } from "@/lib/AuthContext";
+import { calculateProfileCompleteness } from "@/lib/profileValidation";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const DEMO_STUDENT_ID = import.meta.env.VITE_DEMO_STUDENT_ID || "";
@@ -21,52 +22,8 @@ const fmtPKR = (n) =>
   Number(n || 0).toLocaleString("en-PK", { maximumFractionDigits: 0 });
 
 // Which profile fields matter for “completeness”
-const REQUIRED_PROFILE_KEYS = [
-  "cnic",
-  "guardianName",
-  "guardianCnic",
-  "phone",
-  "address",
-  "city",
-  "province",
-  "university",
-  "program",
-  "gpa",
-  "gradYear",
-  // Current Education fields
-  "currentInstitution",
-  "currentCity", 
-  "currentCompletionYear",
-];
-
 // Required documents that affect profile completion percentage
 const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
-
-function computeProfileCompleteness(student, uploadedDocs = new Set()) {
-  if (!student) return { percent: 0, missing: REQUIRED_PROFILE_KEYS, missingDocs: REQUIRED_DOCS };
-  
-  // Check profile fields
-  const missingFields = REQUIRED_PROFILE_KEYS.filter((k) => {
-    const v = student?.[k];
-    return v === null || v === undefined || v === "" || Number.isNaN(v);
-  });
-  
-  // Check documents
-  const missingDocs = REQUIRED_DOCS.filter(doc => !uploadedDocs.has(doc));
-  
-  // Calculate total completeness (fields + documents)
-  const totalRequiredItems = REQUIRED_PROFILE_KEYS.length + REQUIRED_DOCS.length;
-  const completedItems = (REQUIRED_PROFILE_KEYS.length - missingFields.length) + (REQUIRED_DOCS.length - missingDocs.length);
-  const percent = Math.round((completedItems / totalRequiredItems) * 100);
-  
-  return { 
-    percent, 
-    missing: missingFields, 
-    missingDocs,
-    fieldCompletion: Math.round(((REQUIRED_PROFILE_KEYS.length - missingFields.length) / REQUIRED_PROFILE_KEYS.length) * 100),
-    docCompletion: Math.round(((REQUIRED_DOCS.length - missingDocs.length) / REQUIRED_DOCS.length) * 100)
-  };
-}
 
 export const MyApplication = () => {
   const navigate = useNavigate();
@@ -82,13 +39,7 @@ export const MyApplication = () => {
   const [reloadingMsgs, setReloadingMsgs] = useState(false);
   const [serverRequests, setServerRequests] = useState(null); // { items, lastRequestText }
   const [showProfileBanner, setShowProfileBanner] = useState(true);
-  // current education temp form for inline edit
-  const [currentEdu, setCurrentEdu] = useState({
-    currentInstitution: "",
-    currentCity: "",
-    currentCompletionYear: "",
-  });
-  const [savingCurrentEdu, setSavingCurrentEdu] = useState(false);
+
   const [preferredUploadType, setPreferredUploadType] = useState(null);
 
   // Load current application (polling)
@@ -145,33 +96,7 @@ export const MyApplication = () => {
     }
   }, [user?.studentId]);
 
-  // Prefill current education fields from student profile
-  useEffect(() => {
-    let cancel = false;
-    async function loadStudent() {
-      if (!token) return;
-      try {
-        const res = await fetch(`${API}/api/students/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        const s = data?.student || {};
-        if (cancel) return;
-        setCurrentEdu({
-          currentInstitution: s.currentInstitution || "",
-          currentCity: s.currentCity || "",
-          currentCompletionYear: s.currentCompletionYear ?? "",
-        });
-      } catch (_) {
-        // ignore
-      }
-    }
-    loadStudent();
-    return () => {
-      cancel = true;
-    };
-  }, [token]);
+
 
   // Load messages when the application is known
   useEffect(() => {
@@ -329,8 +254,8 @@ export const MyApplication = () => {
         throw new Error(msg);
       }
 
-  setMessages((prev) => [...prev, { from: "student", text: textToSend }]);
-  setRawMessages((prev) => [...prev, { fromRole: "student", text: textToSend }]);
+  setMessages((prev) => [{ from: "student", text: textToSend }, ...prev]); // Add new message at the beginning
+  setRawMessages((prev) => [{ fromRole: "student", text: textToSend }, ...prev]); // Add new message at the beginning
       setMessage("");
       toast.success("Message sent");
     } catch (err) {
@@ -523,10 +448,29 @@ export const MyApplication = () => {
 
   // --- completeness memo
   const profile = application?.student || null;
-  const completeness = useMemo(
-    () => computeProfileCompleteness(profile, haveDocs),
-    [profile, haveDocs]
-  );
+  const completeness = useMemo(() => {
+    if (!profile) return { percent: 0, missing: [], missingDocs: REQUIRED_DOCS };
+    
+    // Use centralized profile validation
+    const profileResult = calculateProfileCompleteness(profile);
+    
+    // Check documents
+    const missingDocs = REQUIRED_DOCS.filter(doc => !haveDocs.has(doc));
+    
+    // Calculate combined completeness (profile + documents)
+    const totalRequiredItems = 15 + REQUIRED_DOCS.length; // 15 profile fields + docs
+    const profileCompleted = Math.round((profileResult.percent / 100) * 15);
+    const docsCompleted = REQUIRED_DOCS.length - missingDocs.length;
+    const percent = Math.round(((profileCompleted + docsCompleted) / totalRequiredItems) * 100);
+    
+    return {
+      percent,
+      missing: profileResult.missing,
+      missingDocs,
+      fieldCompletion: profileResult.percent,
+      docCompletion: Math.round((docsCompleted / REQUIRED_DOCS.length) * 100)
+    };
+  }, [profile, haveDocs]);
   const showBanner =
     showProfileBanner &&
     user?.role === "STUDENT" &&
@@ -601,40 +545,7 @@ export const MyApplication = () => {
     ? `₨ ${fmtPKR(application.needPKR)}`
     : `$ ${fmtUSD(application.needUSD)}`;
 
-  async function saveCurrentEducation() {
-    if (!token) return;
-    try {
-      // minimal validation
-      if (!currentEdu.currentInstitution.trim() || !currentEdu.currentCity.trim()) {
-        toast.error("Please fill current institution and city");
-        return;
-      }
-      const yr = Number(currentEdu.currentCompletionYear);
-      if (!yr || Number.isNaN(yr)) {
-        toast.error("Please enter a valid completion year");
-        return;
-      }
-      setSavingCurrentEdu(true);
-      const res = await fetch(`${API}/api/profile`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          currentInstitution: currentEdu.currentInstitution || null,
-          currentCity: currentEdu.currentCity || null,
-          currentCompletionYear: currentEdu.currentCompletionYear
-            ? Number(currentEdu.currentCompletionYear)
-            : null,
-        }),
-      });
-      if (!res.ok) throw new Error(await res.text());
-      toast.success("Current education saved");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to save current education");
-    } finally {
-      setSavingCurrentEdu(false);
-    }
-  }
+
 
   return (
     <div className="space-y-6">
@@ -1012,36 +923,7 @@ export const MyApplication = () => {
         })()}
       </Card>
 
-      {/* Current Education Details */}
-      <Card className="p-6 space-y-4">
-        <h3 className="font-medium">Current Education (if different from target)</h3>
-        <div className="grid md:grid-cols-3 gap-3">
-          <Input
-            placeholder="Current Institution"
-            value={currentEdu.currentInstitution}
-            onChange={(e) => setCurrentEdu({ ...currentEdu, currentInstitution: e.target.value })}
-          />
-          <Input
-            placeholder="Current City"
-            value={currentEdu.currentCity}
-            onChange={(e) => setCurrentEdu({ ...currentEdu, currentCity: e.target.value })}
-          />
-          <Input
-            placeholder="Completion Year"
-            type="number"
-            value={currentEdu.currentCompletionYear}
-            onChange={(e) => setCurrentEdu({ ...currentEdu, currentCompletionYear: e.target.value })}
-          />
-        </div>
-        <div className="text-sm text-slate-600">
-          You can upload certificates and transcripts under Documents using these types: TRANSCRIPT, DEGREE_CERTIFICATE, ENROLLMENT_CERTIFICATE.
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={saveCurrentEducation} disabled={savingCurrentEdu} className="rounded-2xl">
-            {savingCurrentEdu ? "Saving..." : "Save Current Education"}
-          </Button>
-        </div>
-      </Card>
+
 
       {/* Old section removed - now using enhanced Action Required section above */}
       {false && <Card className="p-6 space-y-4">
@@ -1125,10 +1007,15 @@ export const MyApplication = () => {
         
         {completeness.percent < 100 && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-sm text-yellow-800 font-medium">Profile Incomplete</div>
+            <div className="text-sm text-yellow-800 font-medium">Profile Incomplete ({completeness.percent}%)</div>
             <div className="text-xs text-yellow-700 mt-1">
               Complete your profile in "My Profile" section before submitting for review.
-              <br />Missing: {completeness.missing.join(", ")}
+              {completeness.missing.length > 0 && (
+                <><br />Missing profile fields: {completeness.missing.join(", ")}</>
+              )}
+              {completeness.missingDocs.length > 0 && (
+                <><br />Missing documents: {completeness.missingDocs.join(", ")}</>
+              )}
             </div>
           </div>
         )}

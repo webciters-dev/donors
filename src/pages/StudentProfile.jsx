@@ -45,6 +45,11 @@ export default function StudentProfile() {
     address: "",
     city: "",
     province: "",
+    // Current Education fields
+    currentInstitution: "",
+    currentCity: "",
+    currentCompletionYear: "",
+    // Future Education fields
     university: "",
     program: "",
     gpa: "",
@@ -78,6 +83,11 @@ export default function StudentProfile() {
           address: s.address || "",
           city: s.city || "",
           province: s.province || "",
+          // Current Education fields
+          currentInstitution: s.currentInstitution || "",
+          currentCity: s.currentCity || "",
+          currentCompletionYear: s.currentCompletionYear ?? "",
+          // Future Education fields  
           university: s.university || "",
           program: s.program || "",
           gpa: s.gpa ?? "",
@@ -149,6 +159,7 @@ export default function StudentProfile() {
         // coerce numeric and normalize before send
         gpa: form.gpa === "" ? null : Number(form.gpa),
         gradYear: form.gradYear === "" ? null : Number(form.gradYear),
+        currentCompletionYear: form.currentCompletionYear === "" ? null : Number(form.currentCompletionYear),
         dateOfBirth: form.dateOfBirth
           ? new Date(form.dateOfBirth).toISOString()
           : null,
@@ -325,6 +336,59 @@ export default function StudentProfile() {
             {errors.province && (
               <p className="text-xs text-rose-600 mt-1">{errors.province}</p>
             )}
+          </div>
+
+          {/* Current Education Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Current Education</h3>
+          </div>
+
+          {/* Current Institution */}
+          <div>
+            <label className="block text-sm mb-1">Current Institution</label>
+            <Input
+              value={form.currentInstitution}
+              onChange={(e) => setVal("currentInstitution", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., ABC College"
+            />
+            {errors.currentInstitution && (
+              <p className="text-xs text-rose-600 mt-1">{errors.currentInstitution}</p>
+            )}
+          </div>
+
+          {/* Current City */}
+          <div>
+            <label className="block text-sm mb-1">Current Institution City</label>
+            <Input
+              value={form.currentCity}
+              onChange={(e) => setVal("currentCity", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., Lahore"
+            />
+            {errors.currentCity && (
+              <p className="text-xs text-rose-600 mt-1">{errors.currentCity}</p>
+            )}
+          </div>
+
+          {/* Current Completion Year */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Year of Completion (Current Education)</label>
+            <Input
+              type="number"
+              value={form.currentCompletionYear}
+              onChange={(e) => setVal("currentCompletionYear", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., 2024"
+            />
+            {errors.currentCompletionYear && (
+              <p className="text-xs text-rose-600 mt-1">{errors.currentCompletionYear}</p>
+            )}
+          </div>
+
+          {/* Future Education Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Future Education</h3>
           </div>
 
           {/* University */}

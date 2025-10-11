@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth } from "../middleware/auth.js";
+import { sendDocumentUploadNotification } from "../lib/emailService.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -84,6 +85,14 @@ router.post("/", requireAuth, upload.single("file"), async (req, res) => {
       },
     });
 
+    // Send email notification to assigned field officer/admin (async, don't block response)
+    if (applicationId && req.user.role === 'STUDENT') {
+      // Only notify when student uploads documents (not when admin/field officers upload)
+      notifyDocumentUpload(applicationId, studentId, doc.originalName || doc.type).catch(err => {
+        console.error('Failed to send document upload notification:', err);
+      });
+    }
+
     res.status(201).json({ ok: true, document: doc });
   } catch (err) {
     console.error("Upload failed:", err);
@@ -153,5 +162,61 @@ router.delete("/:id", requireAuth, async (req, res) => {
     res.status(500).json({ error: "Failed to delete document" });
   }
 });
+
+// Helper function to notify field officer/admin about document uploads
+async function notifyDocumentUpload(applicationId, studentId, documentName) {
+  try {
+    // Get student info
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { name: true, email: true }
+    });
+
+    if (!student) return;
+
+    // Find who is assigned to review this application
+    const fieldReview = await prisma.fieldReview.findFirst({
+      where: { applicationId },
+      include: {
+        officer: {
+          select: { email: true, name: true, role: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let recipientEmail = null;
+    let recipientName = null;
+
+    if (fieldReview && fieldReview.officer) {
+      // Notify assigned field officer
+      recipientEmail = fieldReview.officer.email;
+      recipientName = fieldReview.officer.name || 'Field Officer';
+    } else {
+      // No field officer assigned, notify admin
+      const admin = await prisma.user.findFirst({
+        where: { role: 'ADMIN' },
+        select: { email: true, name: true }
+      });
+      
+      if (admin) {
+        recipientEmail = admin.email;
+        recipientName = admin.name || 'Admin';
+      }
+    }
+
+    if (recipientEmail) {
+      await sendDocumentUploadNotification({
+        email: recipientEmail,
+        name: recipientName,
+        studentName: student.name,
+        documentName: documentName,
+        applicationId: applicationId
+      });
+    }
+  } catch (error) {
+    console.error('Error in notifyDocumentUpload:', error);
+  }
+}
 
 export default router;

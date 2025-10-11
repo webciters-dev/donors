@@ -23,7 +23,7 @@ const messages = await prisma.message.findMany({
     studentId,
     ...(applicationId ? { applicationId } : {}),
   },
-  orderBy: { createdAt: "asc" }, // oldest → newest
+  orderBy: { createdAt: "desc" }, // newest → oldest
   select: {
     id: true,
     text: true,

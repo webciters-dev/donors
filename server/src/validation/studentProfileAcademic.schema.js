@@ -40,5 +40,13 @@ export const studentProfileAcademicSchema = z
       .int("Graduation year must be an integer")
       .min(THIS_YEAR - 1, `Enter a valid graduation year (${THIS_YEAR - 1}–${THIS_YEAR + 10})`)
       .max(THIS_YEAR + 10, `Enter a valid graduation year (${THIS_YEAR - 1}–${THIS_YEAR + 10})`),
+    // Current Education fields
+    currentInstitution: z.string().min(1, "Current institution is required"),
+    currentCity: z.string().min(1, "Current institution city is required"),
+    currentCompletionYear: z
+      .coerce.number({ invalid_type_error: "Current completion year must be a number" })
+      .int("Current completion year must be an integer")
+      .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
+      .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
   })
   .required();
