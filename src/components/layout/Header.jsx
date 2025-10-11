@@ -20,7 +20,7 @@ export const Nav = ({ active, setActive }) => {
   ];
 
   const donorTabs = [
-    { key: "marketplace", label: "Sponsor Students" },
+    { key: "marketplace", label: "Sponsor a Student" },
     { key: "donor", label: "My Dashboard" }
   ];
   
@@ -28,8 +28,8 @@ export const Nav = ({ active, setActive }) => {
 
   // For unauthenticated users - show public browse and apply
   const unauthedTabs = [
-    { key: "browse", label: "Sponsor Students" },
-    { key: "apply", label: "Apply for Aid" }
+    { key: "browse", label: "Sponsor a Student" },
+    { key: "apply", label: "Request Financial Aid" }
   ];
 
   const tabs = [
@@ -109,7 +109,7 @@ export const Nav = ({ active, setActive }) => {
                   className="rounded-2xl hidden sm:inline-flex"
                   onClick={() => navigate("/donor-signup")}
                 >
-                  Become a Donor
+                  Donor Signup
                 </Button>
                 <Button className="rounded-2xl" onClick={() => navigate("/login")}>
                   Sign In

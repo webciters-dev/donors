@@ -51,17 +51,17 @@ export default function DonorBrowse() {
     <div className="space-y-6">
       <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold text-emerald-900">Find Students to Help</h1>
+          <h1 className="text-2xl font-semibold text-emerald-900">Sponsor a Student Today</h1>
           <Button 
             onClick={() => navigate("/donor-signup")} 
             className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-6"
           >
-            Start Sponsoring
+            Join as Donor
           </Button>
         </div>
         <p className="text-emerald-800 text-sm max-w-2xl">
-          🎓 Make a difference in a student's life. Browse deserving students who need financial support for their education. 
-          <strong> Sign up as a donor to see full profiles and sponsor students directly.</strong>
+          💡 Transform lives through education. Browse verified students who need your support to achieve their academic dreams. 
+          <strong> Create your donor account to unlock detailed profiles and start making an impact.</strong>
         </p>
       </div>
 
@@ -82,10 +82,10 @@ export default function DonorBrowse() {
               onClick={() => navigate("/donor-signup")} 
               className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-6"
             >
-              Sign Up as Donor
+              Donor Signup
             </Button>
             <p className="text-sm text-slate-500">
-              Get notified when new students are available for sponsorship
+              Get notified when verified students are ready for sponsorship
             </p>
           </div>
         </div>
@@ -109,21 +109,33 @@ export default function DonorBrowse() {
                   <span>{student.city}, {student.province}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Status</span>
-                  <span className="text-emerald-600 font-medium">Approved for Support</span>
+                  <span className="text-slate-600">Field of Study</span>
+                  <span className="font-medium">{student.program}</span>
+                </div>
+                {student.gradYear && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Graduation Year</span>
+                    <span>{student.gradYear}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Funding Goal</span>
+                  <span className="text-emerald-600 font-medium">
+                    {getCurrencyFlag(student.currency)} {fmtAmount(student.displayAmount, student.currency)}
+                  </span>
                 </div>
               </div>
               
               <div className="mt-auto space-y-2">
                 <Button 
-                  variant="outline" 
-                  className="w-full rounded-2xl" 
+                  variant="default" 
+                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700" 
                   onClick={() => navigate("/login", { state: { redirectTo: "/marketplace" } })}
                 >
-                  Login to Sponsor
+                  Start Sponsoring
                 </Button>
                 <p className="text-xs text-slate-500 text-center">
-                  Sign in to see full profile and sponsor this student
+                  Sign in to view complete profile and make a difference
                 </p>
               </div>
             </Card>

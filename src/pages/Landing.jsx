@@ -48,7 +48,7 @@ export const Landing = ({ go }) => {
         </p>
         <div className="flex flex-wrap justify-center gap-4">
           <Button onClick={() => go("apply")} size="lg" className="rounded-2xl">
-            Apply for Aid
+            Request Financial Aid
           </Button>
           <Button 
             onClick={() => navigate("/donor-signup")} 
@@ -56,7 +56,7 @@ export const Landing = ({ go }) => {
             size="lg" 
             className="rounded-2xl"
           >
-            Become a Donor
+            Donor Signup
           </Button>
         </div>
         <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-600">
