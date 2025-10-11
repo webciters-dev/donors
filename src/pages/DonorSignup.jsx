@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -198,8 +199,9 @@ const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
 export default function DonorSignup() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
 
-  // If we were sent here from “Sponsor” we preserve the return target
+  // If we were sent here from "Sponsor" we preserve the return target
   const redirectTo = location.state?.redirectTo || "/marketplace";
 
   const [form, setForm] = useState({
@@ -255,9 +257,25 @@ export default function DonorSignup() {
         throw new Error(errorText);
       }
 
-      toast.success("Donor account created! Please sign in.");
-      // send user to login and keep the intended return page
-      navigate("/login", { replace: true, state: { redirectTo } });
+      const data = await res.json();
+      console.log("🎉 Registration successful:", data);
+      
+      // Automatically log the user in with the returned token and user data
+      login({
+        token: data.token,
+        user: {
+          id: data.user.id,
+          name: data.donor.name,
+          email: data.user.email,
+          role: data.user.role,
+          donorId: data.donor.id,
+        },
+      });
+
+      toast.success(`Welcome ${data.donor.name}! 🎉 Your donor account is ready.`);
+      
+      // Navigate to donor dashboard instead of login page
+      navigate("/donor-dashboard", { replace: true });
     } catch (err) {
       console.error("Registration error:", err);
       // Show more specific error message
