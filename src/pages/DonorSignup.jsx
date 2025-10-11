@@ -232,26 +232,43 @@ export default function DonorSignup() {
 
     try {
       setBusy(true);
+      
+      const requestData = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        country: form.country,
+        organization: form.organization.trim() || null,
+        phone: form.phone.trim() || null,
+      };
+      
+      console.log("🚀 Sending registration request:", requestData);
+      
       const res = await fetch(`${API}/api/auth/register-donor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          country: form.country,
-          organization: form.organization.trim() || null,
-          phone: form.phone.trim() || null,
-        }),
+        body: JSON.stringify(requestData),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Registration failed:", errorText);
+        throw new Error(errorText);
+      }
 
       toast.success("Donor account created! Please sign in.");
       // send user to login and keep the intended return page
       navigate("/login", { replace: true, state: { redirectTo } });
     } catch (err) {
-      console.error(err);
-      toast.error("Signup failed.");
+      console.error("Registration error:", err);
+      // Show more specific error message
+      const errorMessage = err.message || "Signup failed.";
+      if (errorMessage.includes("already registered")) {
+        toast.error("This email is already registered. Please try logging in instead.");
+      } else if (errorMessage.includes("required")) {
+        toast.error("Please fill all required fields.");
+      } else {
+        toast.error(`Signup failed: ${errorMessage}`);
+      }
     } finally {
       setBusy(false);
     }
