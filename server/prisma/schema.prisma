@@ -33,12 +33,18 @@ model Student {
   currentInstitution    String?
   currentCity           String?
   currentCompletionYear Int?
+  // NEW OPTIONAL FIELDS - Won't break existing functionality
+  personalIntroduction  String?        // Student's personal introduction about themselves and family
+  detailedLocation      String?        // Specific village/area within city for more detailed location
+  currentEducationDetails String?      // Details about current education program/courses
+  academicResults       String?        // Current academic performance/grades description
   messages              Message[]
   applications          Application[]
   disbursements         Disbursement[]
   documents             Document[]
   fieldReviews          FieldReview[]
   sponsorships          Sponsorship[]
+  conversations         Conversation[]
   User                  User?
 
   @@map("students")
@@ -67,10 +73,13 @@ model Application {
   familyIncome       Int?
   familyContribution Int?
   purpose            String?
+  // NEW OPTIONAL FIELD - Sub admin's reasoning for approval/rejection
+  approvalReason     String?           // Sub admin's detailed reasoning for recommendation
   messages           Message[]
   student            Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
   documents          Document[]
   fieldReviews       FieldReview[]
+  conversations      Conversation[]
 
   @@map("applications")
 }
@@ -84,6 +93,39 @@ model Message {
   applicationId String?
   application   Application? @relation(fields: [applicationId], references: [id])
   student       Student      @relation(fields: [studentId], references: [id])
+}
+
+// NEW MESSAGING SYSTEM - Extended communication for donors
+model Conversation {
+  id              String             @id @default(cuid())
+  type            ConversationType   // DONOR_STUDENT, DONOR_ADMIN, etc.
+  participantIds  String[]           // Array of user IDs participating
+  studentId       String?            // Optional reference to student if conversation involves one
+  applicationId   String?            // Optional reference to application if conversation is about one
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  lastMessageAt   DateTime           @default(now())
+  messages        ConversationMessage[]
+  student         Student?           @relation(fields: [studentId], references: [id])
+  application     Application?       @relation(fields: [applicationId], references: [id])
+
+  @@map("conversations")
+}
+
+model ConversationMessage {
+  id              String       @id @default(cuid())
+  conversationId  String
+  senderId        String       // User ID of sender
+  senderRole      UserRole     // Role of sender for easy identification
+  text            String
+  createdAt       DateTime     @default(now())
+  readBy          String[]     // Array of user IDs who have read this message
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("conversation_messages")
 }
 
 model Donor {
@@ -172,11 +214,12 @@ model User {
   studentId      String?         @unique
   donorId        String?         @unique
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  fieldReviews   FieldReview[]   @relation("OfficerReviews")
-  passwordResets PasswordReset[]
-  donor          Donor?          @relation(fields: [donorId], references: [id])
-  student        Student?        @relation(fields: [studentId], references: [id])
+  updatedAt            DateTime              @updatedAt
+  fieldReviews         FieldReview[]         @relation("OfficerReviews")
+  passwordResets       PasswordReset[]
+  sentMessages         ConversationMessage[] // Messages sent by this user
+  donor                Donor?                @relation(fields: [donorId], references: [id])
+  student              Student?              @relation(fields: [studentId], references: [id])
 
   @@map("users")
 }
@@ -281,4 +324,10 @@ enum DocumentType {
 enum Currency {
   USD
   PKR
+}
+
+enum ConversationType {
+  DONOR_STUDENT      // Direct donor-student communication
+  DONOR_ADMIN        // Donor asking questions to admin/sub-admin
+  STUDENT_ADMIN      // Existing student-admin communication (compatibility)
 }
