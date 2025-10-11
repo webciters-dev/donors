@@ -195,7 +195,7 @@ router.post("/register-student", async (req, res) => {
 ========================= */
 router.post("/register-donor", async (req, res) => {
   try {
-    const { name, email, password, organization } = req.body || {};
+    const { name, email, password, organization, country, phone } = req.body || {};
     if (!name || !email || !password) {
       return res.status(400).json({ error: "name, email and password are required" });
     }
@@ -209,6 +209,8 @@ router.post("/register-donor", async (req, res) => {
         name,
         email,
         organization: organization || null,
+        country: country || null,
+        phone: phone || null,
       },
     });
 
