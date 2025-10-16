@@ -54,6 +54,17 @@ export default function StudentProfile() {
     program: "",
     gpa: "",
     gradYear: "",
+    // Personal Introduction
+    personalIntroduction: "",
+    // Enhanced Details for Donors
+    familySize: "",
+    parentsOccupation: "",
+    monthlyFamilyIncome: "",
+    careerGoals: "",
+    academicAchievements: "",
+    communityInvolvement: "",
+    currentAcademicYear: "",
+    specificField: "",
   });
 
   const [loading, setLoading] = useState(true);
@@ -92,6 +103,17 @@ export default function StudentProfile() {
           program: s.program || "",
           gpa: s.gpa ?? "",
           gradYear: s.gradYear ?? "",
+          // Personal Introduction
+          personalIntroduction: s.personalIntroduction || "",
+          // Enhanced Details for Donors
+          familySize: s.familySize ?? "",
+          parentsOccupation: s.parentsOccupation || "",
+          monthlyFamilyIncome: s.monthlyFamilyIncome || "",
+          careerGoals: s.careerGoals || "",
+          academicAchievements: s.academicAchievements || "",
+          communityInvolvement: s.communityInvolvement || "",
+          currentAcademicYear: s.currentAcademicYear || "",
+          specificField: s.specificField || "",
         };
         if (!dead) setForm((prev) => ({ ...prev, ...initial }));
       } catch (e) {
@@ -449,6 +471,183 @@ export default function StudentProfile() {
             />
             {errors.gradYear && (
               <p className="text-xs text-rose-600 mt-1">{errors.gradYear}</p>
+            )}
+          </div>
+
+          {/* Personal Introduction Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Personal Introduction</h3>
+          </div>
+
+          {/* Personal Introduction */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">
+              Tell us about yourself and your family <span className="text-gray-500">(This helps potential sponsors understand your story)</span>
+            </label>
+            <textarea
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={4}
+              placeholder="Share your background, family situation, interests, and what motivates you to pursue higher education. This information will be visible to potential sponsors, admins, and sub-admins."
+              value={form.personalIntroduction}
+              onChange={(e) => setVal("personalIntroduction", e.target.value)}
+              maxLength={1000}
+            />
+            <div className="text-xs text-gray-500 text-right mt-1">
+              {form.personalIntroduction.length}/1000 characters
+            </div>
+            {errors.personalIntroduction && (
+              <p className="text-xs text-rose-600 mt-1">{errors.personalIntroduction}</p>
+            )}
+          </div>
+
+          {/* Enhanced Details for Donors Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Additional Details for Sponsors</h3>
+            <p className="text-sm text-gray-600 mb-4">This information helps potential sponsors better understand your background and goals.</p>
+          </div>
+
+          {/* Family Background */}
+          <div>
+            <label className="block text-sm mb-1">Family Size (number of members)</label>
+            <Input
+              type="number"
+              value={form.familySize}
+              onChange={(e) => setVal("familySize", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., 5"
+              min="1"
+              max="20"
+            />
+            {errors.familySize && (
+              <p className="text-xs text-rose-600 mt-1">{errors.familySize}</p>
+            )}
+          </div>
+
+          {/* Parents' Occupation */}
+          <div>
+            <label className="block text-sm mb-1">Parents' Occupation</label>
+            <Input
+              value={form.parentsOccupation}
+              onChange={(e) => setVal("parentsOccupation", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., Farmer, Teacher, Small business owner"
+            />
+            {errors.parentsOccupation && (
+              <p className="text-xs text-rose-600 mt-1">{errors.parentsOccupation}</p>
+            )}
+          </div>
+
+          {/* Monthly Family Income */}
+          <div>
+            <label className="block text-sm mb-1">Monthly Family Income Range</label>
+            <select
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
+              value={form.monthlyFamilyIncome}
+              onChange={(e) => setVal("monthlyFamilyIncome", e.target.value)}
+            >
+              <option value="">Select income range</option>
+              <option value="Less than ₨25,000">Less than ₨25,000</option>
+              <option value="₨25,000-50,000">₨25,000-50,000</option>
+              <option value="₨50,000-100,000">₨50,000-100,000</option>
+              <option value="₨100,000-200,000">₨100,000-200,000</option>
+              <option value="₨200,000-300,000">₨200,000-300,000</option>
+              <option value="More than ₨300,000">More than ₨300,000</option>
+            </select>
+            {errors.monthlyFamilyIncome && (
+              <p className="text-xs text-rose-600 mt-1">{errors.monthlyFamilyIncome}</p>
+            )}
+          </div>
+
+          {/* Current Academic Year */}
+          <div>
+            <label className="block text-sm mb-1">Current Academic Year/Level</label>
+            <select
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
+              value={form.currentAcademicYear}
+              onChange={(e) => setVal("currentAcademicYear", e.target.value)}
+            >
+              <option value="">Select academic year</option>
+              <option value="1st Year">1st Year</option>
+              <option value="2nd Year">2nd Year</option>
+              <option value="3rd Year">3rd Year</option>
+              <option value="Final Year">Final Year</option>
+              <option value="Masters 1st Year">Masters 1st Year</option>
+              <option value="Masters 2nd Year">Masters 2nd Year</option>
+              <option value="PhD">PhD</option>
+            </select>
+            {errors.currentAcademicYear && (
+              <p className="text-xs text-rose-600 mt-1">{errors.currentAcademicYear}</p>
+            )}
+          </div>
+
+          {/* Specific Field/Specialization */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Specific Field/Specialization</label>
+            <Input
+              value={form.specificField}
+              onChange={(e) => setVal("specificField", e.target.value)}
+              className="rounded-2xl"
+              placeholder="e.g., Artificial Intelligence, Cardiac Surgery, Environmental Engineering"
+            />
+            {errors.specificField && (
+              <p className="text-xs text-rose-600 mt-1">{errors.specificField}</p>
+            )}
+          </div>
+
+          {/* Career Goals */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Career Goals & Aspirations</label>
+            <textarea
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={3}
+              placeholder="Describe your post-graduation career goals and how you plan to contribute to your community/field..."
+              value={form.careerGoals}
+              onChange={(e) => setVal("careerGoals", e.target.value)}
+              maxLength={500}
+            />
+            <div className="text-xs text-gray-500 text-right mt-1">
+              {form.careerGoals.length}/500 characters
+            </div>
+            {errors.careerGoals && (
+              <p className="text-xs text-rose-600 mt-1">{errors.careerGoals}</p>
+            )}
+          </div>
+
+          {/* Academic Achievements */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Academic Achievements & Awards</label>
+            <textarea
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+              placeholder="List any academic honors, awards, competitions, or special recognition you've received..."
+              value={form.academicAchievements}
+              onChange={(e) => setVal("academicAchievements", e.target.value)}
+              maxLength={300}
+            />
+            <div className="text-xs text-gray-500 text-right mt-1">
+              {form.academicAchievements.length}/300 characters
+            </div>
+            {errors.academicAchievements && (
+              <p className="text-xs text-rose-600 mt-1">{errors.academicAchievements}</p>
+            )}
+          </div>
+
+          {/* Community Involvement */}
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Community Involvement & Leadership</label>
+            <textarea
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows={2}
+              placeholder="Describe any volunteer work, community service, leadership roles, or social initiatives you've been involved in..."
+              value={form.communityInvolvement}
+              onChange={(e) => setVal("communityInvolvement", e.target.value)}
+              maxLength={300}
+            />
+            <div className="text-xs text-gray-500 text-right mt-1">
+              {form.communityInvolvement.length}/300 characters
+            </div>
+            {errors.communityInvolvement && (
+              <p className="text-xs text-rose-600 mt-1">{errors.communityInvolvement}</p>
             )}
           </div>
 

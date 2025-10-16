@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, GraduationCap, DollarSign, FileText, Users, MapPin, Calendar, Mail, Phone } from "lucide-react";
+import DonorStudentMessaging from "@/components/DonorStudentMessaging";
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -77,14 +78,14 @@ export const StudentDetail = ({ id, goBack }) => {
         setLoading(true);
         setError(null);
         
-        console.log("Loading student with ID:", id);
+
 
         // Try the specific student endpoint first (works for both authenticated and non-authenticated users)
         let res = await fetch(`${API}/api/students/approved/${id}`);
         
         if (res.ok) {
           const data = await res.json();
-          console.log("Individual endpoint success:", data);
+
           if (data.student) {
             setStudent(data.student);
             setApplication(data.student.application || null);
@@ -93,18 +94,18 @@ export const StudentDetail = ({ id, goBack }) => {
         }
 
         // Fallback: try finding student in approved students list
-        console.log("Trying fallback - approved students list");
+
         res = await fetch(`${API}/api/students/approved`);
         if (res.ok) {
           const data = await res.json();
           const students = Array.isArray(data?.students) ? data.students : [];
-          console.log("Found students in list:", students.length);
+
           const foundStudent = students.find(student => 
             String(student.id) === String(id)
           );
           
           if (foundStudent) {
-            console.log("Found student in list:", foundStudent.name);
+
             setStudent(foundStudent);
             setApplication(foundStudent.application || null);
             return;
@@ -196,7 +197,7 @@ export const StudentDetail = ({ id, goBack }) => {
               <span className="font-medium">{student.name}</span>
             </div>
             {/* Show different information based on user role */}
-            {user?.role === "ADMIN" || user?.role === "FIELD_OFFICER" ? (
+            {user?.role === "ADMIN" || user?.role === "SUB_ADMIN" ? (
               <>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Email</span>
@@ -243,6 +244,7 @@ export const StudentDetail = ({ id, goBack }) => {
                 <span className="font-medium">{student.currentInstitution}</span>
               </div>
             )}
+
             {student.sponsorshipCount > 0 && (
               <div className="flex justify-between">
                 <span className="text-slate-500">Sponsors</span>
@@ -251,6 +253,96 @@ export const StudentDetail = ({ id, goBack }) => {
             )}
           </div>
         </div>
+      </Card>
+
+      {/* Personal Introduction */}
+      {student.personalIntroduction && (
+        <Card className="p-6">
+          <SectionTitle icon={Users} title="About Me & My Family" />
+          <div className="mt-4">
+            <div className="prose prose-sm max-w-none">
+              <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{student.personalIntroduction}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Donor-Student Messaging */}
+      <DonorStudentMessaging 
+        student={student} 
+        user={user} 
+        token={token} 
+      />
+
+      {/* Enhanced Background Details */}
+      <Card className="p-6">
+        <SectionTitle icon={GraduationCap} title="Detailed Background" />
+        <div className="mt-4 grid md:grid-cols-2 gap-6">
+          <div className="space-y-3 text-sm">
+            {student.familySize && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Size</span>
+                <span className="font-medium">{student.familySize} members</span>
+              </div>
+            )}
+            {student.parentsOccupation && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Parents' Occupation</span>
+                <span className="font-medium">{student.parentsOccupation}</span>
+              </div>
+            )}
+            {student.monthlyFamilyIncome && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Income</span>
+                <span className="font-medium">{student.monthlyFamilyIncome}</span>
+              </div>
+            )}
+            {student.currentAcademicYear && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Academic Year</span>
+                <span className="font-medium">{student.currentAcademicYear}</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-3 text-sm">
+            {student.specificField && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Specialization</span>
+                <span className="font-medium">{student.specificField}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Career Goals */}
+        {student.careerGoals && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.careerGoals}
+            </div>
+          </div>
+        )}
+
+        {/* Academic Achievements */}
+        {student.academicAchievements && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.academicAchievements}
+            </div>
+          </div>
+        )}
+
+        {/* Community Involvement */}
+        {student.communityInvolvement && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.communityInvolvement}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Application Details */}
@@ -268,12 +360,6 @@ export const StudentDetail = ({ id, goBack }) => {
                 <span className="font-medium">{application.term || "—"}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Status</span>
-                <Badge variant={application.status === 'APPROVED' ? 'default' : 'secondary'}>
-                  {application.status || "PENDING"}
-                </Badge>
-              </div>
-              <div className="flex justify-between">
                 <span className="text-slate-500">Submitted</span>
                 <span className="font-medium">
                   {application.submittedAt ? new Date(application.submittedAt).toLocaleDateString() : "—"}
@@ -285,10 +371,47 @@ export const StudentDetail = ({ id, goBack }) => {
                 <span className="text-slate-500">Currency</span>
                 <span className="font-medium">{currency}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Amount Needed</span>
-                <span className="font-medium">{fmtAmount(displayAmount, currency)}</span>
-              </div>
+              
+              {/* Enhanced Financial Breakdown */}
+              {(application?.universityFee || application?.livingExpenses || application?.totalExpense) ? (
+                <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
+                  <h4 className="font-medium text-slate-700 text-xs uppercase tracking-wide">Financial Breakdown</h4>
+                  {application?.universityFee && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">University Fee</span>
+                      <span className="font-medium">+{fmtAmount(application.universityFee, currency)}</span>
+                    </div>
+                  )}
+                  {application?.livingExpenses && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Books & Living</span>
+                      <span className="font-medium">+{fmtAmount(application.livingExpenses, currency)}</span>
+                    </div>
+                  )}
+                  {application?.totalExpense && (
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-slate-700 font-medium">Total Expense</span>
+                      <span className="font-semibold">{fmtAmount(application.totalExpense, currency)}</span>
+                    </div>
+                  )}
+                  {application?.scholarshipAmount && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Scholarship</span>
+                      <span className="font-medium text-green-600">-{fmtAmount(application.scholarshipAmount, currency)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-slate-700 font-semibold">Amount Required</span>
+                    <span className="font-bold text-blue-600">{fmtAmount(displayAmount, currency)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Amount Needed</span>
+                  <span className="font-medium">{fmtAmount(displayAmount, currency)}</span>
+                </div>
+              )}
+              
               {currency === "PKR" && needUSD > 0 && (
                 <div className="flex justify-between">
                   <span className="text-slate-500">USD Equivalent</span>
@@ -303,6 +426,8 @@ export const StudentDetail = ({ id, goBack }) => {
           </div>
         </Card>
       )}
+
+
 
       {/* Sponsorship Actions */}
       <Card className="p-6">

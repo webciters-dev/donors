@@ -122,6 +122,12 @@ export const DonorDashboard = () => {
           />
           <Button
             className="rounded-2xl"
+            onClick={() => navigate("/donor/portal")}
+          >
+            Go to Donor Portal
+          </Button>
+          <Button
+            className="rounded-2xl"
             variant="outline"
             onClick={() => navigate("/marketplace")}
           >
@@ -154,6 +160,31 @@ export const DonorDashboard = () => {
           </div>
         </Card>
       </div>
+
+      {/* Donor Portal Navigation Card */}
+      <Card className="p-6 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-white">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-emerald-800">Access Full Donor Portal</h3>
+            <p className="text-sm text-emerald-700">
+              Visit the complete donor portal with tabs for browsing students, managing sponsorships, 
+              viewing payment history, and tracking student progress.
+            </p>
+            <div className="flex items-center gap-2 text-xs text-emerald-600">
+              <span>✓ Browse Students</span>
+              <span>✓ My Students</span>
+              <span>✓ Payments</span>
+              <span>✓ Progress</span>
+            </div>
+          </div>
+          <Button 
+            onClick={() => navigate("/donor/portal")}
+            className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl"
+          >
+            Open Portal →
+          </Button>
+        </div>
+      </Card>
 
       {/* Sponsored students list */}
       <Card className="p-4">

@@ -65,6 +65,16 @@ router.get("/", optionalAuth, async (req, res) => {
               guardianCnic: true,
               phone: true,
               address: true,
+              personalIntroduction: true,
+              // Enhanced details for donors
+              familySize: true,
+              parentsOccupation: true,
+              monthlyFamilyIncome: true,
+              careerGoals: true,
+              academicAchievements: true,
+              communityInvolvement: true,
+              currentAcademicYear: true,
+              specificField: true,
             },
           },
           fieldReviews: {
@@ -108,7 +118,20 @@ router.get("/", optionalAuth, async (req, res) => {
  */
 router.post("/", async (req, res) => {
   try {
-    const { studentId, term, needUSD, needPKR, currency, notes, fxRate } = req.body;
+    const { 
+      studentId, 
+      term, 
+      needUSD, 
+      needPKR, 
+      currency, 
+      notes, 
+      fxRate,
+      // Enhanced financial breakdown fields
+      universityFee,
+      livingExpenses,
+      totalExpense,
+      scholarshipAmount
+    } = req.body;
 
     if (!studentId || !term) {
       return res.status(400).json({ error: "Missing required fields: studentId, term" });
@@ -136,6 +159,23 @@ router.post("/", async (req, res) => {
         needPKR === undefined || needPKR === null || needPKR === ""
           ? null
           : parseInt(needPKR, 10),
+      // Enhanced financial breakdown fields
+      universityFee:
+        universityFee === undefined || universityFee === null || universityFee === ""
+          ? null
+          : parseInt(universityFee, 10),
+      livingExpenses:
+        livingExpenses === undefined || livingExpenses === null || livingExpenses === ""
+          ? null
+          : parseInt(livingExpenses, 10),
+      totalExpense:
+        totalExpense === undefined || totalExpense === null || totalExpense === ""
+          ? null
+          : parseInt(totalExpense, 10),
+      scholarshipAmount:
+        scholarshipAmount === undefined || scholarshipAmount === null || scholarshipAmount === ""
+          ? null
+          : parseInt(scholarshipAmount, 10),
     };
 
     // Keep schema compatibility: if only PKR is provided, set needUSD=0

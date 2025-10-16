@@ -39,8 +39,8 @@ async function canAccessStudentDocs(user, studentId, applicationId = null) {
   if (user.role === "ADMIN") return true;
   if (user.role === "STUDENT" && user.studentId === studentId) return true;
   
-  // FIELD_OFFICER (Sub Admin) can access documents for applications they are assigned to review
-  if (user.role === "FIELD_OFFICER" && applicationId) {
+  // SUB_ADMIN can access documents for applications they are assigned to review
+  if (user.role === "SUB_ADMIN" && applicationId) {
     try {
       const review = await prisma.fieldReview.findFirst({
         where: {

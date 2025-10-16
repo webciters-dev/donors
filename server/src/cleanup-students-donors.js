@@ -51,8 +51,8 @@ async function cleanupStudentsAndDonors() {
       console.log('💱 Keeping FX rates (may be needed for new transactions)');
       // Keep FxRate records
       
-      console.log('🔐 Keeping admin and field officer accounts');
-      // Keep ADMIN and FIELD_OFFICER users
+      console.log('🔐 Keeping admin and sub admin accounts');
+      // Keep ADMIN and SUB_ADMIN users
       
       console.log('🔑 Deleting password reset tokens for deleted users');
       // PasswordReset tokens for deleted users will be cleaned up automatically due to CASCADE
@@ -64,9 +64,9 @@ async function cleanupStudentsAndDonors() {
     
     const remainingUsers = await prisma.user.count();
     const remainingAdmins = await prisma.user.count({ where: { role: 'ADMIN' } });
-    const remainingOfficers = await prisma.user.count({ where: { role: 'FIELD_OFFICER' } });
+    const remainingOfficers = await prisma.user.count({ where: { role: 'SUB_ADMIN' } });
     
-    console.log(`   Users: ${remainingUsers} (${remainingAdmins} admins, ${remainingOfficers} officers)`);
+    console.log(`   Users: ${remainingUsers} (${remainingAdmins} admins, ${remainingOfficers} sub-admins)`);
     console.log(`   Students: ${await prisma.student.count()}`);
     console.log(`   Donors: ${await prisma.donor.count()}`);
     console.log(`   Applications: ${await prisma.application.count()}`);

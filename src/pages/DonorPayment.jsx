@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import StablePaymentForm from "@/components/StablePaymentForm";
 import { CURRENCY_META, getCurrencyFromCountry, fmtAmount } from "@/lib/currency";
 import { 
   ArrowLeft, 
@@ -21,9 +20,6 @@ import {
   Lock
 } from "lucide-react";
 
-// Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_4eC39HqLyjWDarjtT1zdp7dc');
-
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 function DonorPayment() {
@@ -35,7 +31,7 @@ function DonorPayment() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("card");
-  const [currency, setCurrency] = useState("PKR");
+  const [currency, setCurrency] = useState("USD"); // Default to USD, will be updated when student data loads
   const [paymentFrequency, setPaymentFrequency] = useState("one-time");
 
   // Payment frequency options
@@ -48,25 +44,57 @@ function DonorPayment() {
   ];
 
   const getPaymentAmount = () => {
-    const totalNeed = student?.needUSD || 0;
-    // For a 2-year program, calculate payments over 24 months
+    // Calculate full education cost from application (supports all currencies)
+    let fullEducationCost = 0;
+    if (student?.applications?.length > 0) {
+      const approvedApp = student.applications.find(app => app.status === 'APPROVED');
+      if (approvedApp) {
+        fullEducationCost = approvedApp.amount || approvedApp.needUSD || 0; // New structure or legacy fallback
+      } else {
+        fullEducationCost = student?.needUSD || 0;
+      }
+    } else {
+      fullEducationCost = student?.needUSD || 0;
+    }
+    
+    const stillNeeded = student?.remainingNeed || 0;
+    
+    // If the student still needs funding and it's less than the full cost, 
+    // this is a "Year 2" payment scenario - charge only what's still needed
+    if (stillNeeded > 0 && stillNeeded < fullEducationCost) {
+      return stillNeeded; // Charge remaining amount (e.g., $2,000)
+    }
+    
+    // Otherwise, calculate based on the full education cost for new sponsorships
     switch (paymentFrequency) {
       case "monthly":
-        return Math.ceil(totalNeed / 24); // 24 months over 2 years
+        return Math.ceil(fullEducationCost / 24); // 24 months over 2 years
       case "quarterly":
-        return Math.ceil(totalNeed / 8);  // 8 quarters over 2 years
+        return Math.ceil(fullEducationCost / 8);  // 8 quarters over 2 years
       case "bi-annually":
-        return Math.ceil(totalNeed / 4);  // 4 payments over 2 years
+        return Math.ceil(fullEducationCost / 4);  // 4 payments over 2 years
       case "annually":
-        return Math.ceil(totalNeed / 2);  // 2 payments over 2 years
+        return Math.ceil(fullEducationCost / 2);  // 2 payments over 2 years
       default:
-        return totalNeed; // One-time payment
+        return fullEducationCost; // One-time payment for full amount
     }
   };
 
   // Calculate payment amount for a specific frequency (not the currently selected one)
   const getAmountForFrequency = (frequency) => {
-    const totalNeed = student?.needUSD || 0;
+    // Use the same logic as totalNeed calculation (supports all currencies)
+    let amount = 0;
+    if (student?.applications?.length > 0) {
+      const approvedApp = student.applications.find(app => app.status === 'APPROVED');
+      if (approvedApp) {
+        amount = approvedApp.amount || approvedApp.needUSD || 0; // New structure or legacy fallback
+      } else {
+        amount = student?.needUSD || 0;
+      }
+    } else {
+      amount = student?.needUSD || 0;
+    }
+    
     switch (frequency) {
       case "monthly":
         return Math.ceil(totalNeed / 24); // 24 months over 2 years
@@ -75,9 +103,9 @@ function DonorPayment() {
       case "bi-annually":
         return Math.ceil(totalNeed / 4);  // 4 payments over 2 years
       case "annually":
-        return Math.ceil(totalNeed / 2);  // 2 payments over 2 years
+        return Math.ceil(amount / 2);  // 2 payments over 2 years
       default:
-        return totalNeed; // One-time payment
+        return amount; // One-time payment
     }
   };
 
@@ -95,10 +123,14 @@ function DonorPayment() {
           const data = await res.json();
           if (data.student) {
             console.log("Student loaded successfully:", data.student.name);
+            console.log("Student applications:", data.student.applications);
             setStudent(data.student);
-            // Determine currency based on country
-            const countryCurrency = getCurrencyFromCountry(data.student.country);
-            setCurrency(data.student.currency || countryCurrency);
+            
+            // Get currency from approved application
+            const approvedApp = data.student.applications?.find(app => app.status === 'APPROVED');
+            const detectedCurrency = approvedApp?.currency || data.student.currency || "USD";
+            console.log("Detected currency:", detectedCurrency);
+            setCurrency(detectedCurrency);
             return;
           }
         }
@@ -112,10 +144,14 @@ function DonorPayment() {
           
           if (foundStudent) {
             console.log("Student found in list:", foundStudent.name);
+            console.log("Student applications:", foundStudent.applications);
             setStudent(foundStudent);
-            // Determine currency based on country
-            const countryCurrency = getCurrencyFromCountry(foundStudent.country);
-            setCurrency(foundStudent.application?.currency || countryCurrency);
+            
+            // Get currency from approved application
+            const approvedApp = foundStudent.applications?.find(app => app.status === 'APPROVED');
+            const detectedCurrency = approvedApp?.currency || foundStudent.currency || foundStudent.application?.currency || "USD";
+            console.log("Detected currency:", detectedCurrency);
+            setCurrency(detectedCurrency);
             return;
           }
         }
@@ -136,11 +172,8 @@ function DonorPayment() {
     }
   }, [studentId, navigate]);
 
-  // Stripe Payment Form Component
-  const PaymentForm = () => {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [cardReady, setCardReady] = useState(false);
+
+
 
     const handleSubmit = async (event) => {
       event.preventDefault();
@@ -150,22 +183,42 @@ function DonorPayment() {
         return;
       }
 
-      let cardElement = elements.getElement(CardElement);
+      if (processing || processingRef.current) {
+        return; // Prevent multiple submissions
+      }
       
-      // If CardElement is not immediately available, wait and try again
+      // Set processing flag immediately to prevent any re-renders
+      processingRef.current = true;
+
+      // Use the stored CardElement reference instead of trying to get it again
+      let cardElement = cardElementRef.current;
+      
+      // If we don't have a stored reference, try to get it from elements
       if (!cardElement) {
-        await new Promise(resolve => setTimeout(resolve, 200));
         cardElement = elements.getElement(CardElement);
+        
+        // If still not available, wait and retry
+        let retries = 0;
+        while (!cardElement && retries < 3) {
+          console.log(`CardElement not available, retry ${retries + 1}/3`);
+          await new Promise(resolve => setTimeout(resolve, 200));
+          cardElement = elements.getElement(CardElement);
+          retries++;
+        }
       }
       
       if (!cardElement) {
+        console.error("CardElement unavailable - both ref and elements failed");
         toast.error("Card information is required. Please refresh the page and try again.");
         return;
       }
-
-      setProcessing(true);
+      
+      console.log("CardElement found successfully", cardElement);
 
       try {
+        // Set processing state AFTER we have confirmed CardElement is available
+        setProcessing(true);
+        
         // Create payment intent on the server
         const paymentIntentRes = await fetch(`${API}/api/payments/create-payment-intent`, {
           method: 'POST',
@@ -188,16 +241,44 @@ function DonorPayment() {
 
         const { clientSecret, paymentIntentId } = await paymentIntentRes.json();
 
-        // Confirm payment with Stripe
-        const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: user.name || 'Anonymous Donor',
-              email: user.email,
+        // Confirm payment with Stripe - wrap in try/catch to handle element unmounting
+        let confirmResult;
+        try {
+          console.log("About to confirm payment with cardElement:", cardElement);
+          confirmResult = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: user.name || 'Anonymous Donor',
+                email: user.email,
+              },
             },
-          },
-        });
+          });
+        } catch (stripeError) {
+          console.error("Stripe confirmCardPayment error:", stripeError);
+          // If element unmounted, try to get a fresh one
+          if (stripeError.message && stripeError.message.includes('Element')) {
+            cardElement = elements.getElement(CardElement);
+            if (cardElement) {
+              console.log("Retrying with fresh CardElement");
+              confirmResult = await stripe.confirmCardPayment(clientSecret, {
+                payment_method: {
+                  card: cardElement,
+                  billing_details: {
+                    name: user.name || 'Anonymous Donor',
+                    email: user.email,
+                  },
+                },
+              });
+            } else {
+              throw new Error("Payment form became unavailable. Please refresh and try again.");
+            }
+          } else {
+            throw stripeError;
+          }
+        }
+
+        const { error: stripeError, paymentIntent } = confirmResult;
 
         if (stripeError) {
           throw new Error(stripeError.message);
@@ -237,77 +318,11 @@ function DonorPayment() {
         toast.error(err.message || 'Payment failed. Please try again.');
       } finally {
         setProcessing(false);
+        processingRef.current = false;
       }
     };
 
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="p-4 border rounded-lg">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
-            Card Information
-          </label>
-          
-          {/* Test mode helper */}
-          <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
-            <div className="flex items-center justify-between">
-              <span>🧪 Test Mode - Use test card numbers</span>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm"
-                onClick={() => {
-                  // Show test card information
-                  toast("Test Card: 4242 4242 4242 4242 | Expiry: 12/25 | CVC: 123");
-                }}
-              >
-                Show Test Card
-              </Button>
-            </div>
-          </div>
 
-          <CardElement
-            options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#424770',
-                  '::placeholder': {
-                    color: '#aab7c4',
-                  },
-                },
-              },
-              hidePostalCode: false,
-            }}
-            onReady={() => setCardReady(true)}
-            onChange={(event) => {
-              if (event.error) {
-                toast.error(event.error.message);
-              }
-            }}
-          />
-        </div>
-        
-        <Button
-          type="submit"
-          className="w-full rounded-2xl"
-          size="lg"
-          disabled={!stripe || !cardReady || processing}
-        >
-          {processing ? (
-            <>Processing...</>
-          ) : (
-            <>
-              <Lock className="h-4 w-4 mr-2" />
-              {paymentFrequency === "one-time" 
-                ? `Pay ${fmtAmount(totalNeed, currency)}` 
-                : `Setup ${frequencyOptions.find(o => o.value === paymentFrequency)?.label} - ${fmtAmount(getPaymentAmount(), currency)}`
-              }
-            </>
-          )}
-        </Button>
-      </form>
-    );
-  };
 
   if (loading) {
     return (
@@ -341,8 +356,24 @@ function DonorPayment() {
     );
   }
 
-  const totalNeed = student?.needUSD || 0;
-  const isAlreadySponsored = student?.sponsored || (student?.remainingNeed <= 0);
+  // Calculate totalNeed from application (new structure supports all currencies)
+  let totalNeed = 0;
+  if (student?.applications?.length > 0) {
+    const approvedApp = student.applications.find(app => app.status === 'APPROVED');
+    if (approvedApp) {
+      // New structure: use single amount field from application
+      totalNeed = approvedApp.amount || approvedApp.needUSD || 0; // Fallback to needUSD for legacy data
+    } else {
+      // Fallback to student.needUSD if no approved application
+      totalNeed = student?.needUSD || 0;
+    }
+  } else {
+    // Fallback to student.needUSD
+    totalNeed = student?.needUSD || 0;
+  }
+  
+  const remainingNeed = student?.remainingNeed || 0; // Amount still needed (e.g., 2000)
+  const isAlreadySponsored = student?.sponsored || (remainingNeed <= 0);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -471,7 +502,20 @@ function DonorPayment() {
                 </div>
               </div>
 
-              <PaymentForm />
+              <StablePaymentForm 
+                student={student}
+                user={user}
+                token={token}
+                currency={currency}
+                totalNeed={totalNeed}
+                paymentFrequency={paymentFrequency}
+                getPaymentAmount={getPaymentAmount}
+                onSuccess={(message) => {
+                  toast.success(message);
+                  navigate('/donor/portal?tab=sponsored');
+                }}
+                onError={(message) => toast.error(message)}
+              />
 
               <div className="text-xs text-slate-500 text-center">
                 By proceeding, you agree to sponsor {student.name}'s complete education.
@@ -484,11 +528,5 @@ function DonorPayment() {
   );
 }
 
-// Main component wrapped with Stripe Elements
-export default function DonorPaymentWithStripe() {
-  return (
-    <Elements stripe={stripePromise}>
-      <DonorPayment />
-    </Elements>
-  );
-}
+// Export the main component directly - no need for Elements wrapper
+export default DonorPayment;

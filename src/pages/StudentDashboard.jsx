@@ -14,7 +14,10 @@ import {
   User, 
   GraduationCap,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  TrendingUp,
+  Plus,
+  Heart
 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -27,6 +30,8 @@ export default function StudentDashboard() {
   
   const [application, setApplication] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [sponsorships, setSponsorships] = useState([]);
+  const [progressUpdates, setProgressUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Handle success messages
@@ -46,6 +51,8 @@ export default function StudentDashboard() {
     async function loadDashboardData() {
       if (!token) return;
       
+
+      
       try {
         setLoading(true);
         
@@ -60,14 +67,78 @@ export default function StudentDashboard() {
           setApplication(userApp);
           
           // Load messages if application exists
-          if (userApp) {
+          if (userApp?.id) {
+            // Load old messages
             const msgRes = await fetch(`${API}/api/messages?studentId=${userApp.studentId}&applicationId=${userApp.id}`, {
               headers: authHeader
             });
+            let allMessages = [];
             if (msgRes.ok) {
               const msgData = await msgRes.json();
-              setMessages(msgData.messages || []);
+              allMessages = msgData.messages || [];
             }
+            
+            // Load new conversation messages
+            try {
+
+              const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+                headers: authHeader
+              });
+
+              
+              if (convRes.ok) {
+                const convData = await convRes.json();
+
+                const studentConversations = convData.conversations || [];
+
+                
+                // Extract messages from conversations and convert to old format
+                studentConversations.forEach(conv => {
+
+                  if (conv.messages) {
+                    conv.messages.forEach(msg => {
+
+                      allMessages.push({
+                        id: msg.id,
+                        text: msg.text,
+                        fromRole: msg.senderRole.toLowerCase(),
+                        createdAt: msg.createdAt,
+                        senderName: msg.sender?.name || 'Unknown'
+                      });
+                    });
+                  }
+                });
+              } else {
+                const errorText = await convRes.text();
+                console.error('🔍 StudentDashboard: Conversations API error:', convRes.status, errorText);
+              }
+            } catch (convError) {
+              console.error('🔍 StudentDashboard: Failed to load conversations:', convError);
+            }
+            
+            // Sort all messages by date (newest first for better UX)
+            allMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            setMessages(allMessages);
+          }
+
+          // Load sponsorships and progress updates
+          try {
+            const [sponsorshipRes, progressRes] = await Promise.all([
+              fetch(`${API}/api/sponsorships?studentId=${user.studentId}`, { headers: authHeader }),
+              fetch(`${API}/api/donor-messages/${user.studentId}/progress`, { headers: authHeader })
+            ]);
+
+            if (sponsorshipRes.ok) {
+              const sponsorshipData = await sponsorshipRes.json();
+              setSponsorships(sponsorshipData.sponsorships || []);
+            }
+
+            if (progressRes.ok) {
+              const progressData = await progressRes.json();
+              setProgressUpdates(progressData.progressUpdates || []);
+            }
+          } catch (err) {
+            console.error("Failed to load sponsorships/progress:", err);
           }
         }
       } catch (error) {
@@ -135,9 +206,11 @@ export default function StudentDashboard() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={msg.fromRole === 'admin' ? 'default' : 'secondary'}>
+                        <Badge variant={msg.fromRole === 'admin' ? 'default' : msg.fromRole === 'donor' ? 'outline' : 'secondary'}>
                           {msg.fromRole === 'admin' ? '👨‍💼 Admin' : 
-                           msg.fromRole === 'field_officer' ? '🏢 Sub Admin' : '👤 You'}
+                           msg.fromRole === 'sub_admin' ? '🏢 Sub Admin' : 
+                           msg.fromRole === 'donor' ? `💝 Donor${msg.senderName ? `: ${msg.senderName}` : ''}` : 
+                           '👤 You'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           {new Date(msg.createdAt).toLocaleDateString()}
@@ -246,6 +319,91 @@ export default function StudentDashboard() {
         </div>
       </Card>
 
+      {/* Sponsorship Status & Progress Updates */}
+      {sponsorships.length > 0 && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Heart className="h-5 w-5 text-red-500" />
+              Your Sponsors
+            </h2>
+            <Badge variant="default" className="bg-emerald-600">
+              {sponsorships.length} sponsor{sponsorships.length > 1 ? 's' : ''}
+            </Badge>
+          </div>
+          
+          <div className="space-y-4">
+            {sponsorships.map((sponsorship) => (
+              <div key={sponsorship.id} className="p-4 bg-emerald-50 rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-emerald-800">
+                    {sponsorship.donor?.name || 'Anonymous Donor'}
+                  </div>
+                  <div className="text-sm text-emerald-600">
+                    Since {new Date(sponsorship.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="text-sm text-emerald-700">
+                  Amount: ${sponsorship.amount.toLocaleString()} • Status: {sponsorship.status}
+                </div>
+              </div>
+            ))}
+            
+            <div className="border-t pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Progress Updates
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/student/progress')}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Update
+                </Button>
+              </div>
+              
+              {progressUpdates.length === 0 ? (
+                <div className="text-center py-6 text-slate-500">
+                  <TrendingUp className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                  <p className="text-sm">No progress updates yet</p>
+                  <p className="text-xs">Share your academic progress with your sponsors!</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {progressUpdates.slice(0, 3).map((update) => (
+                    <div key={update.id} className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{update.title}</div>
+                        {update.description && (
+                          <div className="text-sm text-slate-600 mt-1">{update.description}</div>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {update.type.replace('_', ' ').toLowerCase()}
+                          </Badge>
+                          <span className="text-xs text-slate-500">
+                            {new Date(update.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {progressUpdates.length > 3 && (
+                    <Button variant="outline" size="sm" onClick={() => navigate('/student/progress')}>
+                      View All {progressUpdates.length} Updates
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
@@ -320,7 +478,10 @@ export default function StudentDashboard() {
               <div key={idx} className="flex gap-3 p-3 bg-slate-50 rounded-lg">
                 <div className="flex-1">
                   <div className="font-medium text-sm">
-                    {msg.fromRole === 'student' ? 'You' : msg.fromRole === 'admin' ? 'Admin' : 'Field Officer'}
+                    {msg.fromRole === 'student' ? 'You' : 
+                     msg.fromRole === 'admin' ? 'Admin' : 
+                     msg.fromRole === 'donor' ? `Donor${msg.senderName ? ` (${msg.senderName})` : ''}` : 
+                     'Field Officer'}
                   </div>
                   <div className="text-slate-700">{msg.text}</div>
                   <div className="text-xs text-slate-500 mt-1">

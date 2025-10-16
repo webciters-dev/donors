@@ -153,14 +153,59 @@ export default function SubAdminApplicationDetail() {
         // Set submitted state based on review status
         setSubmitted(currentReview.status === "COMPLETED");
 
-        // Load messages
+        // Load both old messages and donor-student conversations
+        let allMessages = [];
+        
+        // Load old admin-student messages
         const msgRes = await fetch(`${API}/api/messages?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
           headers: authHeader
         });
         if (msgRes.ok) {
           const msgData = await msgRes.json();
-          setMessages(msgData.messages || []);
+          allMessages = msgData.messages || [];
         }
+        
+        // Load donor-student conversations for sub-admin oversight
+        try {
+
+          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+            headers: authHeader
+          });
+          
+          if (convRes.ok) {
+            const convData = await convRes.json();
+            const conversations = convData.conversations || [];
+            
+            // Filter conversations for this specific student
+            const studentConversations = conversations.filter(conv => 
+              conv.studentId === currentReview.studentId && conv.type === 'DONOR_STUDENT'
+            );
+            
+
+            
+            // Extract messages from donor-student conversations
+            studentConversations.forEach(conv => {
+              if (conv.messages) {
+                conv.messages.forEach(msg => {
+                  allMessages.push({
+                    id: msg.id,
+                    text: msg.text,
+                    fromRole: msg.senderRole.toLowerCase(),
+                    createdAt: msg.createdAt,
+                    senderName: msg.sender?.name || 'Unknown',
+                    conversationType: 'DONOR_STUDENT'
+                  });
+                });
+              }
+            });
+          }
+        } catch (convError) {
+          console.error('🔍 SubAdminApplicationDetail: Failed to load conversations:', convError);
+        }
+        
+        // Sort all messages newest first for better UX
+        allMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setMessages(allMessages);
 
         // Load documents
         const docRes = await fetch(`${API}/api/uploads?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
@@ -221,7 +266,7 @@ export default function SubAdminApplicationDetail() {
       if (!res.ok) throw new Error("Failed to save field verification");
       
       if (isSubmitting) {
-        console.log("🎯 Field verification submitted successfully, preparing to navigate...");
+
         setSubmitted(true);
         
         // Create summary of verification completed
@@ -238,14 +283,14 @@ export default function SubAdminApplicationDetail() {
           duration: 4000
         });
         
-        console.log("🚀 Starting navigation timer...");
+
         
         // Navigate back to dashboard - make it more reliable  
         const timeoutId = setTimeout(() => {
-          console.log("⏰ Timeout executed, navigating to dashboard");
+
           try {
             navigate("/field-officer", { replace: true });
-            console.log("✅ Navigation successful");
+
           } catch (navError) {
             console.error("❌ Navigation failed:", navError);
             // Fallback - use window location if navigate fails
@@ -349,7 +394,7 @@ export default function SubAdminApplicationDetail() {
           studentId: student.id,
           applicationId: application.id,
           text: newMessage,
-          fromRole: "field_officer"
+          fromRole: "sub_admin"
         })
       });
 
@@ -435,12 +480,67 @@ export default function SubAdminApplicationDetail() {
             <h2 className="text-lg font-semibold">{student.name}</h2>
           </div>
           <div className="text-sm text-slate-600">
-            {application.currency === 'PKR' 
-              ? `Rs ${application.needPKR?.toLocaleString()}` 
-              : `$${application.needUSD?.toLocaleString()}`
-            } • {student.university} • {student.program}
+            {student.university} • {student.program}
           </div>
         </div>
+        
+        {/* Enhanced Financial Breakdown */}
+        {(application?.universityFee || application?.livingExpenses || application?.totalExpense) ? (
+          <div className="mb-4 p-4 bg-white rounded-lg border">
+            <h4 className="font-medium text-slate-700 text-sm uppercase tracking-wide mb-3">Financial Breakdown</h4>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                {application?.universityFee && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">University Fee</span>
+                    <span className="font-medium">+{application.currency === "PKR" ? `₨${application.universityFee.toLocaleString()}` : `$${application.universityFee.toLocaleString()}`}</span>
+                  </div>
+                )}
+                {application?.livingExpenses && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Books & Living</span>
+                    <span className="font-medium">+{application.currency === "PKR" ? `₨${application.livingExpenses.toLocaleString()}` : `$${application.livingExpenses.toLocaleString()}`}</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                {application?.totalExpense && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-700 font-medium">Total Expense</span>
+                    <span className="font-semibold">{application.currency === "PKR" ? `₨${application.totalExpense.toLocaleString()}` : `$${application.totalExpense.toLocaleString()}`}</span>
+                  </div>
+                )}
+                {application?.scholarshipAmount && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Scholarship</span>
+                    <span className="font-medium text-green-600">-{application.currency === "PKR" ? `₨${application.scholarshipAmount.toLocaleString()}` : `$${application.scholarshipAmount.toLocaleString()}`}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-slate-700 font-semibold">Amount Required</span>
+                  <span className="font-bold text-blue-600">
+                    {application.currency === 'PKR' 
+                      ? `₨${application.needPKR?.toLocaleString()}` 
+                      : `$${application.needUSD?.toLocaleString()}`
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-4 p-3 bg-white rounded-lg border">
+            <div className="flex justify-between items-center">
+              <span className="text-slate-600 font-medium">Amount Required</span>
+              <span className="font-bold text-blue-600">
+                {application.currency === 'PKR' 
+                  ? `₨${application.needPKR?.toLocaleString()}` 
+                  : `$${application.needUSD?.toLocaleString()}`
+                }
+              </span>
+            </div>
+          </div>
+        )}
         
         <div className="grid md:grid-cols-4 gap-4 text-sm">
           <div>
@@ -460,6 +560,90 @@ export default function SubAdminApplicationDetail() {
             <div className="font-medium">{student.guardianName || 'Not provided'}</div>
           </div>
         </div>
+        
+        {/* Personal Introduction */}
+        {student.personalIntroduction && (
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <span className="text-slate-500 text-sm">Personal Introduction:</span>
+            <div className="mt-2 text-sm leading-relaxed text-slate-700 bg-white p-3 rounded border whitespace-pre-wrap">
+              {student.personalIntroduction}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Enhanced Background Details */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <GraduationCap className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold">Detailed Background</h3>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3 text-sm">
+            {student.familySize && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Size</span>
+                <span className="font-medium">{student.familySize} members</span>
+              </div>
+            )}
+            {student.parentsOccupation && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Parents' Occupation</span>
+                <span className="font-medium">{student.parentsOccupation}</span>
+              </div>
+            )}
+            {student.monthlyFamilyIncome && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Income</span>
+                <span className="font-medium">{student.monthlyFamilyIncome}</span>
+              </div>
+            )}
+            {student.currentAcademicYear && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Academic Year</span>
+                <span className="font-medium">{student.currentAcademicYear}</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-3 text-sm">
+            {student.specificField && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Specialization</span>
+                <span className="font-medium">{student.specificField}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Career Goals */}
+        {student.careerGoals && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.careerGoals}
+            </div>
+          </div>
+        )}
+
+        {/* Academic Achievements */}
+        {student.academicAchievements && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.academicAchievements}
+            </div>
+          </div>
+        )}
+
+        {/* Community Involvement */}
+        {student.communityInvolvement && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {student.communityInvolvement}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Home Visit & Family Assessment */}
@@ -842,9 +1026,16 @@ export default function SubAdminApplicationDetail() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" size="sm">
-                          {msg.fromRole === 'student' ? '👤 Student' : 
-                           msg.fromRole === 'field_officer' ? '🏢 Sub Admin' : '👨‍💼 Admin'}
+                          {msg.fromRole === 'donor' ? `💝 Donor${msg.senderName ? `: ${msg.senderName}` : ''}` :
+                           msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT' ? '👤 Student Reply' :
+                           msg.fromRole === 'student' ? '👤 Student' : 
+                           msg.fromRole === 'sub_admin' ? '🏢 Sub Admin' : '👨‍💼 Admin'}
                         </Badge>
+                        {(msg.fromRole === 'donor' || (msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT')) && (
+                          <Badge variant="outline" size="sm" className="text-xs bg-yellow-50 text-yellow-700">
+                            Donor Chat
+                          </Badge>
+                        )}
                         {shouldHighlight && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             📄 New Upload

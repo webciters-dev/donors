@@ -36,17 +36,59 @@ export const AdminHub = ({ go }) => {
           setApplications(appsData.applications || []);
         }
         
-        // Load recent messages from students
+        // Load recent messages from students (both old and new systems)
+        let allMessages = [];
+        
+        // Load old messages
         const messagesRes = await fetch(`${API}/api/messages`, { headers: authHeader });
         if (messagesRes.ok) {
           const messagesData = await messagesRes.json();
-          // Get latest 5 messages from students
-          const studentMessages = (messagesData.messages || [])
-            .filter(msg => msg.fromRole === 'student')
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5);
-          setRecentMessages(studentMessages);
+          allMessages = messagesData.messages || [];
         }
+        
+        // Load conversation messages
+        try {
+          console.log('🔍 AdminHub: Loading conversations...');
+          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, { headers: authHeader });
+          console.log('🔍 AdminHub: Conversations response status:', convRes.status);
+          
+          if (convRes.ok) {
+            const convData = await convRes.json();
+            console.log('🔍 AdminHub: Conversations data:', convData);
+            const conversations = convData.conversations || [];
+            console.log(`🔍 AdminHub: Found ${conversations.length} conversations`);
+            
+            // Extract messages from conversations and convert to old format
+            conversations.forEach(conv => {
+              console.log('🔍 AdminHub: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
+              if (conv.messages) {
+                conv.messages.forEach(msg => {
+                  console.log('🔍 AdminHub: Adding message from conversation:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
+                  allMessages.push({
+                    id: msg.id,
+                    text: msg.text,
+                    fromRole: msg.senderRole.toLowerCase(),
+                    createdAt: msg.createdAt,
+                    senderName: msg.sender?.name || 'Unknown',
+                    studentName: conv.student?.name || 'Unknown Student'
+                  });
+                });
+              }
+            });
+          } else {
+            const errorText = await convRes.text();
+            console.error('🔍 AdminHub: Conversations API error:', convRes.status, errorText);
+          }
+        } catch (convError) {
+          console.error('🔍 AdminHub: Failed to load conversations:', convError);
+        }
+        
+        // Get latest 5 messages from students (including donors)
+        const studentMessages = allMessages
+          .filter(msg => msg.fromRole === 'student' || msg.fromRole === 'donor')
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          .slice(0, 5);
+        setRecentMessages(studentMessages);
       } catch (error) {
         console.error('Failed to load data:', error);
       } finally {
@@ -120,6 +162,92 @@ export const AdminHub = ({ go }) => {
     }
   };
 
+  // Export donors functionality
+  const handleExportDonors = async () => {
+    if (!token) {
+      toast.error("You must be logged in to export data");
+      return;
+    }
+
+    try {
+      toast.info("Preparing donors export...");
+      
+      const response = await fetch(`${API}/api/export/donors`, { 
+        headers: authHeader 
+      });
+
+      if (!response.ok) {
+        throw new Error(`Donors export failed: ${response.statusText}`);
+      }
+
+      // Get the blob data
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'donors_export.csv';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      
+      toast.success("Donors data exported successfully!");
+      
+    } catch (error) {
+      console.error('Donors export failed:', error);
+      toast.error("Failed to export donors data. Please try again.");
+    }
+  };
+
+  // Export sub-admins functionality
+  const handleExportSubAdmins = async () => {
+    if (!token) {
+      toast.error("You must be logged in to export data");
+      return;
+    }
+
+    try {
+      toast.info("Preparing field officers export...");
+      
+      const response = await fetch(`${API}/api/export/sub-admins`, { 
+        headers: authHeader 
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sub-admins export failed: ${response.statusText}`);
+      }
+
+      // Get the blob data
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'field_officers_export.csv';
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      
+      toast.success("Field officers data exported successfully!");
+      
+    } catch (error) {
+      console.error('Sub-admins export failed:', error);
+      toast.error("Failed to export field officers data. Please try again.");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -141,7 +269,13 @@ export const AdminHub = ({ go }) => {
             Manage Sub Admins
           </Button>
           <Button variant="outline" className="rounded-2xl" onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" /> Export Data
+            <Download className="h-4 w-4 mr-2" /> Export Applications
+          </Button>
+          <Button variant="outline" className="rounded-2xl" onClick={handleExportDonors}>
+            <Download className="h-4 w-4 mr-2" /> Export Donors
+          </Button>
+          <Button variant="outline" className="rounded-2xl" onClick={handleExportSubAdmins}>
+            <Download className="h-4 w-4 mr-2" /> Export Field Officers
           </Button>
         </div>
       </div>
@@ -163,13 +297,18 @@ export const AdminHub = ({ go }) => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="secondary">
-                          👤 Student ID: {msg.studentId?.slice(-6)}
+                        <Badge variant={msg.fromRole === 'donor' ? 'default' : 'secondary'}>
+                          {msg.fromRole === 'donor' ? '💝' : '👤'} {msg.fromRole === 'donor' ? 'Donor' : 'Student'}: {msg.senderName || 'Unknown'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           {new Date(msg.createdAt).toLocaleDateString()}
                         </span>
                       </div>
+                      {msg.studentName && msg.fromRole === 'donor' && (
+                        <div className="text-xs text-slate-600 mb-1">
+                          → To: {msg.studentName}
+                        </div>
+                      )}
                       <p className="text-slate-800 text-sm font-medium line-clamp-2">{msg.text}</p>
                     </div>
                   </div>

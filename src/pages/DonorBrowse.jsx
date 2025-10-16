@@ -25,9 +25,13 @@ export default function DonorBrowse() {
           console.log("🔍 DonorBrowse: API Response:", data);
           const apiStudents = Array.isArray(data?.students) ? data.students : [];
           
-          // Transform for display
+          // Transform for display - filter out sponsored students (ONE STUDENT = ONE DONOR)
           const transformedStudents = apiStudents
-            .filter(s => s.isApproved && !s.sponsored && s.remainingNeed > 0)
+            .filter(s => {
+              const remainingNeed = Number(s?.remainingNeed || s?.needUSD || 0);
+              const isSponsored = Boolean(s?.sponsored) || remainingNeed <= 0;
+              return s.isApproved && !isSponsored; // Only show approved and unsponsored students
+            })
             .map(student => ({
               ...student,
               currency: student.application?.currency || getCurrencyFromCountry(student.country) || 'USD',

@@ -64,7 +64,7 @@ export default function Login() {
   const goHomeByRole = (role) => {
     if (role === "ADMIN") return navigate("/admin/applications", { replace: true });
     if (role === "STUDENT") return navigate("/my-application", { replace: true });
-    if (role === "FIELD_OFFICER") return navigate("/field-officer", { replace: true });
+    if (role === "SUB_ADMIN") return navigate("/sub-admin", { replace: true });
     if (role === "DONOR") return navigate("/marketplace", { replace: true }); // donors land back on marketplace
     return navigate("/", { replace: true });
   };

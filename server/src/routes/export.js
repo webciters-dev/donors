@@ -206,13 +206,13 @@ router.get("/statistics", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
         total: await prisma.message.count(),
         fromStudents: await prisma.message.count({ where: { fromRole: 'student' } }),
         fromAdmins: await prisma.message.count({ where: { fromRole: 'admin' } }),
-        fromFieldOfficers: await prisma.message.count({ where: { fromRole: 'field_officer' } }),
+        fromSubAdmins: await prisma.message.count({ where: { fromRole: 'sub_admin' } }),
       },
       users: {
         total: await prisma.user.count(),
         admins: await prisma.user.count({ where: { role: 'ADMIN' } }),
         students: await prisma.user.count({ where: { role: 'STUDENT' } }),
-        fieldOfficers: await prisma.user.count({ where: { role: 'FIELD_OFFICER' } }),
+        subAdmins: await prisma.user.count({ where: { role: 'SUB_ADMIN' } }),
       },
       exportedAt: new Date().toISOString(),
     };
@@ -222,6 +222,163 @@ router.get("/statistics", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   } catch (error) {
     console.error("Statistics export error:", error);
     res.status(500).json({ error: "Failed to export statistics" });
+  }
+});
+
+/**
+ * GET /api/export/donors
+ * Export all donors data as CSV
+ * Admin only
+ */
+router.get("/donors", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const donors = await prisma.donor.findMany({
+      include: {
+        sponsorships: {
+          include: {
+            student: {
+              select: { name: true, email: true, university: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    // Transform data for CSV export
+    const csvData = donors.map(donor => ({
+      "Donor ID": donor.id,
+      "Name": donor.name,
+      "Email": donor.email,
+      "Organization": donor.organization || "",
+      "Phone": donor.phone || "",
+      "Address": donor.address || "",
+      "Country": donor.country || "",
+      "Currency Preference": donor.currencyPreference || "",
+      "Tax ID": donor.taxId || "",
+      "Total Funded (USD)": donor.totalFunded || 0,
+      "Total Sponsorships": donor.sponsorships.length,
+      "Active Sponsorships": donor.sponsorships.filter(s => s.status === "active").length,
+      "Total Sponsored Amount": donor.sponsorships.reduce((sum, s) => sum + (s.amount || 0), 0),
+      "Registration Date": donor.createdAt?.toISOString().split('T')[0] || "",
+      "Last Updated": donor.updatedAt?.toISOString().split('T')[0] || "",
+      "Sponsored Students": donor.sponsorships.map(s => s.student?.name).filter(Boolean).join("; "),
+      "Status": donor.sponsorships.length > 0 ? "Active Donor" : "Registered"
+    }));
+
+    // Define CSV headers explicitly (ensures headers exist even with no data)
+    const headers = [
+      "Donor ID", "Name", "Email", "Organization", "Phone", "Address", 
+      "Country", "Currency Preference", "Tax ID", "Total Funded (USD)",
+      "Total Sponsorships", "Active Sponsorships", "Total Sponsored Amount",
+      "Registration Date", "Last Updated", "Sponsored Students", "Status"
+    ];
+    
+    // Create CSV rows
+    const rows = csvData.map(row => 
+      headers.map(header => {
+        const value = String(row[header] || '');
+        // Handle CSV escaping
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      })
+    );
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="donors_export.csv"');
+    res.send(csvContent);
+    
+  } catch (error) {
+    console.error("Donor export error:", error);
+    res.status(500).json({ error: "Failed to export donors data" });
+  }
+});
+
+/**
+ * GET /api/export/sub-admins
+ * Export all sub-admin (field officers) data as CSV
+ * Admin only
+ */
+router.get("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const subAdmins = await prisma.user.findMany({
+      where: { role: "SUB_ADMIN" },
+      include: {
+        fieldReviews: {
+          include: {
+            application: {
+              include: {
+                student: {
+                  select: { name: true, email: true }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    // Transform data for CSV export
+    const csvData = subAdmins.map(officer => ({
+      "Officer ID": officer.id,
+      "Name": officer.name,
+      "Email": officer.email,
+      "Role": officer.role,
+      "Total Reviews": officer.fieldReviews.length,
+      "Pending Reviews": officer.fieldReviews.filter(r => r.status === "PENDING").length,
+      "Approved Reviews": officer.fieldReviews.filter(r => r.status === "APPROVED").length,
+      "Rejected Reviews": officer.fieldReviews.filter(r => r.status === "REJECTED").length,
+      "Needs Info Reviews": officer.fieldReviews.filter(r => r.status === "NEEDS_INFO").length,
+      "Last Review Date": officer.fieldReviews.length > 0 
+        ? officer.fieldReviews.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].createdAt.toISOString().split('T')[0]
+        : "",
+      "Account Created": officer.createdAt?.toISOString().split('T')[0] || "",
+      "Last Updated": officer.updatedAt?.toISOString().split('T')[0] || "",
+      "Reviewed Students": officer.fieldReviews.map(r => r.application?.student?.name).filter(Boolean).join("; "),
+      "Status": officer.fieldReviews.length > 0 ? "Active Officer" : "Inactive"
+    }));
+
+    // Define CSV headers explicitly (ensures headers exist even with no data)
+    const headers = [
+      "Officer ID", "Name", "Email", "Role", "Total Reviews", "Pending Reviews", 
+      "Approved Reviews", "Rejected Reviews", "Needs Info Reviews", "Last Review Date",
+      "Account Created", "Last Updated", "Reviewed Students", "Status"
+    ];
+    
+    // Create CSV rows
+    const rows = csvData.map(row => 
+      headers.map(header => {
+        const value = String(row[header] || '');
+        // Handle CSV escaping
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      })
+    );
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="field_officers_export.csv"');
+    res.send(csvContent);
+    
+  } catch (error) {
+    console.error("Sub-admin export error:", error);
+    res.status(500).json({ error: "Failed to export sub-admins data" });
   }
 });
 

@@ -1,13 +1,13 @@
 // src/pages/FieldOfficerDashboard.jsx
-import { useEffect, useState } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle } from "lucide-react";
-import { useAuth } from "@/lib/AuthContext";
+import { useAuth } from '@/lib/AuthContext';
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -16,8 +16,30 @@ export default function FieldOfficerDashboard() {
   const { token, user } = useAuth();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+  // Token validation (simplified)
+  const isTokenValid = useMemo(() => {
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.exp > Date.now() / 1000;
+    } catch {
+      return false;
+    }
+  }, [token]);
+
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Auth recovery mechanism
+  useEffect(() => {
+    if (user && user.role === "SUB_ADMIN" && !token) {
+      console.error("❌ User appears logged in but no token found - corrupted auth state");
+      toast.error("Authentication issue detected. Please log in again.");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    }
+  }, [user, token, navigate]);
   const [selectedReview, setSelectedReview] = useState(null);
   const [notes, setNotes] = useState("");
   const [recommendation, setRecommendation] = useState("");
@@ -25,49 +47,25 @@ export default function FieldOfficerDashboard() {
   const [missingNote, setMissingNote] = useState("");
 
   async function loadReviews() {
+    if (!isTokenValid) {
+      toast.error("Authentication required. Please log in again.");
+      navigate("/login");
+      return;
+    }
+
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
-      if (!res.ok) throw new Error(await res.text());
+      const res = await fetch(`${API}/api/field-reviews`, { headers: authHeader });
+      
+      if (!res.ok) {
+        throw new Error(`Failed to load reviews: ${res.status}`);
+      }
+      
       const data = await res.json();
       const reviewsList = Array.isArray(data?.reviews) ? data.reviews : [];
-      
-      // Enrich student data with CNIC information
-      const enrichedReviews = await Promise.all(
-        reviewsList.map(async (review) => {
-          if (review.applicationId) {
-            try {
-              // Fetch application with full student data to get CNIC
-              const appRes = await fetch(`${API}/api/applications/${review.applicationId}`, { headers: { ...authHeader } });
-              if (appRes.ok) {
-                const appData = await appRes.json();
-                console.log("Fetched student data:", appData.student?.name, "CNIC:", appData.student?.cnic);
-                if (appData.student) {
-                  return {
-                    ...review,
-                    student: {
-                      ...review.student,
-                      name: appData.student.name || review.student?.name,
-                      cnic: appData.student.cnic || review.student?.cnic,
-                      program: appData.student.program || review.student?.program,
-                      university: appData.student.university || review.student?.university,
-                      email: appData.student.email || review.student?.email,
-                      gpa: appData.student.gpa || review.student?.gpa
-                    }
-                  };
-                }
-              }
-            } catch (e) {
-              console.log("Could not fetch student data for application", review.applicationId);
-            }
-          }
-          return review;
-        })
-      );
-      
-      setReviews(enrichedReviews);
+      setReviews(reviewsList);
     } catch (e) {
-      console.error(e);
+      console.error('LoadReviews error:', e);
       toast.error("Failed to load assigned reviews");
     } finally {
       setLoading(false);
@@ -75,17 +73,10 @@ export default function FieldOfficerDashboard() {
   }
 
   useEffect(() => {
-    loadReviews();
-    
-    // Auto-refresh every 30 seconds to catch new assignments or status changes
-    const interval = setInterval(() => {
-      if (!loading) {
-        loadReviews();
-      }
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, [token, loading]);
+    if (isTokenValid) {
+      loadReviews();
+    }
+  }, [isTokenValid]);
 
   async function updateReview(reviewId) {
     try {
@@ -172,7 +163,7 @@ export default function FieldOfficerDashboard() {
   const pendingReviews = reviews.filter(r => r.status === "PENDING" || r.status === "IN_PROGRESS");
   const completedReviews = reviews.filter(r => r.status === "COMPLETED");
 
-  if (user?.role !== "FIELD_OFFICER") {
+  if (user?.role !== "SUB_ADMIN") {
     return <Card className="p-6">Sub Admins only.</Card>;
   }
 
@@ -180,10 +171,34 @@ export default function FieldOfficerDashboard() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Sub Admin Dashboard</h1>
-        <Button variant="outline" className="rounded-2xl" onClick={loadReviews} disabled={loading}>
-          {loading ? "Refreshing…" : "Refresh"}
-        </Button>
+        <div className="flex gap-2">
+          {(!token || !user) && (
+            <Button 
+              onClick={() => navigate("/login")} 
+              variant="destructive"
+              className="text-sm rounded-2xl"
+            >
+              Fix Login Issue
+            </Button>
+          )}
+          <Button variant="outline" className="rounded-2xl" onClick={loadReviews} disabled={loading}>
+            {loading ? "Refreshing…" : "Refresh"}
+          </Button>
+        </div>
       </div>
+
+      {/* Auth Issue Banner */}
+      {(!token || !user) && (
+        <Card className="p-4 border-l-4 border-l-red-500 bg-red-50">
+          <div className="flex items-center gap-2 text-red-700">
+            <AlertTriangle className="h-5 w-5" />
+            <div>
+              <h3 className="font-medium">Authentication Issue Detected</h3>
+              <p className="text-sm">You appear to be logged in but your session is invalid. Please log in again to access your reviews.</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Status Overview Cards */}
       <div className="grid md:grid-cols-3 gap-4">
@@ -309,7 +324,7 @@ export default function FieldOfficerDashboard() {
                       size="sm" 
                       variant="outline" 
                       className="rounded-2xl"
-                      onClick={() => navigate(`/field-officer/review/${review.id}`)}
+                      onClick={() => navigate(`/sub-admin/review/${review.id}`)}
                     >
                       View Details
                     </Button>
@@ -461,10 +476,24 @@ function ReviewModal({
       
       try {
         setLoadingDocs(true);
+        
+        if (!authHeader?.Authorization) {
+          console.error("❌ No auth header available for documents API call");
+          toast.error("Authentication required for documents. Please log in again.");
+          return;
+        }
+        
         const url = new URL(`${API}/api/uploads`);
         url.searchParams.set("studentId", selectedReview.studentId);
         url.searchParams.set("applicationId", selectedReview.applicationId);
-        const res = await fetch(url, { headers: { ...authHeader } });
+        
+        const res = await fetch(url, { headers: authHeader });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(`Failed to load documents: ${res.status}`);
+        }
+        
         const data = await res.json();
         setDocs(Array.isArray(data?.documents) ? data.documents : []);
       } catch (e) {

@@ -4,8 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export default function DonorRegister() {
   const navigate = useNavigate();
@@ -76,7 +75,7 @@ export default function DonorRegister() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API}/api/auth/register`, {
+      const response = await fetch(API.url('/api/auth/register'), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

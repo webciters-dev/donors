@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 // POST /api/payments/create-payment-intent - Create payment intent for embedded payment
 router.post('/create-payment-intent', async (req, res) => {
   try {
-    const { studentId, amount, paymentFrequency, userId } = req.body;
+    const { studentId, amount, paymentFrequency, userId, currency } = req.body;
 
     if (!studentId || !amount || !paymentFrequency || !userId) {
       return res.status(400).json({ 
@@ -36,9 +36,12 @@ router.post('/create-payment-intent', async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized: Only donors can create payment intents' });
     }
 
-    // Get student details
+    // Get student details with applications
     const student = await prisma.student.findUnique({
-      where: { id: studentId }
+      where: { id: studentId },
+      include: {
+        applications: true
+      }
     });
 
     if (!student) {
@@ -49,56 +52,64 @@ router.post('/create-payment-intent', async (req, res) => {
       return res.status(400).json({ error: 'Student is already sponsored' });
     }
 
+    // Get the latest APPROVED application for the student
+    const application = student.applications?.find(app => app.status === 'APPROVED');
+    if (!application) {
+      return res.status(400).json({ error: 'No approved application found for this student' });
+    }
+
     // Verify total commitment matches student's educational need
-    const totalNeed = student.needUSD;
+    // Application currency is determined by university country selection
+    const appCurrency = application.currency || 'USD'; // Default to USD if not set
+    const requestedCurrency = currency || 'USD'; // Default to USD if not provided
+    
+    // No currency normalization needed - support all currencies directly
+    // Use single amount field from application (new structure)
+    const totalNeed = application.needUSD || application.amount || 0; // Fallback to needUSD for existing data
     const providedAmount = parseFloat(amount);
     
-    // Handle currency conversion for validation
-    // Check if this is a UK university (should be GBP but stored as USD)
-    const isUKUniversity = student.university && 
-      (student.university.toLowerCase().includes('oxford') ||
-       student.university.toLowerCase().includes('cambridge') ||
-       student.university.toLowerCase().includes('london') ||
-       student.university.toLowerCase().includes('edinburgh') ||
-       student.university.toLowerCase().includes('manchester') ||
-       student.university.toLowerCase().includes('imperial college') ||
-       student.university.toLowerCase().includes('ucl') ||
-       student.university.toLowerCase().includes('lse'));
+    // Debug logging
+    console.log("Payment validation debug:", {
+      originalRequestedCurrency: currency,
+      originalApplicationCurrency: application.currency,
+      applicationAmount: application.amount,
+      applicationNeedUSD: application.needUSD, // Legacy fallback
+      totalNeed,
+      providedAmount,
+      paymentFrequency,
+      match: providedAmount === totalNeed,
+      studentId: student.id,
+      applicationId: application.id
+    });
     
-    let expectedAmount = totalNeed;
+    // Validate that the application has the required amount set
+    if (!totalNeed || totalNeed <= 0) {
+      return res.status(400).json({ 
+        error: `Application does not have valid educational need amount set for ${appCurrency}. Please contact support.`,
+        applicationCurrency: appCurrency,
+        applicationAmount: application.amount,
+        applicationNeedUSD: application.needUSD // Legacy fallback
+      });
+    }
     
-    // If UK university, convert GBP to USD for comparison (approximate rate: 1 GBP = 1.27 USD)
-    if (isUKUniversity) {
-      // The provided amount is in GBP, convert to USD for comparison
-      const gbpToUsdRate = 1.27;
-      const providedAmountInUSD = providedAmount * gbpToUsdRate;
-      
-      // Allow some tolerance for exchange rate fluctuations (within 5%)
-      const tolerance = totalNeed * 0.05;
-      const diff = Math.abs(providedAmountInUSD - totalNeed);
-      
-      if (diff > tolerance) {
-        return res.status(400).json({ 
-          error: 'Total sponsorship amount must match the full educational need', 
-          required: totalNeed, 
-          provided: providedAmount,
-          providedInUSD: Math.round(providedAmountInUSD),
-          paymentFrequency: paymentFrequency,
-          isUKUniversity: true,
-          conversionRate: gbpToUsdRate
-        });
-      }
-    } else {
-      // For non-UK universities, require exact match
-      if (providedAmount !== totalNeed) {
-        return res.status(400).json({ 
-          error: 'Total sponsorship amount must match the full educational need', 
-          required: totalNeed, 
-          provided: providedAmount,
-          paymentFrequency: paymentFrequency,
-          isUKUniversity: false
-        });
-      }
+    // Validate currency compatibility (must be exact match)
+    if (appCurrency !== requestedCurrency) {
+      return res.status(400).json({ 
+        error: `Currency mismatch: Application uses ${appCurrency} but payment requested in ${requestedCurrency}`,
+        applicationCurrency: appCurrency,
+        requestedCurrency: requestedCurrency
+      });
+    }
+    
+    // Simple exact match validation - no currency conversion needed
+    if (providedAmount !== totalNeed) {
+      return res.status(400).json({ 
+        error: 'Total sponsorship amount must match the full educational need', 
+        required: totalNeed, 
+        provided: providedAmount,
+        currency: currency,
+        paymentFrequency: paymentFrequency
+      });
     }
 
     // Create or get existing Stripe customer
@@ -124,18 +135,25 @@ router.post('/create-payment-intent', async (req, res) => {
     let paymentIntent;
 
     if (paymentFrequency === 'one-time') {
-      // Create one-time payment intent
+      // Use original currency - NO conversion needed
+      const stripeAmount = parseFloat(amount);
+      const stripeCurrency = appCurrency.toLowerCase(); // Stripe uses lowercase
+      const stripeDescription = `Full sponsorship for ${student.name} - ${student.program} at ${student.university}`;
+      
+      // Create one-time payment intent in original currency
       paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(parseFloat(amount) * 100), // Convert to cents
-        currency: 'usd',
+        amount: Math.round(stripeAmount * 100), // Convert to cents/pence/smallest unit
+        currency: stripeCurrency, // Use original currency (usd, gbp, eur, cad, pkr)
         customer: customer.id,
         metadata: {
           studentId,
           userId,
           studentName: student.name,
-          paymentFrequency: 'one-time'
+          paymentFrequency: 'one-time',
+          originalAmount: amount,
+          originalCurrency: appCurrency
         },
-        description: `Full sponsorship for ${student.name} - ${student.program} at ${student.university}`
+        description: stripeDescription
       });
     } else {
       // Create subscription for recurring payments
@@ -149,15 +167,19 @@ router.post('/create-payment-intent', async (req, res) => {
       const interval = intervalMapping[paymentFrequency];
       
       // Calculate amount per interval for 2-year program
+      // Use original amount - NO conversion
+      const baseAmount = parseFloat(amount);
+      const stripeCurrency = appCurrency.toLowerCase(); // Stripe uses lowercase
+      
       let amountPerInterval;
       if (paymentFrequency === 'monthly') {
-        amountPerInterval = Math.round((parseFloat(amount) / 24) * 100); // 24 months over 2 years
+        amountPerInterval = Math.round((baseAmount / 24) * 100); // 24 months over 2 years
       } else if (paymentFrequency === 'quarterly') {
-        amountPerInterval = Math.round((parseFloat(amount) / 8) * 100);  // 8 quarters over 2 years
+        amountPerInterval = Math.round((baseAmount / 8) * 100);  // 8 quarters over 2 years
       } else if (paymentFrequency === 'bi-annually') {
-        amountPerInterval = Math.round((parseFloat(amount) / 4) * 100);  // 4 payments over 2 years
+        amountPerInterval = Math.round((baseAmount / 4) * 100);  // 4 payments over 2 years
       } else if (paymentFrequency === 'annually') {
-        amountPerInterval = Math.round((parseFloat(amount) / 2) * 100);  // 2 payments over 2 years
+        amountPerInterval = Math.round((baseAmount / 2) * 100);  // 2 payments over 2 years
       }
 
       // Create product and price for subscription
@@ -173,14 +195,16 @@ router.post('/create-payment-intent', async (req, res) => {
 
       const price = await stripe.prices.create({
         unit_amount: amountPerInterval,
-        currency: 'usd',
+        currency: stripeCurrency, // Use original currency
         recurring: typeof interval === 'object' ? interval : { interval },
         product: product.id,
         metadata: {
           studentId,
           userId,
           paymentFrequency,
-          totalAmount: amount
+          totalAmount: amount,
+          originalAmount: amount,
+          originalCurrency: appCurrency
         }
       });
 
@@ -289,15 +313,24 @@ router.post('/confirm-payment', async (req, res) => {
 
     // Create sponsorship and update records in a transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create the sponsorship
+      // Store original amount and currency (no conversion)
+      const originalAmount = paymentIntent.metadata?.originalAmount;
+      const originalCurrency = paymentIntent.metadata?.originalCurrency;
+      const sponsorshipAmount = originalAmount ? parseFloat(originalAmount) : Math.round(paymentIntent.amount / 100);
+      
       const sponsorship = await tx.sponsorship.create({
         data: {
           donorId: donor.id,
           studentId,
-          amount: Math.round(paymentIntent.amount / 100), // Convert from cents
+          amount: sponsorshipAmount, // Original amount in original currency
           paymentFrequency,
           stripePaymentIntentId: paymentIntentId,
-          stripeSubscriptionId: paymentIntent.metadata?.subscriptionId || null
+          stripeSubscriptionId: paymentIntent.metadata?.subscriptionId || null,
+          // Store currency information for audit
+          amountOriginal: sponsorshipAmount,
+          currencyOriginal: originalCurrency || paymentIntent.currency?.toUpperCase() || 'USD',
+          amountBaseUSD: paymentIntent.currency === 'usd' ? Math.round(paymentIntent.amount / 100) : null, // Only if USD
+          baseCurrency: paymentIntent.currency?.toUpperCase() || 'USD'
         },
         include: {
           donor: {
@@ -323,12 +356,13 @@ router.post('/confirm-payment', async (req, res) => {
         data: { sponsored: true }
       });
 
-      // Update donor's total funded amount
+      // Update donor's total funded amount in original currency
+      // Note: For multi-currency display, we'll need to track currency-specific totals
       await tx.donor.update({
         where: { id: donor.id },
         data: {
           totalFunded: {
-            increment: Math.round(paymentIntent.amount / 100)
+            increment: sponsorshipAmount // Use original amount
           }
         }
       });
@@ -391,14 +425,28 @@ router.post('/create-checkout-session', async (req, res) => {
       });
     }
 
-    // Create checkout session
+    // Get student's application currency
+    const studentWithApp = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: {
+        applications: {
+          where: { status: 'APPROVED' },
+          orderBy: { submittedAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+    
+    const appCurrency = studentWithApp?.applications?.[0]?.currency || 'USD';
+    
+    // Create checkout session in original currency
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: appCurrency.toLowerCase(), // Use original currency
             product_data: {
               name: `Sponsorship for ${student.name}`,
               description: `${student.program} at ${student.university}`,
@@ -407,7 +455,7 @@ router.post('/create-checkout-session', async (req, res) => {
                 studentName: student.name
               }
             },
-            unit_amount: parseInt(amount) * 100, // Convert to cents
+            unit_amount: parseInt(amount) * 100, // Convert to smallest currency unit
           },
           quantity: 1,
         },
@@ -433,126 +481,7 @@ router.post('/create-checkout-session', async (req, res) => {
   }
 });
 
-// POST /api/payments/confirm-payment - Confirm payment and create sponsorship
-router.post('/confirm-payment', async (req, res) => {
-  try {
-    const { paymentIntentId, studentId, userId, paymentFrequency } = req.body;
-
-    if (!paymentIntentId || !studentId || !userId || !paymentFrequency) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: paymentIntentId, studentId, userId, paymentFrequency' 
-      });
-    }
-
-    // Retrieve the payment intent to verify it's succeeded
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status !== 'succeeded') {
-      return res.status(400).json({ 
-        error: 'Payment not completed', 
-        status: paymentIntent.status 
-      });
-    }
-
-    // Get user and student details
-    const [user, student] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, email: true, name: true, role: true }
-      }),
-      prisma.student.findUnique({
-        where: { id: studentId }
-      })
-    ]);
-
-    if (!user || user.role !== 'DONOR') {
-      return res.status(403).json({ error: 'Unauthorized: Only donors can confirm payments' });
-    }
-
-    if (!student) {
-      return res.status(404).json({ error: 'Student not found' });
-    }
-
-    if (student.sponsored) {
-      return res.status(400).json({ error: 'Student is already sponsored' });
-    }
-
-    // Create or get donor record
-    let donor = await prisma.donor.findFirst({
-      where: { email: user.email }
-    });
-
-    if (!donor) {
-      donor = await prisma.donor.create({
-        data: {
-          name: user.name,
-          email: user.email,
-          organization: null // Can be updated later
-        }
-      });
-    }
-
-    // Create sponsorship and update records in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create the sponsorship
-      const sponsorship = await tx.sponsorship.create({
-        data: {
-          donorId: donor.id,
-          studentId,
-          amount: student.educationalNeed, // Always full amount
-          paymentFrequency,
-          stripePaymentIntentId: paymentIntentId,
-          status: 'ACTIVE'
-        },
-        include: {
-          donor: {
-            select: {
-              name: true,
-              organization: true,
-              taxId: true
-            }
-          },
-          student: {
-            select: {
-              name: true,
-              university: true,
-              program: true,
-              educationalNeed: true
-            }
-          }
-        }
-      });
-
-      // Mark student as sponsored
-      await tx.student.update({
-        where: { id: studentId },
-        data: { sponsored: true }
-      });
-
-      // Update donor's total funded amount
-      await tx.donor.update({
-        where: { id: donor.id },
-        data: {
-          totalFunded: {
-            increment: student.educationalNeed
-          }
-        }
-      });
-
-      return sponsorship;
-    });
-
-    res.json({ 
-      success: true, 
-      sponsorship: result,
-      message: 'Sponsorship created successfully'
-    });
-
-  } catch (error) {
-    console.error('Error confirming payment:', error);
-    res.status(500).json({ error: 'Failed to confirm payment' });
-  }
-});
+// Duplicate endpoint removed - using the first confirm-payment implementation
 
 // POST /api/payments/verify-payment - Verify and process successful payment
 router.post('/verify-payment', async (req, res) => {

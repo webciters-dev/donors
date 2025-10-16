@@ -109,6 +109,7 @@ router.post("/register-student", async (req, res) => {
       gradYear,
       needUSD,
       field,
+      personalIntroduction,
     } = req.body;
 
     if (!name || !email || !password) {
@@ -130,6 +131,7 @@ router.post("/register-student", async (req, res) => {
         gradYear: typeof gradYear === "number" ? gradYear : undefined,
         needUSD: typeof needUSD === "number" ? needUSD : undefined,
         field: field ?? undefined,
+        personalIntroduction: personalIntroduction ?? undefined,
       },
       create: {
         name,
@@ -144,6 +146,7 @@ router.post("/register-student", async (req, res) => {
         gradYear: typeof gradYear === "number" ? gradYear : new Date().getFullYear() + 1,
         needUSD: typeof needUSD === "number" ? needUSD : 0,
         field: field ?? "",
+        personalIntroduction: personalIntroduction ?? "",
       },
     });
 

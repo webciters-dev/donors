@@ -157,7 +157,7 @@ export const Marketplace = () => {
   const [gender, setGender] = useState("");
   const [province, setProvince] = useState("");
   const [city, setCity] = useState("");
-  const [maxBudget, setMaxBudget] = useState("");
+  // maxBudget filter removed due to multiple currency complexity
 
   const [students, setStudents] = useState([]);
   // const [fx, setFx] = useState(null); // reserved for donor-localized display in Phase 1 UI
@@ -178,6 +178,8 @@ export const Marketplace = () => {
           const data = await res.json();
           const students = Array.isArray(data?.students) ? data.students : [];
           
+          console.log("🔍 Marketplace API Response:", { totalStudents: students.length, students });
+          
           if (students.length > 0) {
             // Transform API student data to marketplace format
             const transformedStudents = students.map(student => ({
@@ -192,7 +194,7 @@ export const Marketplace = () => {
               province: student.province,
               gender: student.gender,
               isApproved: true, // All students from approved endpoint are approved
-              sponsored: student.remainingNeed <= 0,
+              sponsored: Boolean(student.sponsored), // Trust API's sponsored calculation
               remainingNeed: student.remainingNeed || 0, // 🔧 FIX: Add missing field
               needUsd: student.remainingNeed || 0,
               needUSD: student.remainingNeed || 0,
@@ -200,6 +202,17 @@ export const Marketplace = () => {
               needPKR: student.application?.needPKR || null,
               term: student.application?.term || null,
             }));
+
+            console.log("🔍 Marketplace Transformed Students:", { 
+              totalTransformed: transformedStudents.length, 
+              sample: transformedStudents.slice(0, 2).map(s => ({
+                name: s.name,
+                sponsored: s.sponsored,
+                remainingNeed: s.remainingNeed,
+                needUSD: s.needUSD,
+                isApproved: s.isApproved
+              }))
+            });
 
             setStudents(transformedStudents);
           } else {
@@ -241,13 +254,48 @@ export const Marketplace = () => {
     );
   }
 
-  // SHOW ONLY approved + not fully sponsored
+  // SHOW ONLY approved + not fully sponsored (ONE STUDENT = ONE DONOR)
   const filtered = useMemo(() => {
     const t = q.toLowerCase();
 
-    return students
-      .filter((s) => s.isApproved) // Only show admin-approved students
-      .filter((s) => !s.sponsored && (s.remainingNeed > 0 || s.needUsd > 0 || s.needUSD > 0)) // Only show unsponsored students
+    console.log("🔍 Marketplace Filtering Debug:", {
+      totalStudents: students.length,
+      studentsData: students.map(s => ({
+        name: s.name,
+        isApproved: s.isApproved,
+        sponsored: s.sponsored,
+        remainingNeed: s.remainingNeed,
+        needUSD: s.needUSD
+      }))
+    });
+
+    const approvedStudents = students.filter((s) => s.isApproved);
+    console.log("🔍 After approval filter:", approvedStudents.length);
+
+    const unsponsoredStudents = approvedStudents.filter((s) => {
+      // Hide sponsored students - ONE STUDENT = ONE DONOR FULL SPONSORSHIP
+      // Trust the API's sponsored field calculation
+      const isSponsored = Boolean(s?.sponsored);
+      const shouldShow = !isSponsored;
+      
+      if (!shouldShow) {
+        console.log("🔍 Filtering out sponsored student:", s.name, {
+          sponsored: s.sponsored,
+          remainingNeed: s.remainingNeed,
+          reason: "Student already has a sponsor (ONE STUDENT = ONE DONOR)"
+        });
+      } else {
+        console.log("🔍 Showing available student:", s.name, {
+          sponsored: s.sponsored,
+          remainingNeed: s.remainingNeed
+        });
+      }
+      
+      return shouldShow; // Only show unsponsored students
+    });
+    console.log("🔍 After sponsorship filter:", unsponsoredStudents.length);
+
+    return unsponsoredStudents
       .filter((s) => {
         const textMatch =
           !t ||
@@ -261,12 +309,10 @@ export const Marketplace = () => {
         const provOk = !province || s.province === province;
         const cityOk = !city || (s.city && s.city.toLowerCase() === city.toLowerCase());
 
-        const need = Number(s?.needUsd ?? s?.needUSD ?? 0);
-        const budgetOk = !maxBudget || need <= Number(maxBudget);
-
-        return textMatch && programOk && genderOk && provOk && cityOk && budgetOk;
+        // Budget filter removed due to multiple currency complexity
+        return textMatch && programOk && genderOk && provOk && cityOk;
       });
-  }, [students, q, program, gender, province, city, maxBudget]);
+  }, [students, q, program, gender, province, city]);
 
   return (
     <div className="space-y-6">
@@ -277,7 +323,7 @@ export const Marketplace = () => {
       />
 
       <Card className="p-4">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center">
           {/* Search */}
           <div className="relative md:col-span-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -336,14 +382,7 @@ export const Marketplace = () => {
             onChange={(e) => setCity(e.target.value)}
           />
 
-          {/* Max budget (filters by remaining need) */}
-          <Input
-            className="rounded-2xl md:col-span-1"
-            type="number"
-            placeholder="Max ($)"
-            value={maxBudget}
-            onChange={(e) => setMaxBudget(e.target.value)}
-          />
+          {/* Max budget filter removed - too complex with multiple currencies */}
         </div>
       </Card>
 

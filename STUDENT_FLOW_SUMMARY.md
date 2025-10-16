@@ -48,7 +48,7 @@ User {
   id: String (PK)
   email: String (unique)
   passwordHash: String
-  role: STUDENT | DONOR | ADMIN | FIELD_OFFICER
+  role: STUDENT | DONOR | ADMIN | SUB_ADMIN
   studentId: String? (FK → Student.id)
   donorId: String? (FK → Donor.id)
 }

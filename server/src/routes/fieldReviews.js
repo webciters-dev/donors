@@ -12,7 +12,7 @@ const router = express.Router();
 router.get("/", requireAuth, async (req, res) => {
   try {
     const role = req.user?.role;
-    const where = role === "FIELD_OFFICER"
+    const where = role === "SUB_ADMIN"
       ? { officerUserId: req.user.id }
       : {};
 
@@ -121,8 +121,8 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   }
 });
 
-// Update review (field officer sets status/notes/recommendation)
-router.patch("/:id", requireAuth, onlyRoles("FIELD_OFFICER", "ADMIN"), async (req, res) => {
+// Update review (sub admin sets status/notes/recommendation)
+router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -212,8 +212,8 @@ router.patch("/:id", requireAuth, onlyRoles("FIELD_OFFICER", "ADMIN"), async (re
   }
 });
 
-// Request missing info (field officer) — email placeholder and message log
-router.post("/:id/request-missing", requireAuth, onlyRoles("FIELD_OFFICER", "ADMIN"), async (req, res) => {
+// Request missing info (sub admin) — email placeholder and message log
+router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { items = [], note = "" } = req.body || {};
@@ -274,8 +274,8 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
       select: { id: true, email: true, name: true, role: true }
     });
 
-    if (!newFieldOfficer || newFieldOfficer.role !== 'FIELD_OFFICER') {
-      return res.status(404).json({ error: "Valid field officer not found" });
+    if (!newFieldOfficer || newFieldOfficer.role !== 'SUB_ADMIN') {
+      return res.status(404).json({ error: "Valid sub admin not found" });
     }
 
     // Update the review assignment

@@ -94,7 +94,7 @@ export const Nav = ({ active, setActive }) => {
                   >
                     {user.email}
                   </span>
-                  {role && <Badge variant="secondary">{role === 'FIELD_OFFICER' ? 'Sub Admin' : role}</Badge>}
+                  {role && <Badge variant="secondary">{role === 'SUB_ADMIN' ? 'Sub Admin' : role}</Badge>}
                 </div>
 
                 <Button variant="outline" className="rounded-2xl" onClick={handleLogout}>

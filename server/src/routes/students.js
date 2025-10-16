@@ -74,6 +74,16 @@ router.get("/approved/:id", async (req, res) => {
       city: student.city,
       province: student.province,
       gender: student.gender,
+      personalIntroduction: student.personalIntroduction,
+      // Enhanced details for donors
+      familySize: student.familySize,
+      parentsOccupation: student.parentsOccupation,
+      monthlyFamilyIncome: student.monthlyFamilyIncome,
+      careerGoals: student.careerGoals,
+      academicAchievements: student.academicAchievements,
+      communityInvolvement: student.communityInvolvement,
+      currentAcademicYear: student.currentAcademicYear,
+      specificField: student.specificField,
       // Financial information
       needUSD: app?.needUSD || 0,
       needPKR: app?.needPKR || 0,
@@ -218,6 +228,83 @@ router.get("/me", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
 });
 
 /**
+ * GET /api/students/:id/sponsorship-status
+ * Check if a student is sponsored and return sponsorship details
+ * Roles: STUDENT (own data), DONOR (sponsored students), ADMIN
+ */
+router.get("/:id/sponsorship-status", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Verify access permissions
+    let hasAccess = false;
+    
+    if (userRole === 'ADMIN') {
+      hasAccess = true;
+    } else if (userRole === 'STUDENT') {
+      // Students can only check their own sponsorship status
+      const student = await prisma.student.findUnique({
+        where: { id },
+        include: { User: true }
+      });
+      hasAccess = student?.User?.id === userId;
+    } else if (userRole === 'DONOR') {
+      // Donors can check status of students they sponsor
+      const sponsorship = await prisma.sponsorship.findFirst({
+        where: {
+          studentId: id,
+          donor: {
+            User: { id: userId }
+          }
+        }
+      });
+      hasAccess = !!sponsorship;
+    }
+    
+    if (!hasAccess) {
+      return res.status(403).json({ error: 'Unauthorized to view this student\'s sponsorship status' });
+    }
+    
+    // Get sponsorship information
+    const sponsorship = await prisma.sponsorship.findFirst({
+      where: { studentId: id },
+      include: {
+        donor: {
+          select: {
+            id: true,
+            name: true,
+            organization: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { date: 'desc' }
+    });
+    
+    const student = await prisma.student.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        sponsored: true
+      }
+    });
+    
+    res.json({
+      student,
+      sponsored: !!sponsorship,
+      sponsorship
+    });
+    
+  } catch (error) {
+    console.error('Error checking sponsorship status:', error);
+    res.status(500).json({ error: 'Failed to check sponsorship status' });
+  }
+});
+
+/**
  * PUT /api/students/me
  * Update the current student's profile (validated by Zod).
  * Roles: STUDENT
@@ -252,6 +339,16 @@ router.put(
         currentInstitution,
         currentCity,
         currentCompletionYear,
+        personalIntroduction,
+        // Enhanced details for donors
+        familySize,
+        parentsOccupation,
+        monthlyFamilyIncome,
+        careerGoals,
+        academicAchievements,
+        communityInvolvement,
+        currentAcademicYear,
+        specificField,
       } = req.body;
 
       // Ensure the student exists before update
@@ -293,6 +390,16 @@ router.put(
           ...(currentCompletionYear !== undefined
             ? { currentCompletionYear: currentCompletionYear ? Number(currentCompletionYear) : null }
             : {}),
+          ...(personalIntroduction !== undefined ? { personalIntroduction } : {}),
+          // Enhanced details for donors
+          ...(familySize !== undefined ? { familySize: familySize ? Number(familySize) : null } : {}),
+          ...(parentsOccupation !== undefined ? { parentsOccupation } : {}),
+          ...(monthlyFamilyIncome !== undefined ? { monthlyFamilyIncome } : {}),
+          ...(careerGoals !== undefined ? { careerGoals } : {}),
+          ...(academicAchievements !== undefined ? { academicAchievements } : {}),
+          ...(communityInvolvement !== undefined ? { communityInvolvement } : {}),
+          ...(currentAcademicYear !== undefined ? { currentAcademicYear } : {}),
+          ...(specificField !== undefined ? { specificField } : {}),
         },
       });
 

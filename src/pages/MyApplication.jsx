@@ -41,6 +41,12 @@ export const MyApplication = () => {
   const [showProfileBanner, setShowProfileBanner] = useState(true);
 
   const [preferredUploadType, setPreferredUploadType] = useState(null);
+  
+  // Reply functionality state
+  const [replyText, setReplyText] = useState("");
+  const [sendingReply, setSendingReply] = useState(false);
+  const [showReplyBox, setShowReplyBox] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState(null);
 
   // Load current application (polling)
   useEffect(() => {
@@ -106,18 +112,86 @@ export const MyApplication = () => {
 
     async function loadMessages() {
       try {
-  const url = new URL(`${API}/api/messages`);
-  url.searchParams.set("studentId", application.studentId);
+        console.log('🔍 MyApplication: Loading messages for studentId:', application.studentId);
+        
+        // Load old messages from the existing API
+        const url = new URL(`${API}/api/messages`);
+        url.searchParams.set("studentId", application.studentId);
 
         const res = await fetch(url, { headers: { ...authHeader } });
         const data = await res.json();
-        const list = Array.isArray(data?.messages) ? data.messages : [];
+        let allMessages = Array.isArray(data?.messages) ? data.messages : [];
+        console.log('🔍 MyApplication: Old messages loaded:', allMessages.length);
+        
+        // Load new conversation messages
+        try {
+          console.log('🔍 MyApplication: Loading conversations...');
+          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+            headers: { ...authHeader }
+          });
+          console.log('🔍 MyApplication: Conversations response status:', convRes.status);
+          
+          if (convRes.ok) {
+            const convData = await convRes.json();
+            console.log('🔍 MyApplication: Conversations data:', convData);
+            const conversations = convData.conversations || [];
+            console.log(`🔍 MyApplication: Found ${conversations.length} conversations`);
+            
+            // Extract messages from conversations and add to allMessages
+            conversations.forEach(conv => {
+              console.log('🔍 MyApplication: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
+              
+              // Set the active conversation ID for replies (use the first donor conversation)
+              if (conv.type === 'DONOR_STUDENT' && !activeConversationId) {
+                setActiveConversationId(conv.id);
+                console.log('🔍 MyApplication: Set active conversation for replies:', conv.id);
+              }
+              
+              if (conv.messages) {
+                conv.messages.forEach(msg => {
+                  console.log('🔍 MyApplication: Adding conversation message:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
+                  allMessages.push({
+                    id: msg.id,
+                    text: msg.text,
+                    fromRole: msg.senderRole.toLowerCase(),
+                    createdAt: msg.createdAt,
+                    senderName: msg.sender?.name || 'Unknown',
+                    conversationId: conv.id,
+                    conversationType: conv.type
+                  });
+                });
+              }
+            });
+          } else {
+            const errorText = await convRes.text();
+            console.error('🔍 MyApplication: Conversations API error:', convRes.status, errorText);
+          }
+        } catch (convError) {
+          console.error('🔍 MyApplication: Failed to load conversations:', convError);
+        }
+        
+        // Filter out admin assignment messages if student is APPROVED
+        let filteredMessages = allMessages;
+        if (application?.status === 'APPROVED') {
+          filteredMessages = allMessages.filter(msg => {
+            // Remove admin messages about assignment removal
+            const isAssignmentMessage = msg.fromRole === 'admin' && 
+              (msg.text.includes('Assignment removed') || msg.text.includes('unassigned'));
+            return !isAssignmentMessage;
+          });
+          console.log('🔍 MyApplication: Filtered out assignment messages for APPROVED student');
+        }
+        
+        // Sort all messages by date (newest first for better UX)
+        filteredMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log('🔍 MyApplication: Total messages after processing:', filteredMessages.length);
+        
         if (!cancel) {
-          setRawMessages(list);
-          setMessages(list.map((m) => ({ from: m.fromRole, text: m.text })));
+          setRawMessages(filteredMessages);
+          setMessages(filteredMessages.map((m) => ({ from: m.fromRole, text: m.text, senderName: m.senderName })));
         }
       } catch (err) {
-        console.error(err);
+        console.error('🔍 MyApplication: Error loading messages:', err);
       }
     }
 
@@ -130,19 +204,121 @@ export const MyApplication = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [application?.studentId, application?.id, token]);
 
+  // Send reply to donor
+  async function sendReply() {
+    if (!replyText.trim() || !activeConversationId) {
+      toast.error("Please enter a reply message");
+      return;
+    }
+    
+    try {
+      setSendingReply(true);
+      console.log('🔍 MyApplication: Sending reply to conversation:', activeConversationId);
+      
+      const response = await fetch(`${API}/api/conversations/${activeConversationId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeader
+        },
+        body: JSON.stringify({
+          text: replyText.trim()
+        })
+      });
+      
+      if (response.ok) {
+        console.log('🔍 MyApplication: Reply sent successfully');
+        toast.success("Reply sent successfully!");
+        setReplyText("");
+        setShowReplyBox(false);
+        // Reload messages to show the new reply
+        await reloadMessages();
+      } else {
+        const errorData = await response.json();
+        console.error('🔍 MyApplication: Failed to send reply:', errorData);
+        toast.error(errorData.error || "Failed to send reply");
+      }
+    } catch (error) {
+      console.error('🔍 MyApplication: Error sending reply:', error);
+      toast.error("Failed to send reply");
+    } finally {
+      setSendingReply(false);
+    }
+  }
+
   async function reloadMessages() {
     if (!application?.studentId) return;
     try {
       setReloadingMsgs(true);
+      console.log('🔍 MyApplication: Reloading messages for studentId:', application.studentId);
+      
+      // Load old messages
       const url = new URL(`${API}/api/messages`);
       url.searchParams.set("studentId", application.studentId);
       const res = await fetch(url, { headers: { ...authHeader } });
       const data = await res.json();
-      const list = Array.isArray(data?.messages) ? data.messages : [];
-      setRawMessages(list);
-      setMessages(list.map((m) => ({ from: m.fromRole, text: m.text })));
+      let allMessages = Array.isArray(data?.messages) ? data.messages : [];
+      console.log('🔍 MyApplication: Old messages reloaded:', allMessages.length);
+      
+      // Load new conversation messages
+      try {
+        console.log('🔍 MyApplication: Reloading conversations...');
+        const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+          headers: { ...authHeader }
+        });
+        
+        if (convRes.ok) {
+          const convData = await convRes.json();
+          const conversations = convData.conversations || [];
+          console.log(`🔍 MyApplication: Reloaded ${conversations.length} conversations`);
+          
+          // Extract messages from conversations
+          conversations.forEach(conv => {
+            // Set the active conversation ID for replies (use the first donor conversation)
+            if (conv.type === 'DONOR_STUDENT' && !activeConversationId) {
+              setActiveConversationId(conv.id);
+            }
+            
+            if (conv.messages) {
+              conv.messages.forEach(msg => {
+                allMessages.push({
+                  id: msg.id,
+                  text: msg.text,
+                  fromRole: msg.senderRole.toLowerCase(),
+                  createdAt: msg.createdAt,
+                  senderName: msg.sender?.name || 'Unknown',
+                  conversationId: conv.id,
+                  conversationType: conv.type
+                });
+              });
+            }
+          });
+        } else {
+          console.error('🔍 MyApplication: Conversations reload failed:', convRes.status);
+        }
+      } catch (convError) {
+        console.error('🔍 MyApplication: Failed to reload conversations:', convError);
+      }
+      
+      // Filter out admin assignment messages if student is APPROVED
+      let filteredMessages = allMessages;
+      if (application?.status === 'APPROVED') {
+        filteredMessages = allMessages.filter(msg => {
+          const isAssignmentMessage = msg.fromRole === 'admin' && 
+            (msg.text.includes('Assignment removed') || msg.text.includes('unassigned'));
+          return !isAssignmentMessage;
+        });
+        console.log('🔍 MyApplication: Filtered out assignment messages for APPROVED student');
+      }
+      
+      // Sort all messages by date (newest first for better UX)
+      filteredMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      console.log('🔍 MyApplication: Total messages after reload:', filteredMessages.length);
+      
+      setRawMessages(filteredMessages);
+      setMessages(filteredMessages.map((m) => ({ from: m.fromRole, text: m.text, senderName: m.senderName })));
     } catch (e) {
-      console.error(e);
+      console.error('🔍 MyApplication: Error reloading messages:', e);
       toast.error("Failed to refresh messages");
     } finally {
       setReloadingMsgs(false);
@@ -326,7 +502,7 @@ export const MyApplication = () => {
   }, [rawMessages]);
 
   const requestedItemsParsed = useMemo(() => {
-    // find messages from admin/field_officer that have "Missing info requested: ..."
+    // find messages from admin/sub_admin that have "Missing info requested: ..."
     const items = [];
     let lastRequestText = null;
     for (const m of rawMessages) {
@@ -637,33 +813,106 @@ export const MyApplication = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {rawMessages.map((message, idx) => (
-              <div
-                key={message.id || idx}
-                className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <User className="h-4 w-4" />
-                      <span className="font-medium">
-                        {message.fromRole === 'admin' || message.fromRole === 'field_officer' ? 'Admin' : 'Student'}
-                      </span>
-                      <span>•</span>
-                      <span>{message.createdAt ? new Date(message.createdAt).toLocaleDateString() : 'Recent'}</span>
-                      {(message.fromRole === 'admin' || message.fromRole === 'field_officer') && (
-                        <Badge variant="outline" className="ml-2 text-xs bg-blue-50 border-blue-200 text-blue-700">
-                          Official
-                        </Badge>
-                      )}
+            {rawMessages.map((message, idx) => {
+              const isDonorMessage = message.fromRole === 'donor';
+              const isStudentMessage = message.fromRole === 'student';
+              const isLatest = idx === 0; // Since messages are sorted newest first
+              const needsAttention = isDonorMessage && isLatest;
+              
+              return (
+                <div
+                  key={message.id || idx}
+                  className={`rounded-lg border p-4 shadow-sm hover:shadow-md transition-shadow ${
+                    needsAttention 
+                      ? 'bg-green-50 border-green-200 ring-2 ring-green-100' 
+                      : isDonorMessage 
+                        ? 'bg-blue-50 border-blue-200'
+                        : isStudentMessage
+                          ? 'bg-purple-50 border-purple-200' 
+                          : 'bg-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <User className="h-4 w-4" />
+                        <span className="font-medium">
+                          {message.fromRole === 'admin' || message.fromRole === 'sub_admin' 
+                            ? 'Admin' 
+                            : message.fromRole === 'donor'
+                              ? `💝 Donor${message.senderName ? `: ${message.senderName}` : ''}`
+                              : '👤 You'}
+                        </span>
+                        <span>•</span>
+                        <span>{message.createdAt ? new Date(message.createdAt).toLocaleDateString() : 'Recent'}</span>
+                        {(message.fromRole === 'admin' || message.fromRole === 'sub_admin') && (
+                          <Badge variant="outline" className="ml-2 text-xs bg-blue-50 border-blue-200 text-blue-700">
+                            Official
+                          </Badge>
+                        )}
+                        {needsAttention && (
+                          <Badge className="ml-2 text-xs bg-green-600 text-white animate-pulse">
+                            ✨ New - Reply Needed
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
+                        {message.text}
+                      </p>
                     </div>
-                    <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
-                      {message.text}
-                    </p>
                   </div>
                 </div>
+              );
+            })}
+            
+            {/* Reply Section - Show if there are donor messages */}
+            {rawMessages.some(msg => msg.fromRole === 'donor') && (
+              <div className="border-t pt-4">
+                {!showReplyBox ? (
+                  <Button 
+                    onClick={() => setShowReplyBox(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={!activeConversationId}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Reply to Donor
+                  </Button>
+                ) : (
+                  <div className="space-y-3 bg-green-50 p-4 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4 text-green-600" />
+                      <span className="font-medium text-green-800">Reply to Donor</span>
+                    </div>
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Type your reply here..."
+                      className="w-full p-3 border border-green-300 rounded-md resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      rows={4}
+                    />
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={sendReply}
+                        disabled={sendingReply || !replyText.trim()}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        {sendingReply ? 'Sending...' : 'Send Reply'}
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowReplyBox(false);
+                          setReplyText("");
+                        }}
+                        disabled={sendingReply}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
+            )}
           </div>
         )}
       </Card>

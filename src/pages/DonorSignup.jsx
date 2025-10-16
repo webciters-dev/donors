@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 // Country options with priority grouping
 const COUNTRY_OPTIONS = {
@@ -244,9 +243,9 @@ export default function DonorSignup() {
         phone: form.phone.trim() || null,
       };
       
-      console.log("🚀 Sending registration request:", requestData);
+
       
-      const res = await fetch(`${API}/api/auth/register-donor`, {
+      const res = await fetch(API.url('/api/auth/register-donor'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
@@ -258,7 +257,7 @@ export default function DonorSignup() {
       }
 
       const data = await res.json();
-      console.log("🎉 Registration successful:", data);
+
       
       // Automatically log the user in with the returned token and user data
       login({

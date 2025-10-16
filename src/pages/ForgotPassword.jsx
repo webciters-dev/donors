@@ -28,7 +28,7 @@ export default function ForgotPassword() {
       const data = await res.json();
       // In production you would get the token via email. For local dev we display it:
       if (data?.token) {
-        console.log("Password reset token (dev):", data.token);
+
       }
       setSent(true);
       toast.success("If that email exists, a reset link has been sent.");

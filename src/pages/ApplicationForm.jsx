@@ -7,8 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { Eye, EyeOff, LogIn } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 // Password input component with visibility toggle
 const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
@@ -59,11 +58,7 @@ export const ApplicationForm = () => {
   const [isRegistered, setIsRegistered] = useState(!!user); // If user exists, they're registered
   const [studentId, setStudentId] = useState(user?.studentId || null); // Use existing student ID
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Current user:", user);
-    console.log("Student ID:", studentId);
-  }, [user, studentId]);
+
     
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -77,7 +72,7 @@ export const ApplicationForm = () => {
   }, [location.search, user]);
 
   const [form, setForm] = useState(() => {
-    console.log("🏗️ Initializing form state with user:", user?.name);
+
     return {
       // Step 1 — identity + credentials
       name: user?.name || "",
@@ -85,6 +80,7 @@ export const ApplicationForm = () => {
       password: "",
       confirm: "",
       gender: "",
+      personalIntroduction: "", // Personal introduction about student and family
       // Step 2 — education basics
       country: "", // Country where university is located (required)
       university: "",
@@ -96,7 +92,9 @@ export const ApplicationForm = () => {
       // Currency (auto-selected based on country)
       currency: "PKR", // Default to PKR for our primary market
       // Step 3 — financial details
-      totalExpense: "",
+      universityFee: "", // Tuition and academic fees
+      livingExpenses: "", // Books, accommodation, food, transport, etc.
+      totalExpense: "", // Auto-calculated (universityFee + livingExpenses)
       scholarshipAmount: "0", // Default to 0
       amount: "", // This will be auto-calculated (totalExpense - scholarshipAmount)
     };
@@ -104,17 +102,12 @@ export const ApplicationForm = () => {
 
 
 
-  // Debug form state
-  useEffect(() => {
-    console.log("🔍 Debug - user object:", user);
-    console.log("🔍 Debug - form.name:", form.name);
-    console.log("🔍 Debug - user?.name:", user?.name);
-  }, [user, form.name]);
+
 
   // Update form when user data loads or changes
   useEffect(() => {
     if (user?.name) {
-      console.log("🔄 Updating form with user data:", user.name);
+
       setForm(prev => ({
         ...prev,
         name: user.name,
@@ -126,7 +119,7 @@ export const ApplicationForm = () => {
   // Force form sync when user logs in and has name
   useEffect(() => {
     if (user && user.name && !form.name) {
-      console.log("🔄 Force syncing user data to form:", user.name);
+
       setForm(prev => ({
         ...prev,
         name: user.name,
@@ -153,7 +146,7 @@ export const ApplicationForm = () => {
       setLoading(true);
 
       // Register student using the student-specific endpoint
-      const regRes = await fetch(`${API}/api/auth/register-student`, {
+      const regRes = await fetch(API.url('/api/auth/register-student'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,6 +154,7 @@ export const ApplicationForm = () => {
           email: form.email.trim().toLowerCase(),
           password: form.password,
           gender: form.gender,
+          personalIntroduction: form.personalIntroduction.trim(),
           // These fields will be updated later in Step 2 & 3, but we need defaults
           university: "",
           program: "",
@@ -183,7 +177,7 @@ export const ApplicationForm = () => {
       
       // Auto-login after successful registration
       try {
-        const loginRes = await fetch(`${API}/api/auth/login`, {
+        const loginRes = await fetch(API.url('/api/auth/login'), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
@@ -463,6 +457,36 @@ export const ApplicationForm = () => {
     });
   };
 
+  // Handle university fee change
+  const handleUniversityFeeChange = (value) => {
+    const universityFee = Number(value || 0);
+    const livingExpenses = Number(form.livingExpenses || 0);
+    const newTotal = universityFee + livingExpenses;
+    const newAmount = calculateRequiredAmount(newTotal.toString(), form.scholarshipAmount);
+    
+    setForm({
+      ...form,
+      universityFee: value,
+      totalExpense: newTotal.toString(),
+      amount: newAmount.toString()
+    });
+  };
+
+  // Handle living expenses change
+  const handleLivingExpensesChange = (value) => {
+    const universityFee = Number(form.universityFee || 0);
+    const livingExpenses = Number(value || 0);
+    const newTotal = universityFee + livingExpenses;
+    const newAmount = calculateRequiredAmount(newTotal.toString(), form.scholarshipAmount);
+    
+    setForm({
+      ...form,
+      livingExpenses: value,
+      totalExpense: newTotal.toString(),
+      amount: newAmount.toString()
+    });
+  };
+
   // Final Application Submission (Step 3)
   async function handleSubmit(e) {
     e.preventDefault();
@@ -471,25 +495,19 @@ export const ApplicationForm = () => {
 
     // Validation
     if (!form.university || !form.program || !form.country || !form.gpa || !form.gradYear) {
-      console.log("❌ Validation failed:", {
-        university: form.university,
-        program: form.program, 
-        country: form.country,
-        gpa: form.gpa,
-        gradYear: form.gradYear
-      });
       toast.error("Please complete all required fields: university, program, country, GPA, and graduation year.");
       return;
     }
     
     // Validate term field too
     if (!form.term) {
-      console.log("❌ Term validation failed:", form.term);
       toast.error("Please specify when your program starts (e.g., Spring 2025, Fall 2025).");
       return;
     }
 
     // Validate financial fields
+    const universityFeeNum = Number(form.universityFee || 0);
+    const livingExpensesNum = Number(form.livingExpenses || 0);
     const totalExpenseNum = Number(form.totalExpense || 0);
     const scholarshipNum = Number(form.scholarshipAmount || 0);
     const requiredAmountNum = Number(form.amount || 0);
@@ -536,8 +554,7 @@ export const ApplicationForm = () => {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      console.log("🔑 Auth token present:", !!token);
-      console.log("👤 User ID:", currentStudentId);
+
 
       // Step 1: Update student profile with educational details
       const studentUpdatePayload = {
@@ -549,9 +566,9 @@ export const ApplicationForm = () => {
         // Note: country field needs to be added to backend PATCH route
       };
 
-      console.log("📚 Updating student profile:", studentUpdatePayload);
 
-      const studentRes = await fetch(`${API}/api/students/${currentStudentId}`, {
+
+      const studentRes = await fetch(API.url(`/api/students/${currentStudentId}`), {
         method: "PATCH",
         headers,
         body: JSON.stringify(studentUpdatePayload),
@@ -578,7 +595,7 @@ export const ApplicationForm = () => {
         throw new Error(studentError.error || studentError.message || "Failed to update student profile");
       }
 
-      console.log("✅ Student profile updated successfully");
+
 
       // Step 2: Create application with financial details
       const applicationPayload = {
@@ -586,6 +603,8 @@ export const ApplicationForm = () => {
         term: form.term || "Not specified",
         currency: form.currency,
         // Add the new financial breakdown
+        universityFee: universityFeeNum,
+        livingExpenses: livingExpensesNum,
         totalExpense: totalExpenseNum,
         scholarshipAmount: scholarshipNum,
       };
@@ -597,9 +616,9 @@ export const ApplicationForm = () => {
         applicationPayload.needUSD = requiredAmountNum;
       }
 
-      console.log("💰 Creating application:", applicationPayload);
 
-      const appRes = await fetch(`${API}/api/applications`, {
+
+      const appRes = await fetch(API.url('/api/applications'), {
         method: "POST",
         headers,
         body: JSON.stringify(applicationPayload),
@@ -715,15 +734,33 @@ export const ApplicationForm = () => {
                 <option value="F">Female</option>
                 <option value="Other">Other</option>
               </select>
+            </div>
 
-              <div className="md:col-span-2 flex justify-end">
-                <Button
-                  onClick={handleStep1Registration}
-                  disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender}
-                >
-                  {loading ? "Creating Account..." : "Create Account & Continue"}
-                </Button>
+            {/* Personal Introduction */}
+            <div className="md:col-span-2 space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Tell us about yourself and your family <span className="text-gray-500">(Optional but recommended)</span>
+              </label>
+              <textarea
+                className="w-full rounded-2xl border px-3 py-2 text-sm resize-none"
+                rows={4}
+                placeholder="Share a brief introduction about yourself, your background, family situation, interests, and what motivates you to pursue higher education. This helps potential sponsors understand your story better."
+                value={form.personalIntroduction}
+                onChange={(e) => setForm({ ...form, personalIntroduction: e.target.value })}
+                maxLength={1000}
+              />
+              <div className="text-xs text-gray-500 text-right">
+                {form.personalIntroduction.length}/1000 characters
               </div>
+            </div>
+
+            <div className="md:col-span-2 flex justify-end">
+              <Button
+                onClick={handleStep1Registration}
+                disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender}
+              >
+                {loading ? "Creating Account..." : "Create Account & Continue"}
+              </Button>
             </div>
           </div>
         )}
@@ -853,12 +890,7 @@ export const ApplicationForm = () => {
         {/* STEP 3 — currency + amount + review + submit */}
         {step === 3 && (
           <div>
-            {/* Debug info - will show in console */}
-            {console.log("📊 Step 3 Debug:", { 
-              "user?.name": user?.name, 
-              "form.name": form.name, 
-              "user object": user 
-            })}
+
             <form onSubmit={handleSubmit} className="space-y-6">
             {/* Currency Selection */}
             <div className="space-y-2">
@@ -885,21 +917,61 @@ export const ApplicationForm = () => {
             <div className="space-y-4">
               <h3 className="text-lg font-medium text-slate-800">Financial Details</h3>
               
-              {/* Total Expense */}
+              {/* University Fee */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">
-                  Total Program Expense ({form.currency})
+                  University Fee ({form.currency})
                 </label>
                 <Input
-                  placeholder={`Total cost of your program (${form.currency})`}
+                  placeholder={`Tuition and academic fees (${form.currency})`}
                   type="number"
                   min="0"
-                  value={form.totalExpense}
-                  onChange={(e) => handleTotalExpenseChange(e.target.value)}
+                  value={form.universityFee}
+                  onChange={(e) => handleUniversityFeeChange(e.target.value)}
                   required
                 />
                 <p className="text-xs text-slate-500">
-                  Include tuition, living expenses, books, and other costs
+                  Include tuition, registration, lab fees, and other academic costs
+                </p>
+              </div>
+
+              {/* Living Expenses */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">
+                  Books + Living Expenses ({form.currency})
+                </label>
+                <Input
+                  placeholder={`Books, accommodation, food, transport (${form.currency})`}
+                  type="number"
+                  min="0"
+                  value={form.livingExpenses}
+                  onChange={(e) => handleLivingExpensesChange(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-slate-500">
+                  Include books, accommodation, food, transport, and other living costs
+                </p>
+              </div>
+
+              {/* Total (Auto-calculated) */}
+              <div className="space-y-2 bg-slate-50 p-3 rounded-lg border-2 border-dashed border-slate-300">
+                <label className="text-sm font-medium text-slate-700">
+                  Total Expense ({form.currency})
+                </label>
+                <div className="relative">
+                  <Input
+                    placeholder={`Total cost (${form.currency})`}
+                    type="number"
+                    value={form.totalExpense}
+                    readOnly
+                    className="bg-white cursor-not-allowed font-medium"
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <span className="text-xs text-blue-600 font-medium">Auto-calculated</span>
+                  </div>
+                </div>
+                <p className="text-xs text-blue-600">
+                  ✓ University Fee + Books/Living = {form.currency} {Number(form.universityFee || 0) + Number(form.livingExpenses || 0)}
                 </p>
               </div>
 

@@ -12,6 +12,7 @@ import applicationsRouter from "./routes/applications.js";
 import sponsorshipsRouter from "./routes/sponsorships.js";
 import disbursementsRouter from "./routes/disbursements.js";
 import messagesRouter from "./routes/messages.js";
+import conversationsRouter from "./routes/conversations.js";
 import uploadsRouter from "./routes/uploads.js";
 import paymentsRouter from "./routes/payments.js";
 import fxRouter from "./routes/fx.js";
@@ -19,6 +20,8 @@ import fieldReviewsRouter from "./routes/fieldReviews.js";
 import usersRouter from "./routes/users.js";
 import requestsRouter from "./routes/requests.js";
 import exportRouter from "./routes/export.js";
+import studentProgressRouter from "./routes/student-progress.js";
+
 
 dotenv.config();
 
@@ -92,12 +95,15 @@ app.use("/api/applications", applicationsRouter);
 app.use("/api/sponsorships", sponsorshipsRouter);
 app.use("/api/disbursements", disbursementsRouter);
 app.use("/api/messages", messagesRouter);
+app.use("/api/conversations", conversationsRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/fx", fxRouter);
 app.use("/api/field-reviews", fieldReviewsRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);
 app.use("/api/export", exportRouter);
+app.use("/api/student-progress", studentProgressRouter);
+
 
 // ⬇️ NEW for uploads
 app.use("/api/uploads", uploadsRouter);     // handles file upload API

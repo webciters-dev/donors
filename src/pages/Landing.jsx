@@ -17,7 +17,7 @@ export const Landing = ({ go }) => {
     // Fetch real statistics from API
     const fetchStats = async () => {
       try {
-        const API = import.meta.env.VITE_API_URL || "http://localhost:3002";
+        const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
         // You can implement these endpoints later for real data
         // For now, show clean placeholders
         setStats({
@@ -27,7 +27,7 @@ export const Landing = ({ go }) => {
           successRate: '—'
         });
       } catch (error) {
-        console.log('Stats will be updated when students are added');
+
       }
     };
     

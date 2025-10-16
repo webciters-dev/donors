@@ -48,5 +48,16 @@ export const studentProfileAcademicSchema = z
       .int("Current completion year must be an integer")
       .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
       .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
+    // Personal Introduction
+    personalIntroduction: z.string().max(1000, "Personal introduction must be 1000 characters or less").optional(),
+    // Enhanced details for donors
+    familySize: z.coerce.number().min(1).max(20).optional(),
+    parentsOccupation: z.string().max(200).optional(),
+    monthlyFamilyIncome: z.string().max(50).optional(),
+    careerGoals: z.string().max(500).optional(),
+    academicAchievements: z.string().max(300).optional(),
+    communityInvolvement: z.string().max(300).optional(),
+    currentAcademicYear: z.string().max(50).optional(),
+    specificField: z.string().max(200).optional(),
   })
   .required();

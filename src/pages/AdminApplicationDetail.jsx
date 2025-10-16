@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -52,20 +52,69 @@ export default function AdminApplicationDetail() {
 
         // officers list (admin-only)
         if (user?.role === "ADMIN") {
-          const ofres = await fetch(`${API}/api/users?role=FIELD_OFFICER`, { headers: { ...authHeader } });
+          const ofres = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofres.ok) {
             const ofj = await ofres.json();
             setOfficers(Array.isArray(ofj?.users) ? ofj.users : []);
           }
         }
 
-        // messages
+        // Load both old messages and new conversations
+        let allMessages = [];
+        
+        // Load old admin-student messages
         const murl = new URL(`${API}/api/messages`);
         murl.searchParams.set("studentId", data.studentId);
         murl.searchParams.set("applicationId", data.id);
-        const mres = await fetch(murl);
+        const mres = await fetch(murl, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         const mj = await mres.json();
-        setMessages(Array.isArray(mj?.messages) ? mj.messages : []);
+        allMessages = Array.isArray(mj?.messages) ? mj.messages : [];
+        
+        // Load donor-student conversations for admin oversight
+        try {
+          console.log('🔍 AdminApplicationDetail: Loading donor-student conversations for studentId:', data.studentId);
+          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          });
+          
+          if (convRes.ok) {
+            const convData = await convRes.json();
+            const conversations = convData.conversations || [];
+            
+            // Filter conversations for this specific student
+            const studentConversations = conversations.filter(conv => 
+              conv.studentId === data.studentId && conv.type === 'DONOR_STUDENT'
+            );
+            
+            console.log(`🔍 AdminApplicationDetail: Found ${studentConversations.length} donor-student conversations`);
+            
+            // Extract messages from donor-student conversations
+            studentConversations.forEach(conv => {
+              if (conv.messages) {
+                conv.messages.forEach(msg => {
+                  console.log('🔍 AdminApplicationDetail: Adding conversation message:', msg.senderRole, msg.text?.substring(0, 50));
+                  allMessages.push({
+                    id: msg.id,
+                    text: msg.text,
+                    fromRole: msg.senderRole.toLowerCase(),
+                    createdAt: msg.createdAt,
+                    senderName: msg.sender?.name || 'Unknown',
+                    conversationType: 'DONOR_STUDENT'
+                  });
+                });
+              }
+            });
+          } else {
+            console.error('🔍 AdminApplicationDetail: Conversations API failed:', convRes.status);
+          }
+        } catch (convError) {
+          console.error('🔍 AdminApplicationDetail: Failed to load conversations:', convError);
+        }
+        
+        // Sort all messages newest first for better UX
+        allMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        console.log('🔍 AdminApplicationDetail: Total messages loaded:', allMessages.length);
+        setMessages(allMessages);
       } catch (e) {
         console.error(e);
         toast.error("Failed to load application detail");
@@ -148,7 +197,7 @@ export default function AdminApplicationDetail() {
         throw new Error(t || `HTTP ${res.status}`);
       }
       const msg = await res.json();
-      setMessages(prev => [...prev, msg]);
+      setMessages(prev => [msg, ...prev]); // Add new message at the beginning (newest first)
       setNewMessage("");
     } catch (e) {
       console.error(e);
@@ -244,6 +293,153 @@ export default function AdminApplicationDetail() {
           <div>
             <div className="text-slate-500">Completion Year</div>
             <div>{app.student?.currentCompletionYear ?? "-"}</div>
+          </div>
+        </div>
+        
+        {/* Personal Introduction */}
+        {app.student?.personalIntroduction && (
+          <div className="mt-4 pt-4 border-t">
+            <div className="text-slate-500 text-sm mb-2">Personal Introduction</div>
+            <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {app.student.personalIntroduction}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Enhanced Background Details */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 font-medium mb-4">
+          <GraduationCap className="h-5 w-5" />
+          <span>Detailed Background</span>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3 text-sm">
+            {app.student?.familySize && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Size</span>
+                <span className="font-medium">{app.student.familySize} members</span>
+              </div>
+            )}
+            {app.student?.parentsOccupation && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Parents' Occupation</span>
+                <span className="font-medium">{app.student.parentsOccupation}</span>
+              </div>
+            )}
+            {app.student?.monthlyFamilyIncome && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Family Income</span>
+                <span className="font-medium">{app.student.monthlyFamilyIncome}</span>
+              </div>
+            )}
+            {app.student?.currentAcademicYear && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Academic Year</span>
+                <span className="font-medium">{app.student.currentAcademicYear}</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-3 text-sm">
+            {app.student?.specificField && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Specialization</span>
+                <span className="font-medium">{app.student.specificField}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Career Goals */}
+        {app.student?.careerGoals && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {app.student.careerGoals}
+            </div>
+          </div>
+        )}
+
+        {/* Academic Achievements */}
+        {app.student?.academicAchievements && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {app.student.academicAchievements}
+            </div>
+          </div>
+        )}
+
+        {/* Community Involvement */}
+        {app.student?.communityInvolvement && (
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
+            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
+              {app.student.communityInvolvement}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Financial Details */}
+      <Card className="p-6">
+        <div className="font-medium mb-3">Financial Information</div>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Currency</span>
+              <span className="font-medium">{app.currency || "USD"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Term</span>
+              <span className="font-medium">{app.term || "—"}</span>
+            </div>
+          </div>
+          
+          {/* Enhanced Financial Breakdown */}
+          <div className="space-y-2">
+            {(app?.universityFee || app?.livingExpenses || app?.totalExpense) ? (
+              <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
+                <h4 className="font-medium text-slate-700 text-xs uppercase tracking-wide">Financial Breakdown</h4>
+                {app?.universityFee && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">University Fee</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `₨${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
+                  </div>
+                )}
+                {app?.livingExpenses && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Books & Living</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `₨${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
+                  </div>
+                )}
+                {app?.totalExpense && (
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-slate-700 font-medium">Total Expense</span>
+                    <span className="font-semibold">{app.currency === "PKR" ? `₨${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
+                  </div>
+                )}
+                {app?.scholarshipAmount && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Scholarship</span>
+                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `₨${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-slate-700 font-semibold">Amount Required</span>
+                  <span className="font-bold text-blue-600">
+                    {app.currency === "PKR" ? `₨${(app.needPKR || 0).toLocaleString()}` : `$${(app.needUSD || 0).toLocaleString()}`}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Amount Needed</span>
+                <span className="font-medium">
+                  {app.currency === "PKR" ? `₨${(app.needPKR || 0).toLocaleString()}` : `$${(app.needUSD || 0).toLocaleString()}`}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -724,22 +920,48 @@ export default function AdminApplicationDetail() {
 
       {/* Messages */}
       <Card className="p-6 space-y-3">
-        <div className="font-medium">Conversation</div>
+        <div className="flex items-center gap-2">
+          <div className="font-medium">All Messages</div>
+          <Badge variant="outline" className="text-xs">
+            Admin oversight - includes donor conversations
+          </Badge>
+        </div>
         {messages.length === 0 ? (
           <div className="text-sm text-slate-600">No messages yet.</div>
         ) : (
           <ul className="space-y-2">
-            {messages.map(m => (
-              <li key={m.id} className="text-sm border rounded-md p-2 bg-white">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{m.fromRole}</Badge>
-                    <span className="text-slate-800">{m.text}</span>
+            {messages.map(m => {
+              const isDonorMessage = m.fromRole === 'donor';
+              const isStudentReply = m.fromRole === 'student' && m.conversationType === 'DONOR_STUDENT';
+              
+              return (
+                <li key={m.id} className={`text-sm border rounded-md p-3 ${
+                  isDonorMessage ? 'bg-blue-50 border-blue-200' : 
+                  isStudentReply ? 'bg-green-50 border-green-200' : 
+                  'bg-white'
+                }`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={isDonorMessage ? "default" : isStudentReply ? "secondary" : "outline"}>
+                          {isDonorMessage ? `💝 Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
+                           isStudentReply ? '👤 Student Reply' : 
+                           m.fromRole === 'admin' ? '👨‍💼 Admin' : 
+                           '🏢 Sub Admin'}
+                        </Badge>
+                        {(isDonorMessage || isStudentReply) && (
+                          <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">
+                            Donor-Student Chat
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-slate-800 leading-relaxed">{m.text}</p>
+                    </div>
+                    <span className="text-xs text-slate-500">{new Date(m.createdAt).toLocaleString()}</span>
                   </div>
-                  <span className="text-slate-500">{new Date(m.createdAt).toLocaleString()}</span>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         )}
         <div className="mt-3 grid grid-cols-12 gap-2">

@@ -152,4 +152,71 @@ router.get(
   }
 );
 
+/**
+ * GET /api/donors/me/sponsorship/:studentId
+ * Check if donor has sponsored a specific student and return detailed info
+ */
+router.get(
+  "/me/sponsorship/:studentId",
+  requireAuth,
+  onlyRoles("DONOR", "ADMIN"),
+  async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const donorId =
+        req.user.role === "ADMIN" && req.query.donorId
+          ? String(req.query.donorId)
+          : req.user.donorId;
+
+      if (!donorId) {
+        return res.status(400).json({ error: "No donorId on account." });
+      }
+
+      const sponsorship = await prisma.sponsorship.findFirst({
+        where: { 
+          donorId,
+          studentId: String(studentId)
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              university: true,
+              program: true,
+              city: true,
+              province: true,
+              village: true,
+              gpa: true,
+              needUSD: true,
+              needPKR: true,
+              sponsored: true,
+              currentInstitution: true,
+              currentCity: true,
+              currentCompletionYear: true,
+              gradYear: true,
+              country: true,
+              fatherName: true,
+              motherName: true,
+              familyIncome: true,
+              gender: true
+            },
+          },
+        },
+      });
+
+      if (!sponsorship) {
+        return res.status(404).json({ error: "Sponsorship not found" });
+      }
+
+      res.json({ sponsorship });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ error: "Failed to load sponsorship details" });
+    }
+  }
+);
+
 export default router;

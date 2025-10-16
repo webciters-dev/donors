@@ -83,7 +83,7 @@ export const AdminApplications = () => {
 
         // Load officers list (for sub admin assignment)
         try {
-          const ofRes = await fetch(`${API}/api/users?role=FIELD_OFFICER`, { headers: { ...authHeader } });
+          const ofRes = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofRes.ok) {
             const ofData = await ofRes.json();
             if (!dead) setOfficers(Array.isArray(ofData?.users) ? ofData.users : []);

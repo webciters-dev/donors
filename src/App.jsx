@@ -48,6 +48,8 @@ import SubAdminApplicationDetail from "@/pages/SubAdminApplicationDetail";
 import { MyApplication } from "@/pages/MyApplication";
 import FieldOfficerDashboard from "@/pages/FieldOfficerDashboard";
 import StudentDashboard from "@/pages/StudentDashboard";
+import StudentProgress from "@/pages/StudentProgress";
+
 import { AuthProvider } from "@/lib/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
@@ -67,13 +69,15 @@ const pathFromKey = {
   apply: "/apply",
   admin: "/admin",
   officers: "/admin/officers",
-  fieldofficer: "/field-officer",
+  subadmin: "/sub-admin",
   reports: "/reports",
   matrix: "/matrix",
   update: "/update",
   studentdashboard: "/student/dashboard",
   myapplication: "/my-application",
   studentprofile: "/student/profile",
+  studentprogress: "/student/progress",
+
 };
 
 function keyFromPath(pathname) {
@@ -81,10 +85,12 @@ function keyFromPath(pathname) {
   if (pathname.startsWith("/browse")) return "browse";
   if (pathname.startsWith("/students/")) return "student";
   if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
+  if (pathname.startsWith("/student/progress")) return "studentprogress";
   if (pathname.startsWith("/my-application")) return "myapplication";
   if (pathname.startsWith("/student/profile")) return "studentprofile";
+
   if (pathname.startsWith("/admin")) return "admin";
-  if (pathname.startsWith("/field-officer")) return "fieldofficer";
+  if (pathname.startsWith("/sub-admin")) return "subadmin";
   if (pathname.startsWith("/donor/portal")) return "donor_portal";
 
   const match = Object.entries(pathFromKey).find(([, p]) => p === pathname);
@@ -183,6 +189,14 @@ function Shell() {
               }
             />
             <Route
+              path="/student/progress"
+              element={
+                <ProtectedRoute roles={["STUDENT"]}>
+                  <StudentProgress />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/my-application"
               element={
                 <ProtectedRoute roles={["STUDENT"]}>
@@ -198,6 +212,7 @@ function Shell() {
                 </ProtectedRoute>
               }
             />
+
 
             {/* PROTECTED: DONOR */}
             <Route
@@ -255,19 +270,19 @@ function Shell() {
               }
             />
 
-            {/* PROTECTED: FIELD_OFFICER */}
+            {/* PROTECTED: SUB_ADMIN */}
             <Route
-              path="/field-officer"
+              path="/sub-admin"
               element={
-                <ProtectedRoute roles={["FIELD_OFFICER"]}>
+                <ProtectedRoute roles={["SUB_ADMIN"]}>
                   <FieldOfficerDashboard />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="/field-officer/review/:reviewId"
+              path="/sub-admin/review/:reviewId"
               element={
-                <ProtectedRoute roles={["FIELD_OFFICER"]}>
+                <ProtectedRoute roles={["SUB_ADMIN"]}>
                   <SubAdminApplicationDetail />
                 </ProtectedRoute>
               }

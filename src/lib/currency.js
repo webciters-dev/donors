@@ -2,83 +2,48 @@
 // Supports USD, CAD, GBP, EUR, and PKR based on university country location
 
 // Currency metadata with symbols, flags, and names
+// Currencies determined by university country selection
 export const CURRENCY_META = {
   USD: { symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
-  CAD: { symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
   GBP: { symbol: '£', flag: '🇬🇧', name: 'British Pound Sterling' },
   EUR: { symbol: '€', flag: '🇪🇺', name: 'Euro' },
+  CAD: { symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
   PKR: { symbol: 'Rs', flag: '🇵🇰', name: 'Pakistani Rupee' }
 };
 
-// Determine currency based on country (replaces university parsing)
+// Determine currency based on university country selection
 export const getCurrencyFromCountry = (country) => {
-  if (!country) return 'PKR'; // Default to PKR for our primary market
+  if (!country) return 'USD'; // Default to USD for international students
   
   const countryLower = country.toLowerCase().trim();
   
-  // USA
-  if (countryLower === 'usa' || 
-      countryLower === 'us' ||
-      countryLower === 'united states' ||
-      countryLower === 'united states of america' ||
-      countryLower === 'america') {
+  // Map university countries to their currencies
+  if (countryLower === 'usa' || countryLower === 'united states' || countryLower === 'us') {
     return 'USD';
   }
   
-  // Canada
-  if (countryLower === 'canada' ||
-      countryLower === 'ca') {
-    return 'CAD';
-  }
-  
-  // UK (Note: UK is not in EU anymore, so separate from EUR)
-  if (countryLower === 'uk' ||
-      countryLower === 'united kingdom' ||
-      countryLower === 'england' ||
-      countryLower === 'scotland' ||
-      countryLower === 'wales' ||
-      countryLower === 'northern ireland' ||
-      countryLower === 'great britain' ||
-      countryLower === 'britain') {
+  if (countryLower === 'uk' || countryLower === 'united kingdom' || countryLower === 'england' || 
+      countryLower === 'britain' || countryLower === 'great britain') {
     return 'GBP';
   }
   
-  // European Union countries (EUR)
-  if (countryLower === 'germany' ||
-      countryLower === 'france' ||
-      countryLower === 'italy' ||
-      countryLower === 'spain' ||
-      countryLower === 'netherlands' ||
-      countryLower === 'belgium' ||
-      countryLower === 'austria' ||
-      countryLower === 'portugal' ||
-      countryLower === 'finland' ||
-      countryLower === 'ireland' ||
-      countryLower === 'luxembourg' ||
-      countryLower === 'slovenia' ||
-      countryLower === 'slovakia' ||
-      countryLower === 'estonia' ||
-      countryLower === 'latvia' ||
-      countryLower === 'lithuania' ||
-      countryLower === 'malta' ||
-      countryLower === 'cyprus' ||
-      countryLower === 'greece' ||
-      countryLower === 'croatia' ||
-      countryLower === 'eu' ||
-      countryLower === 'europe' ||
-      countryLower === 'european union') {
-    return 'EUR';
+  if (countryLower === 'canada' || countryLower === 'ca') {
+    return 'CAD';
   }
   
-  // Pakistan (our primary market)
-  if (countryLower === 'pakistan' ||
-      countryLower === 'pk' ||
-      countryLower === 'pak') {
+  if (countryLower === 'pakistan' || countryLower === 'pk' || countryLower === 'pak') {
     return 'PKR';
   }
   
-  // Default to PKR for our primary market (Pakistan-focused system)
-  return 'PKR';
+  // European Union countries
+  if (['germany', 'france', 'italy', 'spain', 'netherlands', 'belgium', 
+       'austria', 'finland', 'ireland', 'portugal', 'luxembourg', 'slovenia', 
+       'estonia', 'latvia', 'lithuania', 'slovakia', 'malta', 'cyprus'].includes(countryLower)) {
+    return 'EUR';
+  }
+  
+  // Default to USD for other countries
+  return 'USD';
 };
 
 // Keep the old function for backward compatibility, but mark as deprecated

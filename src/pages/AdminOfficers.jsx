@@ -22,7 +22,7 @@ export default function AdminOfficers() {
   async function load() {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/users?role=FIELD_OFFICER`, { headers: { ...authHeader } });
+      const res = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
       if (res.status === 401) {
         toast.error("Your session expired. Please sign in again.");
         logout?.();

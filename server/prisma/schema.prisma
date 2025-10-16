@@ -33,11 +33,16 @@ model Student {
   currentInstitution    String?
   currentCity           String?
   currentCompletionYear Int?
-  // NEW OPTIONAL FIELDS - Won't break existing functionality
   personalIntroduction  String?        // Student's personal introduction about themselves and family
-  detailedLocation      String?        // Specific village/area within city for more detailed location
-  currentEducationDetails String?      // Details about current education program/courses
-  academicResults       String?        // Current academic performance/grades description
+  // Enhanced donor-relevant details
+  familySize            Int?           // Number of family members
+  parentsOccupation     String?        // What parents do for living
+  monthlyFamilyIncome   String?        // Income range (e.g., "Less than $200", "$200-500")
+  careerGoals           String?        // Post-graduation career aspirations
+  academicAchievements  String?        // Awards, honors, special recognitions
+  communityInvolvement  String?        // Volunteer work, leadership activities
+  currentAcademicYear   String?        // e.g., "2nd Year", "Final Year"
+  specificField         String?        // Detailed specialization within program
   messages              Message[]
   applications          Application[]
   disbursements         Disbursement[]
@@ -45,6 +50,8 @@ model Student {
   fieldReviews          FieldReview[]
   sponsorships          Sponsorship[]
   conversations         Conversation[]
+
+  progressUpdates       StudentProgress[]
   User                  User?
 
   @@map("students")
@@ -73,6 +80,11 @@ model Application {
   familyIncome       Int?
   familyContribution Int?
   purpose            String?
+  // Enhanced financial breakdown fields
+  universityFee      Int?              // Tuition and academic fees
+  livingExpenses     Int?              // Books, accommodation, food, transport
+  totalExpense       Int?              // Auto-calculated: universityFee + livingExpenses
+  scholarshipAmount  Int?              // Existing scholarships/financial aid
   // NEW OPTIONAL FIELD - Sub admin's reasoning for approval/rejection
   approvalReason     String?           // Sub admin's detailed reasoning for recommendation
   messages           Message[]
@@ -142,6 +154,7 @@ model Donor {
   currencyPreference Currency?
   taxId              String?
   sponsorships       Sponsorship[]
+
   User               User?
 
   @@map("donors")
@@ -302,7 +315,7 @@ enum UserRole {
   STUDENT
   DONOR
   ADMIN
-  FIELD_OFFICER
+  SUB_ADMIN
 }
 
 enum DocumentType {
@@ -331,3 +344,28 @@ enum ConversationType {
   DONOR_ADMIN        // Donor asking questions to admin/sub-admin
   STUDENT_ADMIN      // Existing student-admin communication (compatibility)
 }
+
+model StudentProgress {
+  id                String    @id @default(cuid())
+  studentId         String
+  term              String
+  gpa               Float
+  coursesCompleted  Int?
+  creditsEarned     Int?
+  achievements      String?
+  challenges        String?
+  goals             String?
+  notes             String?
+  updateType        String    @default("academic") // academic, personal, achievement
+  documents         Json?     // Array of document info: {type, originalName, filename, path, size, mimeType}
+  submittedAt       DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([submittedAt])
+  @@map("student_progress")
+}
+
+
