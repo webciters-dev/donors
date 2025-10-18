@@ -492,7 +492,7 @@ export const ApplicationForm = () => {
   async function handleSubmit(e) {
     e.preventDefault();
 
-
+    console.log("🔍 Form submission started with form data:", form);
 
     // Validation
     if (!form.university || !form.program || !form.country || !form.gpa || !form.gradYear) {
@@ -608,13 +608,10 @@ export const ApplicationForm = () => {
         livingExpenses: livingExpensesNum,
         totalExpense: totalExpenseNum,
         scholarshipAmount: scholarshipNum,
+        amount: requiredAmountNum
       };
       
-      // Add amount and currency (this is the required amount after scholarship)
-      applicationPayload.amount = requiredAmountNum;
-      applicationPayload.currency = form.currency;
-
-
+      console.log("🔍 Application payload:", applicationPayload);
 
       const appRes = await fetch(API.url('/api/applications'), {
         method: "POST",
@@ -634,7 +631,8 @@ export const ApplicationForm = () => {
         console.error("❌ Application submission error:", {
           status: appRes.status,
           statusText: appRes.statusText,
-          error: errorData
+          error: errorData,
+          payload: applicationPayload
         });
         
         throw new Error(errorData.error || errorData.message || `Server error: ${appRes.status}`);
@@ -898,10 +896,10 @@ export const ApplicationForm = () => {
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
-                <option value="AUD">�� AUD - Australian Dollar</option>
+                <option value="AUD">AUD - Australian Dollar</option>
                 <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                <option value="EUR">�� EUR - Euro</option>
-                <option value="GBP">�� GBP - British Pound</option>
+                <option value="EUR">🇪🇺 EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
                 <option value="PKR">🇵🇰 PKR - Pakistani Rupee</option>
                 <option value="USD">🇺🇸 USD - US Dollar</option>
               </select>

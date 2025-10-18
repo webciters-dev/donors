@@ -61,7 +61,8 @@ model Application {
   id                 String            @id @default(cuid())
   studentId          String
   term               String
-  needUSD            Int
+  amount             Int?              // NEW: Single currency amount
+  needUSD            Int?              // Legacy: make optional for backwards compatibility
   status             ApplicationStatus @default(PENDING)
   submittedAt        DateTime          @default(now())
   notes              String?
@@ -362,6 +363,10 @@ enum DocumentType {
 enum Currency {
   USD
   PKR
+  EUR
+  GBP
+  CAD
+  AUD
 }
 
 enum ConversationType {

@@ -342,7 +342,7 @@ export default function FieldOfficerDashboard() {
             <div className="font-medium">Completed Reviews ({completedReviews.length})</div>
             {completedReviews.length > 0 && (
               <Badge variant="outline" className="ml-2">
-                Reviews sent to Admin
+                Editable until Admin decides
               </Badge>
             )}
           </div>
@@ -355,74 +355,98 @@ export default function FieldOfficerDashboard() {
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
-              {completedReviews.map(review => (
-                <div key={review.id} className="border rounded-lg p-4 bg-green-50 border-green-200">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="font-medium text-green-800">{review.student?.name}</div>
-                        <Badge 
-                          variant={review.fielderRecommendation === 'STRONGLY_APPROVE' ? 'default' : 
-                                 review.fielderRecommendation === 'APPROVE' ? 'secondary' :
-                                 review.fielderRecommendation === 'CONDITIONAL' ? 'outline' : 'destructive'}
-                          className="text-xs"
-                        >
-                          {review.fielderRecommendation?.replace('_', ' ') || 'No Recommendation'}
-                        </Badge>
-                        {review.verificationScore && (
-                          <Badge variant="outline" className="text-xs">
-                            Score: {review.verificationScore}%
+              {completedReviews.map(review => {
+                const applicationStatus = review.application?.status || 'PENDING';
+                const isAdminDecided = applicationStatus === 'APPROVED' || applicationStatus === 'REJECTED';
+                
+                return (
+                  <div key={review.id} className={`border rounded-lg p-4 ${
+                    isAdminDecided ? 'bg-slate-50 border-slate-200' : 'bg-green-50 border-green-200'
+                  }`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`font-medium ${isAdminDecided ? 'text-slate-800' : 'text-green-800'}`}>
+                            {review.student?.name}
+                          </div>
+                          <Badge 
+                            variant={review.fielderRecommendation === 'STRONGLY_APPROVE' ? 'default' : 
+                                   review.fielderRecommendation === 'APPROVE' ? 'secondary' :
+                                   review.fielderRecommendation === 'CONDITIONAL' ? 'outline' : 'destructive'}
+                            className="text-xs"
+                          >
+                            {review.fielderRecommendation?.replace('_', ' ') || 'No Recommendation'}
                           </Badge>
+                          {review.verificationScore && (
+                            <Badge variant="outline" className="text-xs">
+                              Score: {review.verificationScore}%
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="text-sm text-slate-600 mb-2">
+                          {review.student?.program} at {review.student?.university}
+                        </div>
+                        
+                        <div className={`text-xs mb-2 ${isAdminDecided ? 'text-slate-700' : 'text-green-700'}`}>
+                          ✅ Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
+                          📅 Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
+                        </div>
+                        
+                        {review.recommendationReason && (
+                          <div className={`text-sm text-slate-700 rounded p-2 border ${
+                            isAdminDecided ? 'bg-white border-slate-200' : 'bg-white border-green-200'
+                          }`}>
+                            <strong>Reason:</strong> {review.recommendationReason}
+                          </div>
+                        )}
+                        
+                        {review.adminNotesRequired && (
+                          <div className="text-xs text-amber-700 bg-amber-50 rounded p-2 mt-2 border border-amber-200">
+                            <strong>Admin Attention:</strong> {review.adminNotesRequired}
+                          </div>
                         )}
                       </div>
                       
-                      <div className="text-sm text-slate-600 mb-2">
-                        {review.student?.program} at {review.student?.university}
+                      <div className="flex flex-col gap-2 ml-4">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="rounded-2xl text-xs"
+                          onClick={() => navigate(`/sub-admin/review/${review.id}`)}
+                        >
+                          View Details
+                        </Button>
+                        
+                        {!isAdminDecided ? (
+                          <Button 
+                            size="sm" 
+                            className="rounded-2xl text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                            onClick={() => reopenReview(review.id)}
+                            disabled={loading}
+                          >
+                            ✏️ Edit Review
+                          </Button>
+                        ) : (
+                          <Badge variant="outline" className="text-xs justify-center">
+                            Final Decision Made
+                          </Badge>
+                        )}
+                        
+                        <Badge 
+                          variant={applicationStatus === 'APPROVED' ? 'default' : 
+                                 applicationStatus === 'REJECTED' ? 'destructive' : 'secondary'}
+                          className="text-xs justify-center"
+                        >
+                          {applicationStatus === 'APPROVED' ? '✅ Approved' :
+                           applicationStatus === 'REJECTED' ? '❌ Rejected' :
+                           '⏳ Pending Admin'}
+                        </Badge>
                       </div>
-                      
-                      <div className="text-xs text-green-700 mb-2">
-                        ✅ Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
-                        📅 Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
-                      </div>
-                      
-                      {review.recommendationReason && (
-                        <div className="text-sm text-slate-700 bg-white rounded p-2 border border-green-200">
-                          <strong>Reason:</strong> {review.recommendationReason}
-                        </div>
-                      )}
-                      
-                      {review.adminNotesRequired && (
-                        <div className="text-xs text-amber-700 bg-amber-50 rounded p-2 mt-2 border border-amber-200">
-                          <strong>Admin Attention:</strong> {review.adminNotesRequired}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex flex-col gap-2 ml-4">
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="rounded-2xl text-xs"
-                        onClick={() => navigate(`/field-officer/review/${review.id}`)}
-                      >
-                        Review Details
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        className="rounded-2xl text-xs bg-amber-600 hover:bg-amber-700 text-white"
-                        onClick={() => reopenReview(review.id)}
-                        disabled={loading}
-                      >
-                        ✏️ Edit Review
-                      </Button>
-                      
-                      <Badge variant="outline" className="text-xs justify-center">
-                        {review.application?.status || 'Pending Admin'}
-                      </Badge>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>

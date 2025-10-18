@@ -31,6 +31,15 @@ export const MyApplication = () => {
   const { token, user } = useAuth();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+  // Redirect ACTIVE students to their clean dashboard
+  useEffect(() => {
+    if (user?.studentPhase === 'ACTIVE') {
+      console.log('🔄 Active student detected, redirecting to clean dashboard...');
+      navigate('/student/active', { replace: true });
+      return;
+    }
+  }, [user?.studentPhase, navigate]);
+
   const [application, setApplication] = useState(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -142,10 +151,10 @@ export const MyApplication = () => {
             conversations.forEach(conv => {
               console.log('🔍 MyApplication: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
               
-              // Set the active conversation ID for replies (use the first donor conversation)
-              if (conv.type === 'DONOR_STUDENT' && !activeConversationId) {
+              // Set the active conversation ID for replies
+              if ((conv.type === 'DONOR_STUDENT' || conv.type === 'STUDENT_ADMIN') && !activeConversationId) {
                 setActiveConversationId(conv.id);
-                console.log('🔍 MyApplication: Set active conversation for replies:', conv.id);
+                console.log('🔍 MyApplication: Set active conversation for replies:', conv.id, 'Type:', conv.type);
               }
               
               if (conv.messages) {
@@ -205,38 +214,66 @@ export const MyApplication = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [application?.studentId, application?.id, token]);
 
-  // Send reply to donor
+  // Send reply to admin or donor
   async function sendReply() {
-    if (!replyText.trim() || !activeConversationId) {
+    if (!replyText.trim()) {
       toast.error("Please enter a reply message");
       return;
     }
     
     try {
       setSendingReply(true);
-      console.log('🔍 MyApplication: Sending reply to conversation:', activeConversationId);
+      console.log('🔍 MyApplication: Sending reply. ActiveConversationId:', activeConversationId);
       
-      const response = await fetch(`${API.baseURL}/api/conversations/${activeConversationId}/messages`, {
+      // Try conversation-based reply first if we have an active conversation
+      if (activeConversationId) {
+        const response = await fetch(`${API.baseURL}/api/conversations/${activeConversationId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeader
+          },
+          body: JSON.stringify({
+            text: replyText.trim()
+          })
+        });
+        
+        if (response.ok) {
+          console.log('🔍 MyApplication: Reply sent via conversation');
+          toast.success("Reply sent successfully!");
+          setReplyText("");
+          setShowReplyBox(false);
+          await reloadMessages();
+          return;
+        } else {
+          console.log('🔍 MyApplication: Conversation reply failed, trying simple message API');
+        }
+      }
+      
+      // Fallback to simple message API (works without conversations)
+      const messageResponse = await fetch(`${API.baseURL}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...authHeader
         },
         body: JSON.stringify({
-          text: replyText.trim()
+          studentId: application.studentId,
+          applicationId: application.id,
+          text: replyText.trim(),
+          fromRole: 'student'
         })
       });
       
-      if (response.ok) {
-        console.log('🔍 MyApplication: Reply sent successfully');
+      if (messageResponse.ok) {
+        console.log('🔍 MyApplication: Reply sent via message API');
         toast.success("Reply sent successfully!");
         setReplyText("");
         setShowReplyBox(false);
-        // Reload messages to show the new reply
         await reloadMessages();
       } else {
-        const errorData = await response.json();
-        console.error('🔍 MyApplication: Failed to send reply:', errorData);
+        const errorData = await messageResponse.json();
+        console.error('🔍 MyApplication: Failed to send message:', errorData);
         toast.error(errorData.error || "Failed to send reply");
       }
     } catch (error) {
@@ -867,22 +904,23 @@ export const MyApplication = () => {
             })}
             
             {/* Reply Section - Show if there are donor messages */}
-            {rawMessages.some(msg => msg.fromRole === 'donor') && (
+            {rawMessages.some(msg => msg.fromRole === 'donor' || msg.fromRole === 'admin' || msg.fromRole === 'ADMIN') && (
               <div className="border-t pt-4">
                 {!showReplyBox ? (
                   <Button 
                     onClick={() => setShowReplyBox(true)}
                     className="bg-green-600 hover:bg-green-700 text-white"
-                    disabled={!activeConversationId}
                   >
                     <MessageCircle className="h-4 w-4 mr-2" />
-                    Reply to Donor
+                    {rawMessages.some(msg => msg.fromRole === 'donor') ? 'Reply to Donor' : 'Reply to Admin'}
                   </Button>
                 ) : (
                   <div className="space-y-3 bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex items-center gap-2">
                       <MessageCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-800">Reply to Donor</span>
+                      <span className="font-medium text-green-800">
+                        {rawMessages.some(msg => msg.fromRole === 'donor') ? 'Reply to Donor' : 'Reply to Admin'}
+                      </span>
                     </div>
                     <textarea
                       value={replyText}

@@ -135,6 +135,7 @@ router.get("/approved", async (_req, res) => {
             term: true,
             needUSD: true,
             needPKR: true,
+            amount: true, // New single currency field
             currency: true,
             status: true,
             submittedAt: true,
@@ -154,8 +155,20 @@ router.get("/approved", async (_req, res) => {
         0
       );
 
-      // For marketplace, we stick with USD remaining need (no FX in this endpoint).
-      const baseNeedUSD = Number(app?.needUSD || 0);
+      // Handle both old (needUSD) and new (amount + currency) application structures
+      let baseNeedUSD = 0;
+      if (app) {
+        if (app.needUSD) {
+          // Old structure: use needUSD directly
+          baseNeedUSD = Number(app.needUSD);
+        } else if (app.amount && app.currency) {
+          // New structure: use amount (assume USD equivalent for now, or convert if needed)
+          // For marketplace compatibility, we'll use the amount directly
+          // TODO: Add currency conversion if needed in the future
+          baseNeedUSD = Number(app.amount);
+        }
+      }
+      
       const remainingNeed = Math.max(0, baseNeedUSD - totalSponsored);
 
       return {
@@ -175,9 +188,11 @@ router.get("/approved", async (_req, res) => {
           ? {
               id: app.id,
               term: app.term,
-              needUSD: app.needUSD ?? 0,
+              // For backward compatibility, provide both old and new fields
+              needUSD: app.needUSD ?? app.amount ?? 0,
               needPKR: app.needPKR ?? null,
-              currency: app.currency ?? "USD",
+              amount: app.amount ?? app.needUSD ?? 0, // New field
+              currency: app.currency ?? "USD", // New field
               status: app.status,
               submittedAt: app.submittedAt,
             }

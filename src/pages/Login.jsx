@@ -56,13 +56,21 @@ export default function Login() {
       navigate(redirectTarget, { replace: true });
       return;
     }
-    goHomeByRole(user.role);
+    goHomeByRole(user.role, user);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const goHomeByRole = (role) => {
+  const goHomeByRole = (role, userObj = null) => {
     if (role === "ADMIN") return navigate("/admin/applications", { replace: true });
-    if (role === "STUDENT") return navigate("/my-application", { replace: true });
+    if (role === "STUDENT") {
+      // Route students based on their phase
+      const studentPhase = userObj?.studentPhase;
+      if (studentPhase === 'ACTIVE') {
+        return navigate("/student/active", { replace: true });
+      } else {
+        return navigate("/my-application", { replace: true });
+      }
+    }
     if (role === "SUB_ADMIN") return navigate("/sub-admin", { replace: true });
     if (role === "DONOR") return navigate("/marketplace", { replace: true }); // donors land back on marketplace
     return navigate("/", { replace: true });
@@ -104,7 +112,7 @@ export default function Login() {
       if (redirectTarget) {
         navigate(redirectTarget, { replace: true });
       } else {
-        goHomeByRole(data.user.role);
+        goHomeByRole(data.user.role, data.user);
       }
     } catch (err) {
       console.error(err);

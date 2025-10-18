@@ -63,14 +63,16 @@ router.post("/login", async (req, res) => {
     const ok = await bcrypt.compare(String(password), String(user.passwordHash || ""));
     if (!ok) return res.status(401).json({ error: "Invalid credentials." });
 
-    // Get name from the appropriate profile record
+    // Get name and additional profile data from the appropriate profile record
     let userName = user.name; // Default to user.name (for backwards compatibility)
+    let studentPhase = null; // Only for students
     
     if (user.role === "STUDENT" && user.studentId) {
       const student = await prisma.student.findUnique({ where: { id: user.studentId } });
       if (student?.name) {
         userName = student.name;
       }
+      studentPhase = student?.studentPhase || 'APPLICATION'; // Default to APPLICATION if not set
     } else if (user.role === "DONOR" && user.donorId) {
       const donor = await prisma.donor.findUnique({ where: { id: user.donorId } });
       if (donor?.name) {
@@ -79,9 +81,23 @@ router.post("/login", async (req, res) => {
     }
 
     const token = signToken({ sub: user.id, role: user.role, email: user.email });
+    const userData = { 
+      id: user.id, 
+      name: userName, 
+      email: user.email, 
+      role: user.role, 
+      studentId: user.studentId, 
+      donorId: user.donorId 
+    };
+    
+    // Add studentPhase for students only
+    if (user.role === "STUDENT") {
+      userData.studentPhase = studentPhase;
+    }
+    
     res.json({
       token,
-      user: { id: user.id, name: userName, email: user.email, role: user.role, studentId: user.studentId, donorId: user.donorId },
+      user: userData,
     });
   } catch (err) {
     console.error("LOGIN ERROR:", err);
@@ -130,8 +146,6 @@ router.post("/register-student", async (req, res) => {
         province: province ?? undefined,
         gpa: typeof gpa === "number" ? gpa : undefined,
         gradYear: typeof gradYear === "number" ? gradYear : undefined,
-        amount: typeof amount === "number" ? amount : undefined,
-        currency: currency ?? undefined,
         field: field ?? undefined,
         personalIntroduction: personalIntroduction ?? undefined,
       },
@@ -146,10 +160,9 @@ router.post("/register-student", async (req, res) => {
         province: province ?? "",
         gpa: typeof gpa === "number" ? gpa : 0,
         gradYear: typeof gradYear === "number" ? gradYear : new Date().getFullYear() + 1,
-        amount: typeof amount === "number" ? amount : 0,
-        currency: currency ?? "PKR",
         field: field ?? "",
         personalIntroduction: personalIntroduction ?? "",
+        needUSD: 0, // Legacy field - set to 0 as we now use currency field in applications
       },
     });
 

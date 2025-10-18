@@ -14,10 +14,21 @@ export const Nav = ({ active, setActive }) => {
     { key: "home", label: "Home" },
   ];
 
-  const studentTabs = [
-    { key: "myapplication", label: "My Application" },
-    { key: "studentprofile", label: "My Profile" },
-  ];
+  const studentTabs = (() => {
+    if (user?.studentPhase === 'ACTIVE') {
+      // Active students see clean dashboard and communication
+      return [
+        { key: "activestudent", label: "My Dashboard" },
+        { key: "studentprofile", label: "My Profile" },
+      ];
+    } else {
+      // Application phase students see application interface
+      return [
+        { key: "myapplication", label: "My Application" },
+        { key: "studentprofile", label: "My Profile" },
+      ];
+    }
+  })();
 
   const donorTabs = [
     { key: "marketplace", label: "Sponsor a Student" },
