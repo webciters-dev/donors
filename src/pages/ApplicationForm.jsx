@@ -163,7 +163,8 @@ export const ApplicationForm = () => {
           province: "",
           gpa: 0,
           gradYear: new Date().getFullYear() + 1,
-          needUSD: 0,
+          currency: "PKR",
+          amount: 0,
           field: ""
         }),
       });
@@ -609,12 +610,9 @@ export const ApplicationForm = () => {
         scholarshipAmount: scholarshipNum,
       };
       
-      // Add amount based on currency (this is the required amount after scholarship)
-      if (form.currency === "PKR") {
-        applicationPayload.needPKR = requiredAmountNum;
-      } else {
-        applicationPayload.needUSD = requiredAmountNum;
-      }
+      // Add amount and currency (this is the required amount after scholarship)
+      applicationPayload.amount = requiredAmountNum;
+      applicationPayload.currency = form.currency;
 
 
 
@@ -900,11 +898,12 @@ export const ApplicationForm = () => {
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
-                <option value="USD">🇺🇸 USD - US Dollar</option>
+                <option value="AUD">�� AUD - Australian Dollar</option>
                 <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                <option value="GBP">🇬🇧 GBP - British Pound</option>
-                <option value="EUR">🇪🇺 EUR - Euro</option>
+                <option value="EUR">�� EUR - Euro</option>
+                <option value="GBP">�� GBP - British Pound</option>
                 <option value="PKR">🇵🇰 PKR - Pakistani Rupee</option>
+                <option value="USD">🇺🇸 USD - US Dollar</option>
               </select>
               {form.country && (
                 <p className="text-xs text-green-600">

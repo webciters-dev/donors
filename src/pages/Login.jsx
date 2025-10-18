@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 // Password input component with visibility toggle - moved outside to prevent re-creation
 const PasswordInput = ({ placeholder, value, onChange, autoComplete, showPassword, onToggleVisibility }) => (
@@ -78,7 +77,7 @@ export default function Login() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${API.baseURL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), password }),

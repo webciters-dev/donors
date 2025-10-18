@@ -11,8 +11,7 @@ import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { CURRENCY_META, getCurrencyFromCountry, fmtAmount, getCurrencyFlag } from "@/lib/currency";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 /* ---------- small helper ---------- */
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
@@ -30,7 +29,7 @@ function StudentCard({ student, onSponsored }) {
   const navigate = useNavigate();
   const { user, token } = useAuth();
 
-  const remainingNeed = Number(student?.needUsd ?? student?.needUSD ?? 0);
+  const remainingNeed = Number(student?.remainingNeed || student?.application?.amount || 0);
   const isApproved = Boolean(student?.isApproved);
   const isSponsored = remainingNeed <= 0 || Boolean(student?.sponsored);
 
@@ -58,7 +57,7 @@ function StudentCard({ student, onSponsored }) {
   const universityCurrency = getUniversityCurrency(student?.university);
   const countryCurrency = getCurrencyFromCountry(student?.country);
   const currency = student?.application?.currency || universityCurrency || countryCurrency;
-  const displayAmount = currency === "PKR" ? student?.needPKR || remainingNeed : remainingNeed;
+  const displayAmount = student?.application?.amount || remainingNeed;
   
   // Privacy controls: non-logged-in users see basic info only, no names/personal details
   const isLoggedIn = Boolean(user && token);
@@ -172,7 +171,7 @@ export const Marketplace = () => {
 
       // Try API to get real approved students
       try {
-        const res = await fetch(`${API}/api/students/approved`);
+        const res = await fetch(`${API.baseURL}/api/students/approved`);
         
         if (res.ok && !cancelled) {
           const data = await res.json();
@@ -195,11 +194,9 @@ export const Marketplace = () => {
               gender: student.gender,
               isApproved: true, // All students from approved endpoint are approved
               sponsored: Boolean(student.sponsored), // Trust API's sponsored calculation
-              remainingNeed: student.remainingNeed || 0, // 🔧 FIX: Add missing field
-              needUsd: student.remainingNeed || 0,
-              needUSD: student.remainingNeed || 0,
+              remainingNeed: student.remainingNeed || 0, // Amount still needed
               currency: student.application?.currency || getCurrencyFromCountry(student.country),
-              needPKR: student.application?.needPKR || null,
+              amount: student.application?.amount || 0, // Single currency amount
               term: student.application?.term || null,
             }));
 
@@ -209,7 +206,7 @@ export const Marketplace = () => {
                 name: s.name,
                 sponsored: s.sponsored,
                 remainingNeed: s.remainingNeed,
-                needUSD: s.needUSD,
+                amount: s.amount,
                 isApproved: s.isApproved
               }))
             });
@@ -242,12 +239,12 @@ export const Marketplace = () => {
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
-        const currentNeed = Number(s?.needUsd ?? s?.needUSD ?? 0);
+        const currentNeed = Number(s?.remainingNeed || s?.amount || 0);
         const newNeed = Math.max(0, currentNeed - Number(amount || 0));
         return {
           ...s,
-          needUsd: newNeed,
-          needUSD: newNeed,
+          remainingNeed: newNeed,
+          amount: s.amount, // Keep original amount
           sponsored: newNeed <= 0,
         };
       })
@@ -265,7 +262,7 @@ export const Marketplace = () => {
         isApproved: s.isApproved,
         sponsored: s.sponsored,
         remainingNeed: s.remainingNeed,
-        needUSD: s.needUSD
+        amount: s.amount
       }))
     });
 
@@ -371,7 +368,7 @@ export const Marketplace = () => {
             <option>Punjab</option>
             <option>Sindh</option>
             <option>KPK</option>
-            <option>Islamabad</option>
+            <option>Balochistan</option>
           </select>
 
           {/* City */}

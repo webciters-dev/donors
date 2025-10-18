@@ -9,8 +9,8 @@ import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
 export const AdminApplications = () => {
   const navigate = useNavigate();
@@ -56,7 +56,7 @@ export const AdminApplications = () => {
 
     async function load() {
       try {
-        const res = await fetch(`${API}/api/applications?limit=500`, {
+        const res = await fetch(`${API.baseURL}/api/applications?limit=500`, {
           headers: { ...authHeader },
         });
 
@@ -83,7 +83,7 @@ export const AdminApplications = () => {
 
         // Load officers list (for sub admin assignment)
         try {
-          const ofRes = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
+          const ofRes = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofRes.ok) {
             const ofData = await ofRes.json();
             if (!dead) setOfficers(Array.isArray(ofData?.users) ? ofData.users : []);
@@ -113,7 +113,7 @@ export const AdminApplications = () => {
   async function save(id, body) {
     try {
       setSavingId(id);
-      const res = await fetch(`${API}/api/applications/${id}`, {
+      const res = await fetch(`${API.baseURL}/api/applications/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(body),
@@ -158,7 +158,7 @@ export const AdminApplications = () => {
   async function assignSubAdmin(applicationId, studentId, officerId) {
     try {
       setAssigningId(applicationId);
-      const res = await fetch(`${API}/api/field-reviews`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ applicationId, studentId, officerUserId: officerId })
@@ -220,7 +220,7 @@ export const AdminApplications = () => {
   async function reassignSubAdmin(reviewId, newOfficerId, applicationId) {
     try {
       setAssigningId(`reassign-${reviewId}`);
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}/reassign`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}/reassign`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ newOfficerUserId: newOfficerId })
@@ -263,7 +263,7 @@ export const AdminApplications = () => {
   async function unassignSubAdmin(reviewId, applicationId) {
     try {
       setAssigningId(applicationId);
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}`, {
         method: "DELETE",
         headers: { ...authHeader }
       });
@@ -305,7 +305,7 @@ export const AdminApplications = () => {
 
     try {
       setLoadingDocsId(row.id);
-      const url = new URL(`${API}/api/uploads`);
+      const url = new URL(`${API.baseURL}/api/uploads`);
       url.searchParams.set("studentId", row.studentId);
       if (row.id) url.searchParams.set("applicationId", row.id);
 
@@ -340,9 +340,12 @@ export const AdminApplications = () => {
     if (activeTab === "pending") {
       statusFiltered = apps.filter(a => a.status === "PENDING");
     } else if (activeTab === "approved") {
-      statusFiltered = apps.filter(a => a.status === "APPROVED");
+      // Exclude sponsored students from approved tab
+      statusFiltered = apps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)));
     } else if (activeTab === "rejected") {
       statusFiltered = apps.filter(a => a.status === "REJECTED");
+    } else if (activeTab === "sponsored") {
+      statusFiltered = apps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0));
     }
     // "all" tab shows everything
     
@@ -362,8 +365,9 @@ export const AdminApplications = () => {
   const stats = useMemo(() => ({
     all: apps.length,
     pending: apps.filter(a => a.status === "PENDING").length,
-    approved: apps.filter(a => a.status === "APPROVED").length,
+    approved: apps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0))).length,
     rejected: apps.filter(a => a.status === "REJECTED").length,
+    sponsored: apps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)).length,
   }), [apps]);
 
   if (!isAdmin) {
@@ -387,7 +391,7 @@ export const AdminApplications = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pending" className="flex items-center gap-2">
             Pending Review
             {stats.pending > 0 && (
@@ -420,6 +424,14 @@ export const AdminApplications = () => {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="sponsored" className="flex items-center gap-2">
+            Sponsored
+            {stats.sponsored > 0 && (
+              <Badge variant="default" className="ml-1 bg-blue-100 text-blue-800">
+                {stats.sponsored}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab}>
@@ -434,10 +446,7 @@ export const AdminApplications = () => {
         </div>
 
         {filtered.map((row) => {
-          const isPKR = row.currency === "PKR";
-          const needText = isPKR
-            ? `₨ ${fmtPKR(row.needPKR)}`
-            : `$ ${fmtUSD(row.needUSD)}`;
+          const needText = fmtAmount(row.amount, row.currency);
           const docs = docsByRow[row.id] || [];
 
           return (

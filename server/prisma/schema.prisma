@@ -8,9 +8,9 @@ datasource db {
 }
 
 model Student {
-  id                    String         @id @default(cuid())
+  id                    String            @id @default(cuid())
   name                  String
-  email                 String         @unique
+  email                 String            @unique
   gender                String
   university            String
   field                 String
@@ -21,9 +21,10 @@ model Student {
   country               String
   province              String?
   needUSD               Int
-  sponsored             Boolean        @default(false)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  sponsored             Boolean           @default(false)
+  studentPhase          StudentPhase?     @default(APPLICATION)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
   cnic                  String?
   dateOfBirth           DateTime?
   guardianName          String?
@@ -33,25 +34,24 @@ model Student {
   currentInstitution    String?
   currentCity           String?
   currentCompletionYear Int?
-  personalIntroduction  String?        // Student's personal introduction about themselves and family
-  // Enhanced donor-relevant details
-  familySize            Int?           // Number of family members
-  parentsOccupation     String?        // What parents do for living
-  monthlyFamilyIncome   String?        // Income range (e.g., "Less than $200", "$200-500")
-  careerGoals           String?        // Post-graduation career aspirations
-  academicAchievements  String?        // Awards, honors, special recognitions
-  communityInvolvement  String?        // Volunteer work, leadership activities
-  currentAcademicYear   String?        // e.g., "2nd Year", "Final Year"
-  specificField         String?        // Detailed specialization within program
+  personalIntroduction  String?
+  academicAchievements  String?
+  careerGoals           String?
+  communityInvolvement  String?
+  currentAcademicYear   String?
+  familySize            Int?
+  monthlyFamilyIncome   String?
+  parentsOccupation     String?
+  specificField         String?
   messages              Message[]
   applications          Application[]
+  conversations         Conversation[]
   disbursements         Disbursement[]
   documents             Document[]
   fieldReviews          FieldReview[]
   sponsorships          Sponsorship[]
-  conversations         Conversation[]
-
   progressUpdates       StudentProgress[]
+  progressReports       ProgressReport[]
   User                  User?
 
   @@map("students")
@@ -80,18 +80,16 @@ model Application {
   familyIncome       Int?
   familyContribution Int?
   purpose            String?
-  // Enhanced financial breakdown fields
-  universityFee      Int?              // Tuition and academic fees
-  livingExpenses     Int?              // Books, accommodation, food, transport
-  totalExpense       Int?              // Auto-calculated: universityFee + livingExpenses
-  scholarshipAmount  Int?              // Existing scholarships/financial aid
-  // NEW OPTIONAL FIELD - Sub admin's reasoning for approval/rejection
-  approvalReason     String?           // Sub admin's detailed reasoning for recommendation
+  approvalReason     String?
+  livingExpenses     Int?
+  scholarshipAmount  Int?
+  totalExpense       Int?
+  universityFee      Int?
   messages           Message[]
   student            Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  conversations      Conversation[]
   documents          Document[]
   fieldReviews       FieldReview[]
-  conversations      Conversation[]
 
   @@map("applications")
 }
@@ -107,33 +105,32 @@ model Message {
   student       Student      @relation(fields: [studentId], references: [id])
 }
 
-// NEW MESSAGING SYSTEM - Extended communication for donors
 model Conversation {
-  id              String             @id @default(cuid())
-  type            ConversationType   // DONOR_STUDENT, DONOR_ADMIN, etc.
-  participantIds  String[]           // Array of user IDs participating
-  studentId       String?            // Optional reference to student if conversation involves one
-  applicationId   String?            // Optional reference to application if conversation is about one
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
-  lastMessageAt   DateTime           @default(now())
-  messages        ConversationMessage[]
-  student         Student?           @relation(fields: [studentId], references: [id])
-  application     Application?       @relation(fields: [applicationId], references: [id])
+  id             String                @id @default(cuid())
+  type           ConversationType
+  participantIds String[]
+  studentId      String?
+  applicationId  String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  lastMessageAt  DateTime              @default(now())
+  messages       ConversationMessage[]
+  application    Application?          @relation(fields: [applicationId], references: [id])
+  student        Student?              @relation(fields: [studentId], references: [id])
 
   @@map("conversations")
 }
 
 model ConversationMessage {
-  id              String       @id @default(cuid())
-  conversationId  String
-  senderId        String       // User ID of sender
-  senderRole      UserRole     // Role of sender for easy identification
-  text            String
-  createdAt       DateTime     @default(now())
-  readBy          String[]     // Array of user IDs who have read this message
-  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender          User         @relation(fields: [senderId], references: [id])
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  senderRole     UserRole
+  text           String
+  createdAt      DateTime     @default(now())
+  readBy         String[]
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id])
 
   @@index([conversationId])
   @@index([senderId])
@@ -145,7 +142,6 @@ model Donor {
   name               String
   email              String        @unique
   organization       String?
-  phone              String?
   totalFunded        Int           @default(0)
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
@@ -153,8 +149,8 @@ model Donor {
   address            String?
   currencyPreference Currency?
   taxId              String?
+  phone              String?
   sponsorships       Sponsorship[]
-
   User               User?
 
   @@map("donors")
@@ -219,20 +215,20 @@ model Document {
 }
 
 model User {
-  id             String          @id @default(cuid())
+  id             String                @id @default(cuid())
   name           String?
-  email          String          @unique
+  email          String                @unique
   passwordHash   String
   role           UserRole
-  studentId      String?         @unique
-  donorId        String?         @unique
-  createdAt      DateTime        @default(now())
-  updatedAt            DateTime              @updatedAt
-  fieldReviews         FieldReview[]         @relation("OfficerReviews")
-  passwordResets       PasswordReset[]
-  sentMessages         ConversationMessage[] // Messages sent by this user
-  donor                Donor?                @relation(fields: [donorId], references: [id])
-  student              Student?              @relation(fields: [studentId], references: [id])
+  studentId      String?               @unique
+  donorId        String?               @unique
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  sentMessages   ConversationMessage[]
+  fieldReviews   FieldReview[]         @relation("OfficerReviews")
+  passwordResets PasswordReset[]
+  donor          Donor?                @relation(fields: [donorId], references: [id])
+  student        Student?              @relation(fields: [studentId], references: [id])
 
   @@map("users")
 }
@@ -297,12 +293,41 @@ model FieldReview {
   @@map("field_reviews")
 }
 
+model StudentProgress {
+  id               String   @id @default(cuid())
+  studentId        String
+  term             String
+  gpa              Float
+  coursesCompleted Int?
+  creditsEarned    Int?
+  achievements     String?
+  challenges       String?
+  goals            String?
+  notes            String?
+  updateType       String   @default("academic")
+  documents        Json?
+  submittedAt      DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  student          Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([submittedAt])
+  @@map("student_progress")
+}
+
 enum ApplicationStatus {
   PENDING
   PROCESSING
   APPROVED
   REJECTED
   DRAFT
+}
+
+enum StudentPhase {
+  APPLICATION  // Student is in application/review phase
+  ACTIVE      // Student is approved and actively studying (with/without sponsor)
+  GRADUATED   // Student has completed their program
 }
 
 enum DisbursementStatus {
@@ -340,32 +365,46 @@ enum Currency {
 }
 
 enum ConversationType {
-  DONOR_STUDENT      // Direct donor-student communication
-  DONOR_ADMIN        // Donor asking questions to admin/sub-admin
-  STUDENT_ADMIN      // Existing student-admin communication (compatibility)
+  DONOR_STUDENT
+  DONOR_ADMIN
+  STUDENT_ADMIN
 }
 
-model StudentProgress {
-  id                String    @id @default(cuid())
-  studentId         String
-  term              String
-  gpa               Float
-  coursesCompleted  Int?
-  creditsEarned     Int?
-  achievements      String?
-  challenges        String?
-  goals             String?
-  notes             String?
-  updateType        String    @default("academic") // academic, personal, achievement
-  documents         Json?     // Array of document info: {type, originalName, filename, path, size, mimeType}
-  submittedAt       DateTime  @default(now())
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@index([studentId])
-  @@index([submittedAt])
-  @@map("student_progress")
+enum ProgressReportStatus {
+  SUBMITTED
+  REVIEWED
+  APPROVED
+  NEEDS_REVISION
 }
 
+model ProgressReport {
+  id          String                      @id @default(cuid())
+  studentId   String
+  title       String
+  content     String
+  status      ProgressReportStatus        @default(SUBMITTED)
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  reviewNotes String?
+  
+  student     Student                     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attachments ProgressReportAttachment[]
+  
+  @@map("progress_reports")
+}
 
+model ProgressReportAttachment {
+  id               String         @id @default(cuid())
+  progressReportId String
+  filename         String
+  filepath         String
+  mimetype         String
+  size             Int
+  createdAt        DateTime       @default(now())
+  
+  progressReport   ProgressReport @relation(fields: [progressReportId], references: [id], onDelete: Cascade)
+  
+  @@map("progress_report_attachments")
+}

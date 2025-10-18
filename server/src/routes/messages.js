@@ -7,13 +7,39 @@ const router = express.Router();
 /**
  * GET /api/messages
  * Query params:
- *   - studentId (required)
+ *   - studentId (required for student/donor access)
  *   - applicationId (optional)
+ *   - admin (optional: "true" for admin to get all messages)
  */
 router.get("/", async (req, res) => {
   try {
-    const { studentId, applicationId } = req.query;
+    const { studentId, applicationId, admin } = req.query;
 
+    // Admin access - get all messages
+    if (admin === 'true') {
+      try {
+        const messages = await prisma.message.findMany({
+          orderBy: { createdAt: "desc" }, // newest → oldest
+          include: {
+            student: {
+              select: {
+                name: true,
+              }
+            }
+          }
+        });
+
+        console.log('🔍 Messages API: Found', messages.length, 'old messages');
+        res.json({ messages });
+        return;
+      } catch (adminError) {
+        console.error('❌ Admin messages query failed:', adminError);
+        res.status(500).json({ error: "Failed to fetch admin messages", details: adminError.message });
+        return;
+      }
+    }
+
+    // Regular student access
     if (!studentId) {
       return res.status(400).json({ error: "studentId is required" });
     }

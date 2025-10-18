@@ -19,8 +19,7 @@ import {
   Phone,
   Lock
 } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 function DonorPayment() {
   const { studentId } = useParams();
@@ -49,12 +48,12 @@ function DonorPayment() {
     if (student?.applications?.length > 0) {
       const approvedApp = student.applications.find(app => app.status === 'APPROVED');
       if (approvedApp) {
-        fullEducationCost = approvedApp.amount || approvedApp.needUSD || 0; // New structure or legacy fallback
+        fullEducationCost = approvedApp.amount || 0; // Single currency system
       } else {
-        fullEducationCost = student?.needUSD || 0;
+        fullEducationCost = student?.application?.amount || 0;
       }
     } else {
-      fullEducationCost = student?.needUSD || 0;
+      fullEducationCost = student?.application?.amount || 0;
     }
     
     const stillNeeded = student?.remainingNeed || 0;
@@ -87,12 +86,12 @@ function DonorPayment() {
     if (student?.applications?.length > 0) {
       const approvedApp = student.applications.find(app => app.status === 'APPROVED');
       if (approvedApp) {
-        amount = approvedApp.amount || approvedApp.needUSD || 0; // New structure or legacy fallback
+        amount = approvedApp.amount || 0; // Single currency system
       } else {
-        amount = student?.needUSD || 0;
+        amount = student?.application?.amount || 0;
       }
     } else {
-      amount = student?.needUSD || 0;
+      amount = student?.application?.amount || 0;
     }
     
     switch (frequency) {
@@ -118,7 +117,7 @@ function DonorPayment() {
         console.log("Loading student for payment:", studentId);
         
         // Try the new individual student endpoint first
-        let res = await fetch(`${API}/api/students/approved/${studentId}`);
+        let res = await fetch(`${API.baseURL}/api/students/approved/${studentId}`);
         if (res.ok) {
           const data = await res.json();
           if (data.student) {
@@ -136,7 +135,7 @@ function DonorPayment() {
         }
         
         // Fallback: try to get student from approved students API
-        res = await fetch(`${API}/api/students/approved`);
+        res = await fetch(`${API.baseURL}/api/students/approved`);
         if (res.ok) {
           const data = await res.json();
           const students = data.students || [];
@@ -220,7 +219,7 @@ function DonorPayment() {
         setProcessing(true);
         
         // Create payment intent on the server
-        const paymentIntentRes = await fetch(`${API}/api/payments/create-payment-intent`, {
+        const paymentIntentRes = await fetch(`${API.baseURL}/api/payments/create-payment-intent`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -286,7 +285,7 @@ function DonorPayment() {
 
         if (paymentIntent.status === 'succeeded') {
           // Confirm payment and create sponsorship record
-          const confirmRes = await fetch(`${API}/api/payments/confirm-payment`, {
+          const confirmRes = await fetch(`${API.baseURL}/api/payments/confirm-payment`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -362,14 +361,14 @@ function DonorPayment() {
     const approvedApp = student.applications.find(app => app.status === 'APPROVED');
     if (approvedApp) {
       // New structure: use single amount field from application
-      totalNeed = approvedApp.amount || approvedApp.needUSD || 0; // Fallback to needUSD for legacy data
+      totalNeed = approvedApp.amount || 0; // Single currency system
     } else {
-      // Fallback to student.needUSD if no approved application
-      totalNeed = student?.needUSD || 0;
+      // Fallback to student application amount if no approved application
+      totalNeed = student?.application?.amount || 0;
     }
   } else {
-    // Fallback to student.needUSD
-    totalNeed = student?.needUSD || 0;
+    // Fallback to student application amount
+    totalNeed = student?.application?.amount || 0;
   }
   
   const remainingNeed = student?.remainingNeed || 0; // Amount still needed (e.g., 2000)

@@ -32,6 +32,7 @@ router.get("/aggregate", async (_req, res) => {
 router.get("/", requireAuth, async (req, res) => {
   try {
     const { role, id: userId } = req.user;
+    const { donorId: queryDonorId } = req.query;
 
     let where = {};
     if (role === "DONOR") {
@@ -42,7 +43,12 @@ router.get("/", requireAuth, async (req, res) => {
       });
       if (!user?.donorId) return res.json({ sponsorships: [] });
       where.donorId = user.donorId;
-    } else if (role !== "ADMIN") {
+    } else if (role === "ADMIN") {
+      // Admin can filter by donorId if provided
+      if (queryDonorId) {
+        where.donorId = queryDonorId;
+      }
+    } else {
       return res.status(403).json({ error: "Forbidden" });
     }
 
@@ -58,6 +64,14 @@ router.get("/", requireAuth, async (req, res) => {
             program: true,
             city: true,
             province: true,
+            applications: {
+              select: {
+                id: true,
+                status: true,
+              },
+              orderBy: { submittedAt: "desc" },
+              take: 1, // Get the most recent application
+            },
           },
         },
         donor: { select: { id: true, name: true, email: true } },

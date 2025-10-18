@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { CheckCircle2, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
 export default function AdminApplicationDetail() {
   const { id } = useParams(); // application id
@@ -31,13 +31,13 @@ export default function AdminApplicationDetail() {
     async function load() {
       try {
         // load application with student
-        const res = await fetch(`${API}/api/applications/${id}`);
+        const res = await fetch(`${API.baseURL}/api/applications/${id}`);
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         setApp(data);
 
         // docs
-        const url = new URL(`${API}/api/uploads`);
+        const url = new URL(`${API.baseURL}/api/uploads`);
         url.searchParams.set("studentId", data.studentId);
         url.searchParams.set("applicationId", data.id);
         const dres = await fetch(url, { headers: { ...authHeader } });
@@ -45,14 +45,14 @@ export default function AdminApplicationDetail() {
         setDocs(Array.isArray(dj?.documents) ? dj.documents : []);
 
         // field reviews
-        const rres = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
+        const rres = await fetch(`${API.baseURL}/api/field-reviews`, { headers: { ...authHeader } });
         const rj = await rres.json();
         const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
         setReviews(mine);
 
         // officers list (admin-only)
         if (user?.role === "ADMIN") {
-          const ofres = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
+          const ofres = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofres.ok) {
             const ofj = await ofres.json();
             setOfficers(Array.isArray(ofj?.users) ? ofj.users : []);
@@ -63,7 +63,7 @@ export default function AdminApplicationDetail() {
         let allMessages = [];
         
         // Load old admin-student messages
-        const murl = new URL(`${API}/api/messages`);
+        const murl = new URL(`${API.baseURL}/api/messages`);
         murl.searchParams.set("studentId", data.studentId);
         murl.searchParams.set("applicationId", data.id);
         const mres = await fetch(murl, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
@@ -73,7 +73,7 @@ export default function AdminApplicationDetail() {
         // Load donor-student conversations for admin oversight
         try {
           console.log('🔍 AdminApplicationDetail: Loading donor-student conversations for studentId:', data.studentId);
-          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+          const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
           
@@ -139,7 +139,7 @@ export default function AdminApplicationDetail() {
   async function createAssignment() {
     try {
       if (!assignOfficer) { toast.error("Select a sub admin"); return; }
-      const res = await fetch(`${API}/api/field-reviews`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ applicationId: app.id, studentId: app.studentId, officerUserId: assignOfficer })
@@ -148,7 +148,7 @@ export default function AdminApplicationDetail() {
       const j = await res.json();
       
       // Instead of adding to existing array, refresh the reviews to avoid duplicates
-      const rres = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
+      const rres = await fetch(`${API.baseURL}/api/field-reviews`, { headers: { ...authHeader } });
       const rj = await rres.json();
       const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
       setReviews(mine);
@@ -168,7 +168,7 @@ export default function AdminApplicationDetail() {
         toast.error("Please list at least one missing item");
         return;
       }
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}/request-missing`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ items, note: missingNote[reviewId] || "" })
@@ -187,7 +187,7 @@ export default function AdminApplicationDetail() {
     try {
       const text = newMessage.trim();
       if (!text) return;
-      const res = await fetch(`${API}/api/messages`, {
+      const res = await fetch(`${API.baseURL}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ studentId: app.studentId, applicationId: app.id, text, fromRole: "admin" })
@@ -213,7 +213,7 @@ export default function AdminApplicationDetail() {
         return;
       }
 
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}/reassign`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}/reassign`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ newOfficerUserId: newOfficerId })
@@ -222,7 +222,7 @@ export default function AdminApplicationDetail() {
       if (!res.ok) throw new Error(await res.text());
       
       // Refresh reviews
-      const rres = await fetch(`${API}/api/field-reviews`, { headers: { ...authHeader } });
+      const rres = await fetch(`${API.baseURL}/api/field-reviews`, { headers: { ...authHeader } });
       const rj = await rres.json();
       const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
       setReviews(mine);
@@ -428,7 +428,7 @@ export default function AdminApplicationDetail() {
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-slate-700 font-semibold">Amount Required</span>
                   <span className="font-bold text-blue-600">
-                    {app.currency === "PKR" ? `₨${(app.needPKR || 0).toLocaleString()}` : `$${(app.needUSD || 0).toLocaleString()}`}
+                    {fmtAmount(app.amount, app.currency)}
                   </span>
                 </div>
               </div>
@@ -436,7 +436,7 @@ export default function AdminApplicationDetail() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Amount Needed</span>
                 <span className="font-medium">
-                  {app.currency === "PKR" ? `₨${(app.needPKR || 0).toLocaleString()}` : `$${(app.needUSD || 0).toLocaleString()}`}
+                  {fmtAmount(app.amount, app.currency)}
                 </span>
               </div>
             )}
@@ -542,7 +542,7 @@ export default function AdminApplicationDetail() {
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={async () => {
                   try {
-                    const res = await fetch(`${API}/api/applications/${app.id}`, {
+                    const res = await fetch(`${API.baseURL}/api/applications/${app.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json", ...authHeader },
                       body: JSON.stringify({
@@ -566,7 +566,7 @@ export default function AdminApplicationDetail() {
                         
                         if (proceed) {
                           // Force approve with override
-                          const forceRes = await fetch(`${API}/api/applications/${app.id}`, {
+                          const forceRes = await fetch(`${API.baseURL}/api/applications/${app.id}`, {
                             method: "PATCH",
                             headers: { "Content-Type": "application/json", ...authHeader },
                             body: JSON.stringify({

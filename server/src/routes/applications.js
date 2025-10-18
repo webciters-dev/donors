@@ -75,6 +75,8 @@ router.get("/", optionalAuth, async (req, res) => {
               communityInvolvement: true,
               currentAcademicYear: true,
               specificField: true,
+              // Sponsorship status for admin filtering
+              sponsored: true,
             },
           },
           fieldReviews: {
@@ -111,21 +113,17 @@ router.get("/", optionalAuth, async (req, res) => {
 
 /**
  * POST /api/applications
- * Accepts either:
- *   - { studentId, term, needUSD, currency: "USD" }  OR
- *   - { studentId, term, needPKR, currency: "PKR" }
- * Also optional: notes, fxRate
+ * Accepts: { studentId, term, amount, currency }
+ * Single currency system - no more needUSD/needPKR conversion
  */
 router.post("/", async (req, res) => {
   try {
     const { 
       studentId, 
       term, 
-      needUSD, 
-      needPKR, 
+      amount,
       currency, 
-      notes, 
-      fxRate,
+      notes,
       // Enhanced financial breakdown fields
       universityFee,
       livingExpenses,
@@ -137,28 +135,21 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Missing required fields: studentId, term" });
     }
 
-    if ((needUSD == null || needUSD === "") && (needPKR == null || needPKR === "")) {
-      return res.status(400).json({ error: "Either needUSD or needPKR is required." });
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: "Amount is required and must be greater than 0" });
+    }
+
+    if (!currency) {
+      return res.status(400).json({ error: "Currency is required" });
     }
 
     const data = {
       studentId,
       term: String(term),
-      status: "DRAFT", // Fix: Create applications as DRAFT instead of default PENDING
+      status: "DRAFT", // Create applications as DRAFT
       notes: notes ?? null,
-      fxRate:
-        fxRate === undefined || fxRate === null || fxRate === ""
-          ? null
-          : Number(fxRate),
-      currency: currency === "PKR" ? "PKR" : currency === "USD" ? "USD" : null,
-      needUSD:
-        needUSD === undefined || needUSD === null || needUSD === ""
-          ? null
-          : parseInt(needUSD, 10),
-      needPKR:
-        needPKR === undefined || needPKR === null || needPKR === ""
-          ? null
-          : parseInt(needPKR, 10),
+      currency: currency,
+      amount: parseInt(amount, 10),
       // Enhanced financial breakdown fields
       universityFee:
         universityFee === undefined || universityFee === null || universityFee === ""
@@ -178,16 +169,8 @@ router.post("/", async (req, res) => {
           : parseInt(scholarshipAmount, 10),
     };
 
-    // Keep schema compatibility: if only PKR is provided, set needUSD=0
-    if ((data.needUSD === null || data.needUSD === undefined) && data.needPKR != null) {
-      data.needUSD = 0;
-    }
-
-    // Build snapshot into new Phase 1 fields
-    const snap = await buildSnapshot(
-      data.currency === "PKR" ? data.needPKR : data.needUSD,
-      data.currency || (data.needPKR != null ? "PKR" : "USD")
-    );
+    // Build snapshot with single currency amount
+    const snap = await buildSnapshot(data.amount, data.currency);
 
     const application = await prisma.application.create({
       data: { ...data, ...snap },
@@ -209,12 +192,12 @@ router.post("/", async (req, res) => {
 
 /**
  * PATCH /api/applications/:id
- * Allows updating status/notes/fxRate and currency/needUSD/needPKR
+ * Allows updating status/notes and amount/currency
  */
 router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, fxRate, currency, needUSD, needPKR, forceApprove } = req.body;
+    const { status, notes, amount, currency, forceApprove } = req.body;
 
     // Document validation for APPROVED status
     if (status === "APPROVED") {
@@ -259,30 +242,23 @@ router.patch("/:id", async (req, res) => {
     const data = {};
     if (status) data.status = status;
     if (notes !== undefined) data.notes = notes ?? null;
-    if (fxRate !== undefined && fxRate !== "") data.fxRate = Number(fxRate);
-    if (fxRate === "") data.fxRate = null;
-    if (currency === "USD" || currency === "PKR" || currency === null) {
-      data.currency = currency ?? null;
-    }
-    if (needUSD !== undefined) {
-      data.needUSD = needUSD === null || needUSD === "" ? null : parseInt(needUSD, 10);
-    }
-    if (needPKR !== undefined) {
-      data.needPKR = needPKR === null || needPKR === "" ? null : parseInt(needPKR, 10);
+    if (currency) data.currency = currency;
+    if (amount !== undefined) {
+      data.amount = amount === null || amount === "" ? null : parseInt(amount, 10);
     }
 
-    // If any amount/currency inputs provided, load existing and recompute snapshot
-    if (currency !== undefined || needUSD !== undefined || needPKR !== undefined) {
+    // If amount/currency provided, recompute snapshot
+    if (currency !== undefined || amount !== undefined) {
       const existing = await prisma.application.findUnique({ where: { id } });
       if (!existing) return res.status(404).json({ error: "Application not found" });
 
-      const finalCurrency = data.currency ?? existing.currency ?? (existing.needPKR != null ? "PKR" : "USD");
-      const finalAmount = finalCurrency === "PKR"
-        ? (data.needPKR ?? existing.needPKR)
-        : (data.needUSD ?? existing.needUSD);
+      const finalCurrency = data.currency ?? existing.currency;
+      const finalAmount = data.amount ?? existing.amount;
 
-      const snap = await buildSnapshot(finalAmount, finalCurrency || (finalAmount != null ? "USD" : null));
-      Object.assign(data, snap);
+      if (finalAmount && finalCurrency) {
+        const snap = await buildSnapshot(finalAmount, finalCurrency);
+        Object.assign(data, snap);
+      }
     }
 
     const updated = await prisma.application.update({
@@ -290,6 +266,23 @@ router.patch("/:id", async (req, res) => {
       data,
       include: { student: { select: { id: true, name: true, email: true, university: true, program: true } } },
     });
+
+    // 🎓 STUDENT PHASE TRANSITION: When application is approved, transition student to ACTIVE phase
+    if (status === "APPROVED" && updated.student?.id) {
+      try {
+        await prisma.student.update({
+          where: { id: updated.student.id },
+          data: { 
+            studentPhase: 'ACTIVE',
+            sponsored: true // Keep backward compatibility
+          }
+        });
+        console.log(`🎓 Student ${updated.student.name} transitioned to ACTIVE phase`);
+      } catch (phaseError) {
+        // Log error but don't fail the application approval
+        console.error('Phase transition error:', phaseError);
+      }
+    }
 
     res.json(updated);
   } catch (error) {

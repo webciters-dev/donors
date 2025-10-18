@@ -19,8 +19,8 @@ import {
   Plus,
   Heart
 } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function StudentDashboard() {
         setLoading(true);
         
         // Load application
-        const appRes = await fetch(`${API}/api/applications`, {
+        const appRes = await fetch(`${API.baseURL}/api/applications`, {
           headers: authHeader
         });
         if (appRes.ok) {
@@ -69,7 +69,7 @@ export default function StudentDashboard() {
           // Load messages if application exists
           if (userApp?.id) {
             // Load old messages
-            const msgRes = await fetch(`${API}/api/messages?studentId=${userApp.studentId}&applicationId=${userApp.id}`, {
+            const msgRes = await fetch(`${API.baseURL}/api/messages?studentId=${userApp.studentId}&applicationId=${userApp.id}`, {
               headers: authHeader
             });
             let allMessages = [];
@@ -81,7 +81,7 @@ export default function StudentDashboard() {
             // Load new conversation messages
             try {
 
-              const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+              const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
                 headers: authHeader
               });
 
@@ -124,8 +124,8 @@ export default function StudentDashboard() {
           // Load sponsorships and progress updates
           try {
             const [sponsorshipRes, progressRes] = await Promise.all([
-              fetch(`${API}/api/sponsorships?studentId=${user.studentId}`, { headers: authHeader }),
-              fetch(`${API}/api/donor-messages/${user.studentId}/progress`, { headers: authHeader })
+              fetch(`${API.baseURL}/api/sponsorships?studentId=${user.studentId}`, { headers: authHeader }),
+              fetch(`${API.baseURL}/api/donor-messages/${user.studentId}/progress`, { headers: authHeader })
             ]);
 
             if (sponsorshipRes.ok) {
@@ -272,13 +272,7 @@ export default function StudentDashboard() {
                   <div>
                     <div className="text-slate-600">Amount Requested</div>
                     <div className="font-medium">
-                      {(() => {
-                        const currency = application.currency || 'USD';
-                        const amount = currency === 'PKR' ? 
-                          (application.needPKR || application.needUSD || 0) : 
-                          (application.needUSD || 0);
-                        return `${currency === 'PKR' ? 'Rs' : '$'} ${amount.toLocaleString()}`;
-                      })()}
+                      {fmtAmount(application.amount, application.currency)}
                     </div>
                   </div>
                 </div>

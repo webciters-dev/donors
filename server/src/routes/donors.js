@@ -6,6 +6,115 @@ import { requireAuth, onlyRoles } from "../middleware/auth.js";
 const router = express.Router();
 
 /**
+ * GET /api/donors
+ * Return all donors (ADMIN only) for admin dashboard
+ */
+router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { limit = 50, page = 1 } = req.query;
+    const take = parseInt(limit);
+    const skip = (parseInt(page) - 1) * take;
+
+    console.log('🔍 Donors API: Fetching donors...');
+
+    const [donors, total] = await Promise.all([
+      prisma.donor.findMany({
+        skip,
+        take,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          organization: true,
+          totalFunded: true,
+          country: true,
+          currencyPreference: true,
+          createdAt: true,
+        },
+        // Get sponsorship count separately to avoid _count issues
+      }),
+      prisma.donor.count()
+    ]);
+
+    console.log(`🔍 Donors API: Found ${donors.length} donors`);
+
+    // Get sponsorship counts separately
+    const donorsWithCounts = await Promise.all(
+      donors.map(async (donor) => {
+        const sponsorshipCount = await prisma.sponsorship.count({
+          where: { donorId: donor.id }
+        });
+        return {
+          ...donor,
+          sponsorshipCount
+        };
+      })
+    );
+
+    res.json({
+      donors: donorsWithCounts,
+      pagination: {
+        page: parseInt(page),
+        limit: take,
+        total,
+        pages: Math.ceil(total / take)
+      }
+    });
+  } catch (e) {
+    console.error('🔍 Donors API Error:', e);
+    res.status(500).json({ error: "Failed to load donors" });
+  }
+});
+
+/**
+ * GET /api/donors/:donorId
+ * Return specific donor details (ADMIN only)
+ */
+router.get("/:donorId", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { donorId } = req.params;
+
+    const donor = await prisma.donor.findUnique({
+      where: { id: donorId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        organization: true,
+        phone: true,
+        totalFunded: true,
+        country: true,
+        address: true,
+        currencyPreference: true,
+        taxId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!donor) {
+      return res.status(404).json({ error: "Donor not found" });
+    }
+
+    // Get sponsorship count
+    const sponsorshipCount = await prisma.sponsorship.count({
+      where: { donorId }
+    });
+
+    res.json({
+      donor: {
+        ...donor,
+        sponsorshipCount
+      }
+    });
+  } catch (e) {
+    console.error('🔍 Individual Donor API Error:', e);
+    res.status(500).json({ error: "Failed to load donor details" });
+  }
+});
+
+/**
  * GET /api/donors/me
  * Return the donor user’s donor record + basic aggregates.
  */
@@ -137,7 +246,8 @@ router.get(
               city: true,
               province: true,
               gpa: true,
-              needUSD: true,
+              amount: true,
+              currency: true,
               sponsored: true,
             },
           },
@@ -190,8 +300,8 @@ router.get(
               province: true,
               village: true,
               gpa: true,
-              needUSD: true,
-              needPKR: true,
+              amount: true,
+              currency: true,
               sponsored: true,
               currentInstitution: true,
               currentCity: true,

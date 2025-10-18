@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { UserPlus, Mail, Shield, Edit2 } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export default function AdminOfficers() {
   const { token, user, logout } = useAuth();
@@ -22,7 +21,7 @@ export default function AdminOfficers() {
   async function load() {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
+      const res = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
       if (res.status === 401) {
         toast.error("Your session expired. Please sign in again.");
         logout?.();
@@ -47,7 +46,7 @@ export default function AdminOfficers() {
         return;
       }
       setCreating(true);
-      const res = await fetch(`${API}/api/users/field-officers`, {
+      const res = await fetch(`${API.baseURL}/api/users/field-officers`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(form),
@@ -72,7 +71,7 @@ export default function AdminOfficers() {
     try {
       const body = { name: o._name, email: o._email };
       if (o._newPassword) body.password = o._newPassword;
-      const res = await fetch(`${API}/api/users/${o.id}`, {
+      const res = await fetch(`${API.baseURL}/api/users/${o.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(body),

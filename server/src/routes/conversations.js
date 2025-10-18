@@ -12,17 +12,25 @@ const router = express.Router();
 router.get("/", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id;
+    const userRole = req.user.role;
     const includeAllMessages = req.query.includeAllMessages === 'true';
     
-    console.log("🔍 Conversations API called by user:", userId);
+    console.log("🔍 Conversations API called by user:", userId, "role:", userRole);
     console.log("🔍 Include all messages:", includeAllMessages);
 
-    const conversations = await prisma.conversation.findMany({
-      where: {
+    // Build where clause - admin sees all conversations, others see only their own
+    let whereClause = {};
+    if (userRole !== 'ADMIN') {
+      whereClause = {
         participantIds: {
           has: userId
         }
-      },
+      };
+    }
+    // Admin sees all conversations (no where clause)
+
+    const conversations = await prisma.conversation.findMany({
+      where: whereClause,
       include: {
         student: {
           select: {
@@ -46,10 +54,17 @@ router.get("/", requireAuth, async (req, res) => {
           ...(includeAllMessages ? {} : { take: 1 }),
           include: {
             sender: {
-              select: {
-                id: true,
-                name: true,
-                role: true
+              include: {
+                student: {
+                  select: {
+                    name: true
+                  }
+                },
+                donor: {
+                  select: {
+                    name: true
+                  }
+                }
               }
             }
           }

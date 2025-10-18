@@ -21,6 +21,7 @@ import usersRouter from "./routes/users.js";
 import requestsRouter from "./routes/requests.js";
 import exportRouter from "./routes/export.js";
 import studentProgressRouter from "./routes/student-progress.js";
+import studentRouter from "./routes/student.js";
 
 
 dotenv.config();
@@ -103,6 +104,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/requests", requestsRouter);
 app.use("/api/export", exportRouter);
 app.use("/api/student-progress", studentProgressRouter);
+app.use("/api/student", studentRouter);
 
 
 // ⬇️ NEW for uploads

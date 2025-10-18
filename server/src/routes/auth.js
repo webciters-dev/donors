@@ -91,7 +91,7 @@ router.post("/login", async (req, res) => {
 
 /* =========================
    STUDENT SELF-REGISTER (used by ApplicationForm)
-   body: { name, email, password, university, program, gender, country, city, province, gpa, gradYear, needUSD, field }
+   body: { name, email, password, university, program, gender, country, city, province, gpa, gradYear, amount, currency, field }
 ========================= */
 router.post("/register-student", async (req, res) => {
   try {
@@ -107,7 +107,8 @@ router.post("/register-student", async (req, res) => {
       province,
       gpa,
       gradYear,
-      needUSD,
+      amount,
+      currency,
       field,
       personalIntroduction,
     } = req.body;
@@ -129,7 +130,8 @@ router.post("/register-student", async (req, res) => {
         province: province ?? undefined,
         gpa: typeof gpa === "number" ? gpa : undefined,
         gradYear: typeof gradYear === "number" ? gradYear : undefined,
-        needUSD: typeof needUSD === "number" ? needUSD : undefined,
+        amount: typeof amount === "number" ? amount : undefined,
+        currency: currency ?? undefined,
         field: field ?? undefined,
         personalIntroduction: personalIntroduction ?? undefined,
       },
@@ -144,7 +146,8 @@ router.post("/register-student", async (req, res) => {
         province: province ?? "",
         gpa: typeof gpa === "number" ? gpa : 0,
         gradYear: typeof gradYear === "number" ? gradYear : new Date().getFullYear() + 1,
-        needUSD: typeof needUSD === "number" ? needUSD : 0,
+        amount: typeof amount === "number" ? amount : 0,
+        currency: currency ?? "PKR",
         field: field ?? "",
         personalIntroduction: personalIntroduction ?? "",
       },

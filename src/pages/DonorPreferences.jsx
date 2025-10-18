@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Settings } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export const DonorPreferences = () => {
   const { token, user } = useAuth();
@@ -22,7 +21,7 @@ export const DonorPreferences = () => {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`${API}/api/donors/me`, {
+        const res = await fetch(`${API.baseURL}/api/donors/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;
@@ -44,7 +43,7 @@ export const DonorPreferences = () => {
 
   async function save() {
     try {
-      const res = await fetch(`${API}/api/donors/me`, {
+      const res = await fetch(`${API.baseURL}/api/donors/me`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

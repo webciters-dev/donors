@@ -6,8 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { fmtAmount } from "@/data/demoDonor";
 import { getCurrencyFlag, getCurrencyFromCountry } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export default function DonorBrowse() {
   const navigate = useNavigate();
@@ -17,8 +16,8 @@ export default function DonorBrowse() {
   useEffect(() => {
     async function loadStudents() {
       try {
-        console.log("🔍 DonorBrowse: Fetching from:", `${API}/api/students/approved`);
-        const res = await fetch(`${API}/api/students/approved`);
+        console.log("🔍 DonorBrowse: Fetching from:", `${API.baseURL}/api/students/approved`);
+        const res = await fetch(`${API.baseURL}/api/students/approved`);
         
         if (res.ok) {
           const data = await res.json();
@@ -28,14 +27,14 @@ export default function DonorBrowse() {
           // Transform for display - filter out sponsored students (ONE STUDENT = ONE DONOR)
           const transformedStudents = apiStudents
             .filter(s => {
-              const remainingNeed = Number(s?.remainingNeed || s?.needUSD || 0);
+              const remainingNeed = Number(s?.remainingNeed || s?.application?.amount || 0);
               const isSponsored = Boolean(s?.sponsored) || remainingNeed <= 0;
               return s.isApproved && !isSponsored; // Only show approved and unsponsored students
             })
             .map(student => ({
               ...student,
               currency: student.application?.currency || getCurrencyFromCountry(student.country) || 'USD',
-              displayAmount: student.remainingNeed || student.needUSD || 0
+              displayAmount: student.remainingNeed || student.application?.amount || 0
             }));
           
           console.log("🔍 DonorBrowse: Transformed students:", transformedStudents);

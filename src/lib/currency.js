@@ -8,7 +8,8 @@ export const CURRENCY_META = {
   GBP: { symbol: '£', flag: '🇬🇧', name: 'British Pound Sterling' },
   EUR: { symbol: '€', flag: '🇪🇺', name: 'Euro' },
   CAD: { symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
-  PKR: { symbol: 'Rs', flag: '🇵🇰', name: 'Pakistani Rupee' }
+  PKR: { symbol: 'Rs', flag: '🇵🇰', name: 'Pakistani Rupee' },
+  AUD: { symbol: 'A$', flag: '🇦🇺', name: 'Australian Dollar' }
 };
 
 // Determine currency based on university country selection
@@ -29,6 +30,10 @@ export const getCurrencyFromCountry = (country) => {
   
   if (countryLower === 'canada' || countryLower === 'ca') {
     return 'CAD';
+  }
+  
+  if (countryLower === 'australia' || countryLower === 'au' || countryLower === 'aus') {
+    return 'AUD';
   }
   
   if (countryLower === 'pakistan' || countryLower === 'pk' || countryLower === 'pak') {

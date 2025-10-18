@@ -12,8 +12,8 @@ import {
   Shield, CheckCircle, XCircle, AlertTriangle, Calendar, Camera,
   MapPin, DollarSign, BookOpen, Users, ClipboardCheck 
 } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
 export default function SubAdminApplicationDetail() {
   const { reviewId } = useParams(); // field review id
@@ -112,7 +112,7 @@ export default function SubAdminApplicationDetail() {
         setLoading(true);
         
         // Get the specific review with full details
-        const reviewRes = await fetch(`${API}/api/field-reviews`, { headers: authHeader });
+        const reviewRes = await fetch(`${API.baseURL}/api/field-reviews`, { headers: authHeader });
         if (!reviewRes.ok) throw new Error("Failed to load reviews");
         
         const reviewData = await reviewRes.json();
@@ -157,7 +157,7 @@ export default function SubAdminApplicationDetail() {
         let allMessages = [];
         
         // Load old admin-student messages
-        const msgRes = await fetch(`${API}/api/messages?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
+        const msgRes = await fetch(`${API.baseURL}/api/messages?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
           headers: authHeader
         });
         if (msgRes.ok) {
@@ -168,7 +168,7 @@ export default function SubAdminApplicationDetail() {
         // Load donor-student conversations for sub-admin oversight
         try {
 
-          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+          const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
             headers: authHeader
           });
           
@@ -208,7 +208,7 @@ export default function SubAdminApplicationDetail() {
         setMessages(allMessages);
 
         // Load documents
-        const docRes = await fetch(`${API}/api/uploads?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
+        const docRes = await fetch(`${API.baseURL}/api/uploads?studentId=${currentReview.studentId}&applicationId=${currentReview.applicationId}`, {
           headers: authHeader
         });
         if (docRes.ok) {
@@ -252,7 +252,7 @@ export default function SubAdminApplicationDetail() {
       
       const status = isSubmitting ? "COMPLETED" : "IN_PROGRESS";
       
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ 
@@ -338,7 +338,7 @@ export default function SubAdminApplicationDetail() {
         return doc;
       });
 
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}/request-missing`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ 
@@ -387,7 +387,7 @@ export default function SubAdminApplicationDetail() {
     try {
       if (!newMessage.trim()) return;
       
-      const res = await fetch(`${API}/api/messages`, {
+      const res = await fetch(`${API.baseURL}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({
@@ -519,9 +519,9 @@ export default function SubAdminApplicationDetail() {
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-slate-700 font-semibold">Amount Required</span>
                   <span className="font-bold text-blue-600">
-                    {application.currency === 'PKR' 
-                      ? `₨${application.needPKR?.toLocaleString()}` 
-                      : `$${application.needUSD?.toLocaleString()}`
+                    {application.amount && application.currency 
+                      ? fmtAmount(application.amount, application.currency)
+                      : 'Amount not set'
                     }
                   </span>
                 </div>
@@ -533,9 +533,9 @@ export default function SubAdminApplicationDetail() {
             <div className="flex justify-between items-center">
               <span className="text-slate-600 font-medium">Amount Required</span>
               <span className="font-bold text-blue-600">
-                {application.currency === 'PKR' 
-                  ? `₨${application.needPKR?.toLocaleString()}` 
-                  : `$${application.needUSD?.toLocaleString()}`
+                {application.amount && application.currency 
+                  ? fmtAmount(application.amount, application.currency)
+                  : 'Amount not set'
                 }
               </span>
             </div>

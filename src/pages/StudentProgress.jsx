@@ -23,8 +23,7 @@ import {
   Clock,
   Plus
 } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export default function StudentProgress() {
   const navigate = useNavigate();

@@ -9,8 +9,7 @@ import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { getCurrencyFromCountry } from "@/lib/currency";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
   <div className="flex items-center justify-between">
@@ -81,7 +80,7 @@ export const StudentDetail = ({ id, goBack }) => {
 
 
         // Try the specific student endpoint first (works for both authenticated and non-authenticated users)
-        let res = await fetch(`${API}/api/students/approved/${id}`);
+        let res = await fetch(`${API.baseURL}/api/students/approved/${id}`);
         
         if (res.ok) {
           const data = await res.json();
@@ -95,7 +94,7 @@ export const StudentDetail = ({ id, goBack }) => {
 
         // Fallback: try finding student in approved students list
 
-        res = await fetch(`${API}/api/students/approved`);
+        res = await fetch(`${API.baseURL}/api/students/approved`);
         if (res.ok) {
           const data = await res.json();
           const students = Array.isArray(data?.students) ? data.students : [];
@@ -146,8 +145,9 @@ export const StudentDetail = ({ id, goBack }) => {
     );
   }
 
-  // Determine currency and amounts (matching Marketplace.jsx logic)
+  // Determine currency and amount from application or student
   let currency = application?.currency || student?.currency;
+  let displayAmount = application?.amount || student?.amount || 0;
   
   // If no explicit currency, detect from university or country
   if (!currency) {
@@ -164,9 +164,6 @@ export const StudentDetail = ({ id, goBack }) => {
       currency = 'USD';
     }
   }
-  const needUSD = Number(student?.needUsd || student?.needUSD || application?.needUSD || 0);
-  const needPKR = Number(student?.needPKR || application?.needPKR || 0);
-  const displayAmount = currency === "PKR" ? needPKR : needUSD;
 
   return (
     <div className="space-y-6">
@@ -412,12 +409,6 @@ export const StudentDetail = ({ id, goBack }) => {
                 </div>
               )}
               
-              {currency === "PKR" && needUSD > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500">USD Equivalent</span>
-                  <span className="font-medium text-slate-500">{fmtAmount(needUSD, "USD")}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-slate-500">Notes</span>
                 <span className="font-medium">{application.notes || "—"}</span>

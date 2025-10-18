@@ -44,11 +44,17 @@ import { Clock } from "lucide-react";
 // ⬇️ NEW
 import { AdminApplications } from "@/pages/AdminApplications";
 import AdminApplicationDetail from "@/pages/AdminApplicationDetail";
+import AdminDonorDetail from "@/pages/AdminDonorDetail";
+import AdminMessageThread from "@/pages/AdminMessageThread";
+import AdminPayments from "@/pages/AdminPayments";
+import AdminDisbursements from "@/pages/AdminDisbursements";
+import AdminDonors from "@/pages/AdminDonors";
 import SubAdminApplicationDetail from "@/pages/SubAdminApplicationDetail";
 import { MyApplication } from "@/pages/MyApplication";
 import FieldOfficerDashboard from "@/pages/FieldOfficerDashboard";
 import StudentDashboard from "@/pages/StudentDashboard";
 import StudentProgress from "@/pages/StudentProgress";
+import ActiveStudentDashboard from "@/pages/ActiveStudentDashboard";
 
 import { AuthProvider } from "@/lib/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -74,6 +80,7 @@ const pathFromKey = {
   matrix: "/matrix",
   update: "/update",
   studentdashboard: "/student/dashboard",
+  activestudent: "/student/active",
   myapplication: "/my-application",
   studentprofile: "/student/profile",
   studentprogress: "/student/progress",
@@ -84,6 +91,7 @@ function keyFromPath(pathname) {
   if (pathname === "/" || pathname === "/#/" || pathname === "") return "home";
   if (pathname.startsWith("/browse")) return "browse";
   if (pathname.startsWith("/students/")) return "student";
+  if (pathname.startsWith("/student/active")) return "activestudent";
   if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
   if (pathname.startsWith("/student/progress")) return "studentprogress";
   if (pathname.startsWith("/my-application")) return "myapplication";
@@ -189,6 +197,14 @@ function Shell() {
               }
             />
             <Route
+              path="/student/active"
+              element={
+                <ProtectedRoute roles={["STUDENT"]}>
+                  <ActiveStudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/student/progress"
               element={
                 <ProtectedRoute roles={["STUDENT"]}>
@@ -266,6 +282,46 @@ function Shell() {
               element={
                 <ProtectedRoute roles={["ADMIN"]}>
                   <AdminApplicationDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/donors/:donorId"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminDonorDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/messages/:messageId"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminMessageThread />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/payments"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminPayments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/disbursements"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminDisbursements />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/donors"
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminDonors />
                 </ProtectedRoute>
               }
             />

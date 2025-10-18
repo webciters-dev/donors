@@ -12,8 +12,7 @@ import {
   getCompletionMessage, 
   isProfileReadyForSubmission 
 } from "@/lib/profileValidation";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 // Helpers
 function onlyDigits(s = "") {
@@ -76,7 +75,7 @@ export default function StudentProfile() {
     let dead = false;
     async function load() {
       try {
-        const res = await fetch(`${API}/api/students/me`, {
+        const res = await fetch(`${API.baseURL}/api/students/me`, {
           headers: { ...authHeader },
         });
         if (!res.ok) throw new Error(await res.text());
@@ -187,7 +186,7 @@ export default function StudentProfile() {
           : null,
       };
 
-      const res = await fetch(`${API}/api/students/me`, {
+      const res = await fetch(`${API.baseURL}/api/students/me`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(payload),
@@ -353,7 +352,7 @@ export default function StudentProfile() {
               value={form.province}
               onChange={(e) => setVal("province", e.target.value)}
               className="rounded-2xl"
-              placeholder="Punjab, Sindh, KPK, Balochistan, Islamabad"
+              placeholder="Punjab, Sindh, KPK, Balochistan"
             />
             {errors.province && (
               <p className="text-xs text-rose-600 mt-1">{errors.province}</p>

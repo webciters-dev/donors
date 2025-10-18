@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle } from "lucide-react";
 import { useAuth } from '@/lib/AuthContext';
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
 export default function FieldOfficerDashboard() {
   const navigate = useNavigate();
@@ -55,7 +55,7 @@ export default function FieldOfficerDashboard() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/field-reviews`, { headers: authHeader });
+      const res = await fetch(`${API.baseURL}/api/field-reviews`, { headers: authHeader });
       
       if (!res.ok) {
         throw new Error(`Failed to load reviews: ${res.status}`);
@@ -80,7 +80,7 @@ export default function FieldOfficerDashboard() {
 
   async function updateReview(reviewId) {
     try {
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ notes, recommendation, status: "COMPLETED" })
@@ -111,7 +111,7 @@ export default function FieldOfficerDashboard() {
         return;
       }
 
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}/request-missing`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}/request-missing`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ items, note: missingNote })
@@ -139,7 +139,7 @@ export default function FieldOfficerDashboard() {
   async function reopenReview(reviewId) {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/field-reviews/${reviewId}`, {
+      const res = await fetch(`${API.baseURL}/api/field-reviews/${reviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ status: "IN_PROGRESS" })
@@ -483,7 +483,7 @@ function ReviewModal({
           return;
         }
         
-        const url = new URL(`${API}/api/uploads`);
+        const url = new URL(`${API.baseURL}/api/uploads`);
         url.searchParams.set("studentId", selectedReview.studentId);
         url.searchParams.set("applicationId", selectedReview.applicationId);
         
@@ -535,9 +535,7 @@ function ReviewModal({
             <div><strong>Student:</strong> {selectedReview.student?.name} • CNIC: {selectedReview.student?.cnic || 'Not provided'}</div>
             <div><strong>Status:</strong> {selectedReview.application?.status}</div>
             <div><strong>Term:</strong> {selectedReview.application?.term}</div>
-            <div><strong>Amount:</strong> {selectedReview.application?.currency === "PKR" 
-              ? `₨${Number(selectedReview.application?.needPKR || 0).toLocaleString()}`
-              : `$${Number(selectedReview.application?.needUSD || 0).toLocaleString()}`}
+            <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}
             </div>
           </div>
         </div>

@@ -64,8 +64,8 @@ router.post('/create-payment-intent', async (req, res) => {
     const requestedCurrency = currency || 'USD'; // Default to USD if not provided
     
     // No currency normalization needed - support all currencies directly
-    // Use single amount field from application (new structure)
-    const totalNeed = application.needUSD || application.amount || 0; // Fallback to needUSD for existing data
+    // Use single amount field from application
+    const totalNeed = application.amount || 0;
     const providedAmount = parseFloat(amount);
     
     // Debug logging
@@ -73,7 +73,6 @@ router.post('/create-payment-intent', async (req, res) => {
       originalRequestedCurrency: currency,
       originalApplicationCurrency: application.currency,
       applicationAmount: application.amount,
-      applicationNeedUSD: application.needUSD, // Legacy fallback
       totalNeed,
       providedAmount,
       paymentFrequency,
@@ -87,8 +86,7 @@ router.post('/create-payment-intent', async (req, res) => {
       return res.status(400).json({ 
         error: `Application does not have valid educational need amount set for ${appCurrency}. Please contact support.`,
         applicationCurrency: appCurrency,
-        applicationAmount: application.amount,
-        applicationNeedUSD: application.needUSD // Legacy fallback
+        applicationAmount: application.amount
       });
     }
     

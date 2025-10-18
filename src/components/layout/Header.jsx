@@ -76,15 +76,38 @@ export const Nav = ({ active, setActive }) => {
           <div className="flex items-center gap-3 text-sm text-slate-700">
             {user ? (
               <>
-                {/* Admin shortcut to Applications table */}
+                {/* Admin navigation links */}
                 {role === "ADMIN" && (
-                  <Button
-                    variant={active === "admin" ? "default" : "outline"}
-                    className="rounded-2xl hidden sm:inline-flex"
-                    onClick={() => navigate("/admin/applications")}
-                  >
-                    Applications
-                  </Button>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => navigate("/admin/payments")}
+                    >
+                      Payments
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => navigate("/admin/disbursements")}
+                    >
+                      Disbursements
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl"
+                      onClick={() => navigate("/admin/donors")}
+                    >
+                      Donors
+                    </Button>
+                    <Button
+                      variant={active === "admin" ? "default" : "outline"}
+                      className="rounded-2xl"
+                      onClick={() => navigate("/admin/applications")}
+                    >
+                      Applications
+                    </Button>
+                  </div>
                 )}
 
                 <div className="hidden sm:flex items-center gap-2">

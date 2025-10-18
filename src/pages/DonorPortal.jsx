@@ -16,11 +16,16 @@ import {
   FileText, 
   Users,
   DollarSign,
-  GraduationCap 
+  GraduationCap,
+  MessageSquare,
+  Send,
+  Upload,
+  CheckCircle,
+  BookOpen,
+  Clock
 } from "lucide-react";
 import { CURRENCY_META, fmtAmount, getCurrencyFlag } from "@/lib/currency";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 // Program duration calculation helper - uses actual application data
 const calculateProgramDuration = (student) => {
@@ -99,7 +104,7 @@ export default function DonorPortal() {
         setLoading(true);
 
         // Load available students
-        const studentsRes = await fetch(`${API}/api/students/approved`, {
+        const studentsRes = await fetch(`${API.baseURL}/api/students/approved`, {
           headers: authHeader
         });
         
@@ -111,14 +116,14 @@ export default function DonorPortal() {
           const transformedStudents = apiStudents
             .filter(s => {
               // Hide sponsored students - only show available for sponsorship
-              const remainingNeed = Number(s?.remainingNeed || s?.needUSD || 0);
+              const remainingNeed = Number(s?.remainingNeed || s?.application?.amount || 0);
               const isSponsored = Boolean(s?.sponsored) || remainingNeed <= 0;
               return !isSponsored; // Only show unsponsored students
             })
             .map(s => ({
               ...s,
               currency: s.application?.currency || 'USD',
-              need: s.remainingNeed || s.needUSD || 0,
+              need: s.remainingNeed || s.application?.amount || 0,
               fundedUSD: s.totalSponsored || 0,
               targetUniversity: s.university,
               targetProgram: s.program,
@@ -130,7 +135,7 @@ export default function DonorPortal() {
 
         // Load donor's sponsorships if authenticated
         if (token) {
-          const sponsorshipsRes = await fetch(`${API}/api/sponsorships`, {
+          const sponsorshipsRes = await fetch(`${API.baseURL}/api/sponsorships`, {
             headers: authHeader
           });
           
@@ -181,7 +186,7 @@ export default function DonorPortal() {
     }
 
     try {
-      const res = await fetch(`${API}/api/sponsorships`, {
+      const res = await fetch(`${API.baseURL}/api/sponsorships`, {
         method: 'POST',
         headers: {
           ...authHeader,
@@ -234,7 +239,7 @@ export default function DonorPortal() {
                 <DollarSign className="h-5 w-5 text-emerald-600" />
                 <span className="text-sm font-medium text-emerald-800">Total Pledged</span>
               </div>
-              <div className="text-3xl font-bold text-emerald-700">{fmtAmount(totalPledged)}</div>
+              <div className="text-3xl font-bold text-emerald-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
               <div className="text-xs text-slate-600">Total amount sponsored/pledged</div>
             </div>
           </Card>
@@ -247,11 +252,11 @@ export default function DonorPortal() {
                 <span className="text-sm font-bold text-emerald-800 uppercase tracking-wide">✅ Fully Paid</span>
               </div>
               <div className="text-4xl font-bold text-emerald-700 mb-1">
-                {fmtAmount(0)},-
+                {fmtAmount(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
               </div>
               <div className="text-xs text-emerald-700 font-semibold leading-tight">
                 COMPLETE SPONSORSHIP<br/>
-                <span className="text-emerald-600">{sponsorships.length > 0 ? calculateProgramDuration(sponsorships[0]?.student).toUpperCase() : '2-YEAR'} PROGRAM</span>
+                <span className="text-emerald-600">EDUCATION PROGRAM</span>
               </div>
             </div>
           </Card>
@@ -296,10 +301,10 @@ export default function DonorPortal() {
             <div className="space-y-2">
               <div className="font-medium text-emerald-800">Complete Sponsorship Status</div>
               <div className="text-sm text-emerald-700">
-                <strong>✅ YOU HAVE SUCCESSFULLY SPONSORED THE COMPLETE EDUCATION FOR {fmtAmount(totalPledged)} DOLLARS</strong>
+                <strong>✅ YOU HAVE SUCCESSFULLY SPONSORED THE COMPLETE EDUCATION FOR {fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')} DOLLARS</strong>
               </div>
               <div className="text-sm text-emerald-700">
-                <strong>Your sponsorship covers the full {sponsorships.length > 0 ? calculateProgramDuration(sponsorships[0]?.student).toUpperCase() : '2-YEAR'} education program. No additional payments required.</strong>
+                <strong>Your sponsorship covers the complete education program. No additional payments required.</strong>
               </div>
             </div>
           </div>
@@ -415,7 +420,7 @@ export default function DonorPortal() {
                       </div>
                       <div className="text-right space-y-1">
                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs">
-                          Total: {fmtAmount(totalPledgedForStudent)}
+                          Total: {fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}
                         </Badge>
                       </div>
                     </div>
@@ -425,16 +430,16 @@ export default function DonorPortal() {
                       <div className="text-xs font-medium text-slate-700 mb-2">Payment Status</div>
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div className="bg-emerald-100 p-2 rounded text-center">
-                          <div className="font-semibold text-emerald-700">{fmtAmount(paidSoFar)}</div>
+                          <div className="font-semibold text-emerald-700">{fmtAmount(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-emerald-600">Paid</div>
                         </div>
                         <div className="bg-orange-100 p-2 rounded text-center">
-                          <div className="font-semibold text-orange-700">{fmtAmount(yetToPayForStudent)}</div>
+                          <div className="font-semibold text-orange-700">{fmtAmount(yetToPayForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-orange-600">Yet to pay</div>
                         </div>
                       </div>
                       <div className="text-xs text-slate-600 text-center mt-2">
-                        {calculateProgramDuration(sponsorship.student)} education program
+                        
                       </div>
                     </div>
 
@@ -479,7 +484,7 @@ export default function DonorPortal() {
                   </div>
                 </div>
               <div className="text-sm text-blue-800">
-                This is a <strong>{sponsorships.length > 0 ? calculateProgramDuration(sponsorships[0]?.student) : '2-year'} education program</strong>. Payment schedules are designed to support students throughout their academic journey.
+                This is an <strong>education program</strong>. Payment schedules are designed to support students throughout their academic journey.
               </div>
               </Card>
 
@@ -501,7 +506,7 @@ export default function DonorPortal() {
                         <p className="text-xs text-slate-500">Sponsored on {sponsorshipDate.toLocaleDateString()}</p>
                       </div>
                       <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-lg font-bold px-4 py-2">
-                        Total Pledge: {fmtAmount(totalPledgedForStudent)}
+                        Total Pledge: {fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}
                       </Badge>
                     </div>
 
@@ -517,7 +522,7 @@ export default function DonorPortal() {
                               ✓ PAID
                             </Badge>
                           </div>
-                          <div className="text-2xl font-bold text-emerald-700">{fmtAmount(paidSoFar)}</div>
+                          <div className="text-2xl font-bold text-emerald-700">{fmtAmount(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-sm text-emerald-600">
                             Paid on {sponsorshipDate.toLocaleDateString()}
                           </div>
@@ -532,7 +537,7 @@ export default function DonorPortal() {
                               ✓ FULLY SPONSORED
                             </Badge>
                           </div>
-                          <div className="text-2xl font-bold text-emerald-700">{fmtAmount(totalPledgedForStudent)}</div>
+                          <div className="text-2xl font-bold text-emerald-700">{fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-sm text-emerald-600">
                             <strong>Complete education sponsored</strong>
                           </div>
@@ -550,13 +555,181 @@ export default function DonorPortal() {
         </TabsContent>
 
         <TabsContent value="progress" className="space-y-4">
-          <Card className="p-8 text-center">
-            <TrendingUp className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-            <div className="text-slate-600 mb-4">Track student progress and impact</div>
-            <div className="text-sm text-red-500 font-medium border border-red-200 bg-red-50 p-3 rounded">
-              THIS IS WHERE ALL MESSAGES, PROGRESS, EDUCATION ACHIEVED, TESTS, EXAM RESULTS ETC.... WILL BE
-            </div>
-          </Card>
+          {sponsorships.map((sponsorship, index) => {
+            const sponsorshipDate = new Date(sponsorship.date);
+            const totalPledgedForStudent = sponsorship.amount;
+            
+            return (
+              <Card key={index} className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-800">{sponsorship.student?.name}</h3>
+                    <p className="text-sm text-slate-600">{sponsorship.student?.program} • {sponsorship.student?.university}</p>
+                  </div>
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                    Communication & Progress
+                  </Badge>
+                </div>
+
+                {/* Progress Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="bg-emerald-50 p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-emerald-800">Complete Education</span>
+                      <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-xs">
+                        ✓ FULLY SPONSORED
+                      </Badge>
+                    </div>
+                    <div className="text-2xl font-bold text-emerald-700">{fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
+                    <div className="text-sm text-emerald-600">
+                      <strong>Complete education sponsored</strong>
+                    </div>
+                    <div className="text-xs text-emerald-600 font-medium mt-1">
+                      NO ADDITIONAL PAYMENTS REQUIRED
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <TrendingUp className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium text-blue-800">Academic Progress</span>
+                    </div>
+                    <div className="text-lg font-bold text-blue-700">On Track</div>
+                    <div className="text-sm text-blue-600">
+                      {sponsorship.student?.program} Program
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">
+                      Expected graduation: {sponsorship.student?.gradYear || 'TBA'}
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-50 p-4 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageSquare className="h-4 w-4 text-purple-600" />
+                      <span className="font-medium text-purple-800">Communication</span>
+                    </div>
+                    <div className="text-lg font-bold text-purple-700">Active</div>
+                    <div className="text-sm text-purple-600">
+                      Send messages & track updates
+                    </div>
+                  </div>
+                </div>
+
+                {/* Messaging Interface */}
+                <div className="border rounded-lg p-4 bg-white">
+                  <div className="flex items-center gap-2 mb-4">
+                    <MessageSquare className="h-5 w-5 text-slate-600" />
+                    <h4 className="font-semibold text-slate-800">Communication with {sponsorship.student?.name}</h4>
+                  </div>
+
+                  {/* Message Thread */}
+                  <div className="bg-slate-50 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
+                    <div className="space-y-3">
+                      {/* Sample conversation - In real implementation, this would come from API */}
+                      <div className="flex justify-end">
+                        <div className="bg-emerald-600 text-white rounded-lg p-3 max-w-xs">
+                          <p className="text-sm">Hello {sponsorship.student?.name}! I'm excited to support your education at {sponsorship.student?.university}. Please feel free to share your progress and any updates.</p>
+                          <div className="text-xs opacity-75 mt-1">You • Just now</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-start">
+                        <div className="bg-white border rounded-lg p-3 max-w-xs">
+                          <p className="text-sm">Thank you so much for your generous support! I will keep you updated on my academic progress and achievements.</p>
+                          <div className="text-xs text-slate-500 mt-1">{sponsorship.student?.name} • Welcome message</div>
+                        </div>
+                      </div>
+
+                      {/* Placeholder for more messages */}
+                      <div className="text-center text-sm text-slate-500 py-2">
+                        <MessageSquare className="h-4 w-4 mx-auto mb-1 opacity-50" />
+                        Send a message to start the conversation!
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Message Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder={`Send a message to ${sponsorship.student?.name}...`}
+                      className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    />
+                    <button className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+                      <Send className="h-4 w-4" />
+                      Send
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress Updates & Documents */}
+                <div className="mt-6 border rounded-lg p-4 bg-white">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Upload className="h-5 w-5 text-slate-600" />
+                    <h4 className="font-semibold text-slate-800">Academic Progress & Documents</h4>
+                  </div>
+
+                  {/* Document Upload Area */}
+                  <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-lg p-6 text-center mb-4">
+                    <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                    <p className="text-slate-600 mb-2">Student can upload progress documents here</p>
+                    <p className="text-sm text-slate-500">Transcripts, certificates, exam results, project reports</p>
+                    <button className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                      Upload Documents
+                    </button>
+                  </div>
+
+                  {/* Progress Timeline */}
+                  <div className="space-y-3">
+                    <h5 className="font-medium text-slate-700">Academic Timeline</h5>
+                    
+                    <div className="flex items-start gap-3 p-3 bg-emerald-50 rounded-lg">
+                      <div className="bg-emerald-600 rounded-full p-1">
+                        <CheckCircle className="h-3 w-3 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-emerald-800">Sponsorship Confirmed</p>
+                        <p className="text-sm text-emerald-600">Full education sponsorship activated</p>
+                        <p className="text-xs text-emerald-500">{sponsorshipDate.toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                      <div className="bg-blue-600 rounded-full p-1">
+                        <BookOpen className="h-3 w-3 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-blue-800">Academic Year Started</p>
+                        <p className="text-sm text-blue-600">{sponsorship.student?.program} program commenced</p>
+                        <p className="text-xs text-blue-500">Expected updates: Semester reports, exam results</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-slate-50 rounded-lg opacity-75">
+                      <div className="bg-slate-400 rounded-full p-1">
+                        <Clock className="h-3 w-3 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-700">Upcoming: Mid-term Progress</p>
+                        <p className="text-sm text-slate-600">Student will share academic progress updates</p>
+                        <p className="text-xs text-slate-500">Expected: Next few weeks</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+
+          {sponsorships.length === 0 && (
+            <Card className="p-8 text-center">
+              <TrendingUp className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <div className="text-slate-600 mb-4">Track student progress and impact</div>
+              <div className="text-sm text-slate-500">
+                Sponsor a student to start tracking their academic progress and communicate directly with them.
+              </div>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

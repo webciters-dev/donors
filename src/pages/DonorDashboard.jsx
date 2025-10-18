@@ -8,8 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { DollarSign, GraduationCap, Building2, UserRound } from "lucide-react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import { API } from "@/lib/api";
 
 export const DonorDashboard = () => {
   const { token, user, logout } = useAuth();
@@ -22,47 +21,80 @@ export const DonorDashboard = () => {
   const isDonor = user?.role === "DONOR";
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+  // Calculate statistics from sponsorships data (same as DonorPortal)
+  const totalFunded = sponsorships.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const sponsorshipCount = sponsorships.length;
+  const studentsHelped = new Set(sponsorships.map(s => s.studentId)).size;
+
   useEffect(() => {
     if (!isDonor) return;
     let dead = false;
 
     async function load() {
       try {
-        const [pRes, sRes] = await Promise.all([
-          fetch(`${API}/api/donors/me`, { headers: { ...authHeader } }),
-          fetch(`${API}/api/donors/me/sponsorships`, {
-            headers: { ...authHeader },
-          }),
-        ]);
+        console.log('🔍 Loading donor dashboard...', { 
+          token: !!token, 
+          tokenLength: token?.length,
+          user,
+          authHeader 
+        });
 
-        if (pRes.status === 401 || sRes.status === 401) {
+        // Check if we have a token
+        if (!token) {
+          console.error('❌ No token available');
+          toast.error("Please sign in to access your dashboard.");
+          navigate("/login");
+          return;
+        }
+        
+        // Use same endpoints as DonorPortal for consistency
+              const sponsorshipsResponse = await fetch(`${API.baseURL}/api/sponsorships`, {
+          headers: { ...authHeader },
+        });
+
+        console.log('📡 API responses:', { 
+          sponsorshipsStatus: sponsorshipsRes.status 
+        });
+
+        // Handle authentication failures
+        if (sponsorshipsRes.status === 401) {
+          console.error('🔒 Authentication failed - token expired or invalid');
           toast.error("Your session expired. Please sign in again.");
           logout?.();
+          navigate("/login");
           return;
         }
 
-        if (!pRes.ok) {
-          const errorText = await pRes.text();
-          console.error("Profile API error:", errorText);
-          throw new Error(`Profile API failed (${pRes.status}): ${errorText}`);
-        }
-        if (!sRes.ok) {
-          const errorText = await sRes.text();
-          console.error("Sponsorships API error:", errorText);
-          throw new Error(`Sponsorships API failed (${sRes.status}): ${errorText}`);
+        // Handle authorization failures (wrong role)
+        if (sponsorshipsRes.status === 403) {
+          console.error('🚫 Authorization failed - insufficient permissions');
+          const sponsorshipsError = await sponsorshipsRes.text();
+          console.error('Sponsorships error:', sponsorshipsError);
+          toast.error("Access denied. Please contact support.");
+          return;
         }
 
-        const p = await pRes.json();
-        const s = await sRes.json();
+        if (!sponsorshipsRes.ok) {
+          const errorText = await sponsorshipsRes.text();
+          console.error("Sponsorships API error:", sponsorshipsRes.status, errorText);
+          throw new Error(`Sponsorships API failed (${sponsorshipsRes.status}): ${errorText}`);
+        }
+
+        const sponsorshipsData = await sponsorshipsRes.json();
+        
+        console.log('✅ API data received:');
+        console.log('Sponsorships response:', JSON.stringify(sponsorshipsData, null, 2));
+        
         if (!dead) {
-          setProfile(p);
-          setSponsorships(Array.isArray(s?.sponsorships) ? s.sponsorships : []);
+          // Use same data structure as DonorPortal
+          setSponsorships(Array.isArray(sponsorshipsData?.sponsorships) ? sponsorshipsData.sponsorships : []);
+          console.log('✅ Dashboard data loaded successfully');
+          console.log('Sponsorships set:', sponsorshipsData?.sponsorships);
         }
       } catch (e) {
         console.error("Donor dashboard error:", e);
         if (!dead) {
-          toast.error("Failed to load donor dashboard");
-          setProfile(null);
+          toast.error("Failed to load donor dashboard: " + e.message);
           setSponsorships([]);
         }
       }
@@ -141,22 +173,22 @@ export const DonorDashboard = () => {
         <Card className="p-4">
           <div className="text-sm text-slate-600">Total Sponsored (USD)</div>
           <div className="text-2xl font-semibold">
-            ${fmt(profile?.stats?.totalFunded)}
+            ${fmt(totalFunded)}
           </div>
         </Card>
         <Card className="p-4">
           <div className="text-sm text-slate-600">Students Sponsored</div>
           <div className="text-2xl font-semibold">
-            {fmt(profile?.stats?.sponsorshipCount)}
+            {fmt(sponsorshipCount)}
           </div>
         </Card>
         <Card className="p-4">
           <div className="text-sm text-slate-600">Account</div>
           <div className="text-base font-medium truncate">
-            {profile?.donor?.name || user?.email}
+            {user?.name || user?.email}
           </div>
           <div className="text-xs text-slate-500 truncate">
-            {profile?.donor?.email}
+            {user?.email}
           </div>
         </Card>
       </div>

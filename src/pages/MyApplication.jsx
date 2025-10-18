@@ -11,8 +11,9 @@ import { CheckCircle2, Circle, MessageCircle, User } from "lucide-react";
 import DocumentUploader from "@/components/DocumentUploader";
 import { useAuth } from "@/lib/AuthContext";
 import { calculateProfileCompleteness } from "@/lib/profileValidation";
+import { API } from "@/lib/api";
+import { fmtAmount } from "@/lib/currency";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const DEMO_STUDENT_ID = import.meta.env.VITE_DEMO_STUDENT_ID || "";
 
 // --- tiny helpers ---
@@ -55,7 +56,7 @@ export const MyApplication = () => {
 
     async function loadApp() {
       try {
-        const res = await fetch(`${API}/api/applications`, {
+        const res = await fetch(`${API.baseURL}/api/applications`, {
           headers: { ...authHeader },
         });
         const data = await res.json();
@@ -115,7 +116,7 @@ export const MyApplication = () => {
         console.log('🔍 MyApplication: Loading messages for studentId:', application.studentId);
         
         // Load old messages from the existing API
-        const url = new URL(`${API}/api/messages`);
+        const url = new URL(`${API.baseURL}/api/messages`);
         url.searchParams.set("studentId", application.studentId);
 
         const res = await fetch(url, { headers: { ...authHeader } });
@@ -126,7 +127,7 @@ export const MyApplication = () => {
         // Load new conversation messages
         try {
           console.log('🔍 MyApplication: Loading conversations...');
-          const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+          const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
             headers: { ...authHeader }
           });
           console.log('🔍 MyApplication: Conversations response status:', convRes.status);
@@ -215,7 +216,7 @@ export const MyApplication = () => {
       setSendingReply(true);
       console.log('🔍 MyApplication: Sending reply to conversation:', activeConversationId);
       
-      const response = await fetch(`${API}/api/conversations/${activeConversationId}/messages`, {
+      const response = await fetch(`${API.baseURL}/api/conversations/${activeConversationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -253,7 +254,7 @@ export const MyApplication = () => {
       console.log('🔍 MyApplication: Reloading messages for studentId:', application.studentId);
       
       // Load old messages
-      const url = new URL(`${API}/api/messages`);
+      const url = new URL(`${API.baseURL}/api/messages`);
       url.searchParams.set("studentId", application.studentId);
       const res = await fetch(url, { headers: { ...authHeader } });
       const data = await res.json();
@@ -263,7 +264,7 @@ export const MyApplication = () => {
       // Load new conversation messages
       try {
         console.log('🔍 MyApplication: Reloading conversations...');
-        const convRes = await fetch(`${API}/api/conversations?includeAllMessages=true`, {
+        const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
           headers: { ...authHeader }
         });
         
@@ -333,7 +334,7 @@ export const MyApplication = () => {
     async function loadDocs() {
       try {
         setLoadingDocs(true);
-        const url = new URL(`${API}/api/uploads`);
+        const url = new URL(`${API.baseURL}/api/uploads`);
         url.searchParams.set("studentId", application.studentId);
         if (application.id) url.searchParams.set("applicationId", application.id);
         const res = await fetch(url, { headers: { ...authHeader } });
@@ -360,7 +361,7 @@ export const MyApplication = () => {
     let dead = false;
     async function loadReq() {
       try {
-        const url = new URL(`${API}/api/requests`);
+        const url = new URL(`${API.baseURL}/api/requests`);
         url.searchParams.set("studentId", application.studentId);
         const res = await fetch(url);
         if (!res.ok) throw new Error(await res.text());
@@ -410,7 +411,7 @@ export const MyApplication = () => {
     const textToSend = (typeof textOverride === "string" ? textOverride : message).trim();
     if (!textToSend || !application?.studentId) return;
     try {
-      const res = await fetch(`${API}/api/messages`, {
+      const res = await fetch(`${API.baseURL}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({
@@ -442,7 +443,7 @@ export const MyApplication = () => {
 
   async function deleteDoc(id) {
     try {
-      const res = await fetch(`${API}/api/uploads/${id}`, {
+      const res = await fetch(`${API.baseURL}/api/uploads/${id}`, {
         method: "DELETE",
         headers: { ...authHeader },
       });
@@ -601,7 +602,7 @@ export const MyApplication = () => {
         toast.error("Please resolve before submission", { description: issues[0] });
         return;
       }
-      const res = await fetch(`${API}/api/applications/${application.id}`, {
+      const res = await fetch(`${API.baseURL}/api/applications/${application.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify({ status: "PENDING" }),
@@ -610,7 +611,7 @@ export const MyApplication = () => {
       toast.success("Application submitted for review");
       // Optional: post a message to thread
       try {
-        await fetch(`${API}/api/messages`, {
+        await fetch(`${API.baseURL}/api/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json", ...authHeader },
           body: JSON.stringify({ studentId: application.studentId, applicationId: application.id, text: "Submitted application for review.", fromRole: "student" })
@@ -716,10 +717,10 @@ export const MyApplication = () => {
 
 // ...existing code...
 
-  const isPKR = application.currency === "PKR";
-  const needText = isPKR
-    ? `₨ ${fmtPKR(application.needPKR)}`
-    : `$ ${fmtUSD(application.needUSD)}`;
+  // Format the amount with proper currency symbol
+  const needText = application.amount && application.currency 
+    ? fmtAmount(application.amount, application.currency)
+    : 'Amount not set';
 
 
 
