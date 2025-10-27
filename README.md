@@ -32,34 +32,150 @@ src/
 
 ## Quick Start
 
+### Option 1: Quick Setup (Recommended for New Developers)
+
+1. **Run the quick setup script**:
+   ```bash
+   cd database
+   bash quick_setup.sh  # Linux/Mac
+   # or
+   # Run quick_setup.sh in Git Bash on Windows
+   ```
+   
+   This will:
+   - Check prerequisites (PostgreSQL, Node.js)
+   - Create the database
+   - Install dependencies
+   - Run migrations and seed data
+   - Create environment files
+
+2. **Start the servers**:
+   ```bash
+   # Backend (in one terminal)
+   cd server && npm run dev
+   
+   # Frontend (in another terminal)
+   npm run dev
+   ```
+
+### Option 2: Manual Setup
+
 1. **Install dependencies**:
    ```bash
    npm install
+   cd server && npm install
    ```
 
-2. **Run development server**:
+2. **Setup database** (see [Database Setup](#database-setup)):
    ```bash
+   createdb donors_dev
+   cd server
+   npx prisma migrate deploy
+   npm run seed
+   ```
+
+3. **Configure environment**:
+   - Copy `server/.env.example` to `server/.env`
+   - Update database credentials
+
+4. **Run development servers**:
+   ```bash
+   # Backend
+   cd server && npm run dev
+   
+   # Frontend  
    npm run dev
    ```
    
    Open [http://localhost:8080](http://localhost:8080) in your browser.
 
-3. **Build for production**:
+5. **Build for production**:
    ```bash
    npm run build
    ```
+
+## Database Setup
+
+The project uses PostgreSQL with Prisma ORM. Database utilities are located in the `database/` directory.
+
+### Quick Database Setup
+
+```bash
+# Quick setup for new developers
+cd database
+bash quick_setup.sh  # Linux/Mac
+# or use Git Bash on Windows
+```
+
+### Manual Database Setup
+
+1. **Create database**:
+   ```bash
+   createdb donors_dev
+   ```
+
+2. **Run migrations**:
+   ```bash
+   cd server
+   npx prisma migrate deploy
+   npx prisma generate
+   ```
+
+3. **Seed with sample data**:
+   ```bash
+   npm run seed
+   ```
+
+### Database Management Commands
+
+```bash
+# Export database (for sharing with team)
+cd database
+./export_database.sh      # Linux/Mac
+export_database.bat       # Windows
+
+# Import database (for new developers)
+./import_database.sh      # Linux/Mac  
+import_database.bat       # Windows
+
+# Reset database (fresh start)
+./reset_database.sh       # Linux/Mac
+powershell reset_database.ps1  # Windows
+```
+
+### Using with npm scripts
+
+Add to your `server/package.json`:
+
+```json
+{
+  "scripts": {
+    "db:export": "cd ../database && bash export_database.sh",
+    "db:import": "cd ../database && bash import_database.sh", 
+    "db:reset": "cd ../database && bash reset_database.sh",
+    "db:fresh": "npm run db:reset && npm run seed"
+  }
+}
+```
 
 ## Configuration
 
 ### Environment Variables
 
-Create a `.env` file in the root directory:
-
+**Frontend** - Create `.env` in root directory:
 ```env
 # Optional: Backend API URL
 VITE_API_URL=http://localhost:3001
+# When not set, the app uses mock data
+```
 
-# When VITE_API_URL is not set, the app uses mock data
+**Backend** - Create `server/.env`:
+```env
+DATABASE_URL="postgresql://postgres:password@localhost:5432/donors_dev"
+JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
+PORT=3001
+NODE_ENV=development
+FRONTEND_URL="http://localhost:8080"
 ```
 
 ### API Integration

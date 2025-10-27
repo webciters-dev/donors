@@ -10,7 +10,19 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node src/seed.js"
+    "db:seed": "node src/seed.js",
+    "seed": "node ./prisma/seed.cjs",
+    "db:export": "cd ../database && bash export_database.sh",
+    "db:export:win": "cd ../database && export_database.bat",
+    "db:import": "cd ../database && bash import_database.sh",
+    "db:import:win": "cd ../database && import_database.bat",
+    "db:reset": "cd ../database && bash reset_database.sh",
+    "db:reset:win": "cd ../database && powershell -ExecutionPolicy Bypass -File reset_database.ps1",
+    "db:reset:keep-admin": "cd ../database && powershell -ExecutionPolicy Bypass -File reset_database.ps1 -KeepAdmin",
+    "db:backup": "npm run db:export",
+    "db:restore": "npm run db:import",
+    "db:fresh": "npm run db:reset && npm run seed",
+    "db:migrate:fresh": "prisma migrate reset --force && npm run seed"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
