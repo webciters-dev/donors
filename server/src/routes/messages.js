@@ -72,7 +72,7 @@ const messages = await prisma.message.findMany({
  *   - studentId (required)
  *   - applicationId (optional)
  *   - text (required)
- *   - fromRole (required: "student" | "admin")
+ *   - fromRole (required: "student" | "admin" | "sub_admin" | "donor")
  */
 router.post("/", async (req, res) => {
   try {

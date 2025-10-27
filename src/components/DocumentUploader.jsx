@@ -5,9 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { API } from "@/lib/api";
 import axios from "axios";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 /**
  * Props:
@@ -66,7 +65,7 @@ export default function DocumentUploader({ studentId, applicationId, onUploaded,
 
       const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-      const res = await axios.post(`${API}/api/uploads`, fd, {
+      const res = await axios.post(`${API.baseURL}/api/uploads`, fd, {
         headers,
         onUploadProgress: (evt) => {
           if (!evt.total) return;

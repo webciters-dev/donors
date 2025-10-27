@@ -289,12 +289,12 @@ export default function SubAdminApplicationDetail() {
         const timeoutId = setTimeout(() => {
 
           try {
-            navigate("/field-officer", { replace: true });
+            navigate("/sub-admin", { replace: true });
 
           } catch (navError) {
             console.error("❌ Navigation failed:", navError);
             // Fallback - use window location if navigate fails
-            window.location.href = window.location.origin + window.location.pathname + "#/field-officer";
+            window.location.href = window.location.origin + window.location.pathname + "#/sub-admin";
           }
         }, 3000);
         
@@ -456,7 +456,7 @@ export default function SubAdminApplicationDetail() {
         
         <div className="flex gap-2">
           {submitted ? (
-            <Button onClick={() => navigate("/field-officer")} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => navigate("/sub-admin")} className="bg-green-600 hover:bg-green-700">
               Return to Dashboard
             </Button>
           ) : (
@@ -838,7 +838,7 @@ export default function SubAdminApplicationDetail() {
                       <>
                         <CheckCircle className="h-4 w-4 text-green-600" />
                         <a
-                          href={`${API}${doc.url}`}
+                          href={`${API.baseURL}${doc.url}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-green-700 hover:text-green-900 hover:underline font-medium"
@@ -1077,7 +1077,7 @@ export default function SubAdminApplicationDetail() {
           <div className="flex gap-3">
             {submitted ? (
               <Button 
-                onClick={() => navigate("/field-officer")} 
+                onClick={() => navigate("/sub-admin")} 
                 className="bg-green-600 hover:bg-green-700 px-6"
                 size="lg"
               >

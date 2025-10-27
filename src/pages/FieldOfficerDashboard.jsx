@@ -602,7 +602,7 @@ function ReviewModal({
                       )}
                       {isUploaded ? (
                         <a
-                          href={`${API}${uploaded.url}`}
+                          href={`${API.baseURL}${uploaded.url}`}
                           target="_blank"
                           rel="noreferrer"
                           className="text-green-700 hover:text-green-900 hover:underline font-medium"
@@ -633,7 +633,7 @@ function ReviewModal({
                         <div className="flex items-center gap-2">
                           <CheckCircle className="h-4 w-4 text-blue-600" />
                           <a
-                            href={`${API}${uploaded.url}`}
+                            href={`${API.baseURL}${uploaded.url}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-blue-700 hover:text-blue-900 hover:underline font-medium"
@@ -665,7 +665,7 @@ function ReviewModal({
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-gray-600" />
                           <a
-                            href={`${API}${d.url}`}
+                            href={`${API.baseURL}${d.url}`}
                             target="_blank"
                             rel="noreferrer"
                             className="text-gray-700 hover:text-gray-900 hover:underline font-medium"

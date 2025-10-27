@@ -274,10 +274,11 @@ router.patch("/:id", async (req, res) => {
           where: { id: updated.student.id },
           data: { 
             studentPhase: 'ACTIVE',
-            sponsored: true // Keep backward compatibility
+            // 🔥 FIX: Do NOT set sponsored=true on approval - only when donor actually sponsors
+            // sponsored field should remain false until actual sponsorship occurs
           }
         });
-        console.log(`🎓 Student ${updated.student.name} transitioned to ACTIVE phase`);
+        console.log(`🎓 Student ${updated.student.name} transitioned to ACTIVE phase (ready for marketplace)`);
       } catch (phaseError) {
         // Log error but don't fail the application approval
         console.error('Phase transition error:', phaseError);

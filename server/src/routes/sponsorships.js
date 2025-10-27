@@ -166,8 +166,15 @@ router.post("/", requireAuth, async (req, res) => {
       },
     });
 
+    // 🎯 MARK STUDENT AS SPONSORED: Set sponsored=true when sponsorship is created
+    await prisma.student.update({
+      where: { id: studentId },
+      data: { sponsored: true }
+    });
+
     // Log payment preferences for now (can be stored in separate table or added to schema later)
     console.log(`Sponsorship created with payment preferences: frequency=${paymentFrequency}, method=${paymentMethod}`);
+    console.log(`🎉 Student ${created.student.name} is now sponsored by ${created.donor.name}`);
 
     res.status(201).json(created);
   } catch (e) {

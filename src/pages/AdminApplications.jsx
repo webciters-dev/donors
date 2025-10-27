@@ -43,7 +43,7 @@ export const AdminApplications = () => {
     if (!url) return "#";
     if (url.startsWith("http://") || url.startsWith("https://")) return url;
     // server returns /uploads/filename — prefix with API
-    return `${API}${url}`;
+    return `${API.baseURL}${url}`;
   }
 
   // ---------------------------

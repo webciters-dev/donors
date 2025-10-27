@@ -676,7 +676,7 @@ export default function AdminApplicationDetail() {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                   <a
-                    href={`${API}${doc.url}`}
+                    href={`${API.baseURL}${doc.url}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-green-700 hover:text-green-900 hover:underline font-medium"

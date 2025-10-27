@@ -903,8 +903,8 @@ export const MyApplication = () => {
               );
             })}
             
-            {/* Reply Section - Show if there are donor messages */}
-            {rawMessages.some(msg => msg.fromRole === 'donor' || msg.fromRole === 'admin' || msg.fromRole === 'ADMIN') && (
+            {/* Reply Section - Show if there are donor messages OR admin/sub-admin messages */}
+            {rawMessages.some(msg => msg.fromRole === 'donor' || msg.fromRole === 'admin' || msg.fromRole === 'ADMIN' || msg.fromRole === 'sub_admin') && (
               <div className="border-t pt-4">
                 {!showReplyBox ? (
                   <Button 
@@ -1052,7 +1052,7 @@ export const MyApplication = () => {
                               <div className="font-medium">{docType.replaceAll("_", " ")}</div>
                               {isUploaded ? (
                                 <a
-                                  href={`${API}${uploaded.url}`}
+                                  href={`${API.baseURL}${uploaded.url}`}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-emerald-700 hover:underline text-xs"
@@ -1117,7 +1117,7 @@ export const MyApplication = () => {
                               <div className="font-medium">{item.label}</div>
                               {isUploaded ? (
                                 <a
-                                  href={`${API}${uploaded.url}`}
+                                  href={`${API.baseURL}${uploaded.url}`}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="text-emerald-700 hover:underline text-xs"
@@ -1181,7 +1181,7 @@ export const MyApplication = () => {
                                 <div className="flex-1">
                                   <div className="font-medium">{d.type.replaceAll("_", " ")}</div>
                                   <a
-                                    href={`${API}${d.url}`}
+                                    href={`${API.baseURL}${d.url}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="text-blue-700 hover:underline text-xs"
@@ -1308,6 +1308,23 @@ export const MyApplication = () => {
           </div>
         )}
       </Card>
+
+      {/* My Profile Link for Incomplete Profiles */}
+      {completeness.percent < 100 && user?.role === "STUDENT" && (
+        <Card className="p-6 bg-red-50 border-red-200">
+          <div className="text-center space-y-4">
+            <div className="text-red-600 font-medium">
+              Your profile is incomplete ({completeness.percent}% complete). Please complete your profile to continue with your application.
+            </div>
+            <Button 
+              onClick={() => navigate("/student/profile")}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-medium"
+            >
+              My Profile
+            </Button>
+          </div>
+        </Card>
+      )}
     </div>
   );
 };
