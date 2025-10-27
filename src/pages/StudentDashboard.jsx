@@ -475,7 +475,7 @@ export default function StudentDashboard() {
                     {msg.fromRole === 'student' ? 'You' : 
                      msg.fromRole === 'admin' ? 'Admin' : 
                      msg.fromRole === 'donor' ? `Donor${msg.senderName ? ` (${msg.senderName})` : ''}` : 
-                     'Field Officer'}
+                     'Sub Admin'}
                   </div>
                   <div className="text-slate-700">{msg.text}</div>
                   <div className="text-xs text-slate-500 mt-1">

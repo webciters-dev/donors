@@ -170,7 +170,7 @@ export const AdminApplications = () => {
         
         // Handle specific duplicate assignment error
         if (res.status === 400 && errorData.includes("already assigned")) {
-          errorMessage = "This application is already assigned to the selected field officer.";
+          errorMessage = "This application is already assigned to the selected sub admin.";
         }
         
         throw new Error(errorMessage || `HTTP ${res.status}`);
@@ -204,7 +204,7 @@ export const AdminApplications = () => {
       // Show more user-friendly error messages
       if (err.message.includes("already assigned")) {
         toast.warning("Application Already Assigned", {
-          description: "This application is already assigned to the selected field officer."
+          description: "This application is already assigned to the selected sub admin."
         });
       } else {
         toast.error(`Assignment failed: ${err.message}`);

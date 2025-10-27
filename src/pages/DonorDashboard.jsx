@@ -48,16 +48,16 @@ export const DonorDashboard = () => {
         }
         
         // Use same endpoints as DonorPortal for consistency
-              const sponsorshipsResponse = await fetch(`${API.baseURL}/api/sponsorships`, {
+        const sponsorshipsResponse = await fetch(`${API.baseURL}/api/sponsorships`, {
           headers: { ...authHeader },
         });
 
         console.log('📡 API responses:', { 
-          sponsorshipsStatus: sponsorshipsRes.status 
+          sponsorshipsStatus: sponsorshipsResponse.status 
         });
 
         // Handle authentication failures
-        if (sponsorshipsRes.status === 401) {
+        if (sponsorshipsResponse.status === 401) {
           console.error('🔒 Authentication failed - token expired or invalid');
           toast.error("Your session expired. Please sign in again.");
           logout?.();
@@ -66,21 +66,21 @@ export const DonorDashboard = () => {
         }
 
         // Handle authorization failures (wrong role)
-        if (sponsorshipsRes.status === 403) {
+        if (sponsorshipsResponse.status === 403) {
           console.error('🚫 Authorization failed - insufficient permissions');
-          const sponsorshipsError = await sponsorshipsRes.text();
+          const sponsorshipsError = await sponsorshipsResponse.text();
           console.error('Sponsorships error:', sponsorshipsError);
           toast.error("Access denied. Please contact support.");
           return;
         }
 
-        if (!sponsorshipsRes.ok) {
-          const errorText = await sponsorshipsRes.text();
-          console.error("Sponsorships API error:", sponsorshipsRes.status, errorText);
-          throw new Error(`Sponsorships API failed (${sponsorshipsRes.status}): ${errorText}`);
+        if (!sponsorshipsResponse.ok) {
+          const errorText = await sponsorshipsResponse.text();
+          console.error("Sponsorships API error:", sponsorshipsResponse.status, errorText);
+          throw new Error(`Sponsorships API failed (${sponsorshipsResponse.status}): ${errorText}`);
         }
 
-        const sponsorshipsData = await sponsorshipsRes.json();
+        const sponsorshipsData = await sponsorshipsResponse.json();
         
         console.log('✅ API data received:');
         console.log('Sponsorships response:', JSON.stringify(sponsorshipsData, null, 2));

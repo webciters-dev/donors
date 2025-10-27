@@ -116,8 +116,8 @@ router.get("/:id", requireAuth, async (req, res) => {
             id: true,
             term: true,
             status: true,
-            needUSD: true,
-            needPKR: true,
+            amount: true,
+            currency: true,
             currency: true
           }
         },

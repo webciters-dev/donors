@@ -29,9 +29,8 @@ function StudentCard({ student, onSponsored }) {
   const navigate = useNavigate();
   const { user, token } = useAuth();
 
-  const remainingNeed = Number(student?.remainingNeed || student?.application?.amount || 0);
   const isApproved = Boolean(student?.isApproved);
-  const isSponsored = remainingNeed <= 0 || Boolean(student?.sponsored);
+  const isSponsored = Boolean(student?.sponsored);
 
   // Determine display currency based on university location or country
   const getUniversityCurrency = (university) => {
@@ -56,8 +55,18 @@ function StudentCard({ student, onSponsored }) {
   
   const universityCurrency = getUniversityCurrency(student?.university);
   const countryCurrency = getCurrencyFromCountry(student?.country);
-  const currency = student?.application?.currency || universityCurrency || countryCurrency;
-  const displayAmount = student?.application?.amount || remainingNeed;
+  const currency = student?.application?.currency || student?.currency || universityCurrency || countryCurrency;
+  const displayAmount = student?.application?.amount || student?.amount || 0;
+  
+  // Debug logging for amount display issues
+  if (displayAmount === 0) {
+    console.log(`🔍 Amount is 0 for ${student.name}:`, {
+      'student.application.amount': student?.application?.amount,
+      'student.amount': student?.amount,
+      'student.application': student?.application,
+      currency
+    });
+  }
   
   // Privacy controls: non-logged-in users see basic info only, no names/personal details
   const isLoggedIn = Boolean(user && token);
@@ -194,10 +203,11 @@ export const Marketplace = () => {
               gender: student.gender,
               isApproved: true, // All students from approved endpoint are approved
               sponsored: Boolean(student.sponsored), // Trust API's sponsored calculation
-              remainingNeed: student.remainingNeed || 0, // Amount still needed
               currency: student.application?.currency || getCurrencyFromCountry(student.country),
               amount: student.application?.amount || 0, // Single currency amount
               term: student.application?.term || null,
+              // Preserve application object for StudentCard component
+              application: student.application,
             }));
 
             console.log("🔍 Marketplace Transformed Students:", { 
@@ -205,7 +215,6 @@ export const Marketplace = () => {
               sample: transformedStudents.slice(0, 2).map(s => ({
                 name: s.name,
                 sponsored: s.sponsored,
-                remainingNeed: s.remainingNeed,
                 amount: s.amount,
                 isApproved: s.isApproved
               }))
@@ -239,13 +248,9 @@ export const Marketplace = () => {
     setStudents((prev) =>
       prev.map((s) => {
         if (s.id !== studentId) return s;
-        const currentNeed = Number(s?.remainingNeed || s?.amount || 0);
-        const newNeed = Math.max(0, currentNeed - Number(amount || 0));
         return {
           ...s,
-          remainingNeed: newNeed,
-          amount: s.amount, // Keep original amount
-          sponsored: newNeed <= 0,
+          sponsored: true, // Student is now completely sponsored
         };
       })
     );
@@ -261,7 +266,6 @@ export const Marketplace = () => {
         name: s.name,
         isApproved: s.isApproved,
         sponsored: s.sponsored,
-        remainingNeed: s.remainingNeed,
         amount: s.amount
       }))
     });
@@ -278,13 +282,11 @@ export const Marketplace = () => {
       if (!shouldShow) {
         console.log("🔍 Filtering out sponsored student:", s.name, {
           sponsored: s.sponsored,
-          remainingNeed: s.remainingNeed,
           reason: "Student already has a sponsor (ONE STUDENT = ONE DONOR)"
         });
       } else {
         console.log("🔍 Showing available student:", s.name, {
-          sponsored: s.sponsored,
-          remainingNeed: s.remainingNeed
+          sponsored: s.sponsored
         });
       }
       

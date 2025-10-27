@@ -27,14 +27,13 @@ export default function DonorBrowse() {
           // Transform for display - filter out sponsored students (ONE STUDENT = ONE DONOR)
           const transformedStudents = apiStudents
             .filter(s => {
-              const remainingNeed = Number(s?.remainingNeed || s?.application?.amount || 0);
-              const isSponsored = Boolean(s?.sponsored) || remainingNeed <= 0;
+              const isSponsored = Boolean(s?.sponsored);
               return s.isApproved && !isSponsored; // Only show approved and unsponsored students
             })
             .map(student => ({
               ...student,
               currency: student.application?.currency || getCurrencyFromCountry(student.country) || 'USD',
-              displayAmount: student.remainingNeed || student.application?.amount || 0
+              displayAmount: student.application?.amount || 0
             }));
           
           console.log("🔍 DonorBrowse: Transformed students:", transformedStudents);

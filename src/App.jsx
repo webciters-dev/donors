@@ -51,7 +51,7 @@ import AdminDisbursements from "@/pages/AdminDisbursements";
 import AdminDonors from "@/pages/AdminDonors";
 import SubAdminApplicationDetail from "@/pages/SubAdminApplicationDetail";
 import { MyApplication } from "@/pages/MyApplication";
-import FieldOfficerDashboard from "@/pages/FieldOfficerDashboard";
+import SubAdminDashboard from "@/pages/SubAdminDashboard";
 import StudentDashboard from "@/pages/StudentDashboard";
 import StudentProgress from "@/pages/StudentProgress";
 import ActiveStudentDashboard from "@/pages/ActiveStudentDashboard";
@@ -331,7 +331,7 @@ function Shell() {
               path="/sub-admin"
               element={
                 <ProtectedRoute roles={["SUB_ADMIN"]}>
-                  <FieldOfficerDashboard />
+                  <SubAdminDashboard />
                 </ProtectedRoute>
               }
             />

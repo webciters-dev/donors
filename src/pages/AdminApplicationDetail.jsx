@@ -205,7 +205,7 @@ export default function AdminApplicationDetail() {
     }
   }
 
-  async function reassignFieldOfficer(reviewId) {
+  async function reassignSubAdmin(reviewId) {
     try {
       const newOfficerId = reassignOfficer[reviewId];
       if (!newOfficerId) {
@@ -905,7 +905,7 @@ export default function AdminApplicationDetail() {
                     variant="outline" 
                     size="sm"
                     className="rounded-2xl" 
-                    onClick={()=>reassignFieldOfficer(r.id)}
+                    onClick={()=>reassignSubAdmin(r.id)}
                     disabled={!reassignOfficer[r.id]}
                   >
                     Reassign

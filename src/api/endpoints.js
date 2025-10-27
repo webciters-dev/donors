@@ -101,7 +101,7 @@ export const listStudents = async (params = {}) => {
     }
     
     if (params.maxBudget) {
-      students = students.filter(s => s.needUSD <= Number(params.maxBudget));
+      students = students.filter(s => s.application?.amount <= Number(params.maxBudget));
     }
     
     return { data: { students, pagination: { total: students.length } } };

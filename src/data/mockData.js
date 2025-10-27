@@ -10,8 +10,6 @@ export const mockData = {
       university: "Harvard University",
       gpa: 3.5,
       gradYear: 2027,
-      needUsd: 50000,
-      needPKR: null,
       currency: "USD",
       gender: "M",
       province: "Punjab",
@@ -38,7 +36,7 @@ export const mockData = {
       term: "Fall 2025",
       status: "APPROVED",
       submittedAt: "2025-10-02",
-      needUsd: 50000,
+      amount: 50000,
       currency: "USD",
       documents: ["transcript.pdf", "id_card.jpg", "admission_letter.pdf"]
     }

@@ -265,7 +265,7 @@ export const AdminHub = ({ go }) => {
     }
 
     try {
-      toast.info("Preparing field officers export...");
+      toast.info("Preparing sub admins export...");
       
       const response = await fetch(`${API.baseURL}/api/export/sub-admins`, { 
         headers: authHeader 
@@ -282,7 +282,7 @@ export const AdminHub = ({ go }) => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'field_officers_export.csv';
+      link.download = 'sub_admins_export.csv';
       
       // Trigger download
       document.body.appendChild(link);
@@ -292,11 +292,11 @@ export const AdminHub = ({ go }) => {
       // Clean up
       URL.revokeObjectURL(url);
       
-      toast.success("Field officers data exported successfully!");
+      toast.success("Sub admins data exported successfully!");
       
     } catch (error) {
       console.error('Sub-admins export failed:', error);
-      toast.error("Failed to export field officers data. Please try again.");
+      toast.error("Failed to export sub admins data. Please try again.");
     }
   };
 
@@ -312,7 +312,7 @@ export const AdminHub = ({ go }) => {
           >
             Manage Applications
           </Button>
-          {/* NEW: manage field officers */}
+          {/* NEW: manage sub admins */}
           <Button
             className="rounded-2xl"
             variant="secondary"
@@ -327,7 +327,7 @@ export const AdminHub = ({ go }) => {
             <Download className="h-4 w-4 mr-2" /> Export Donors
           </Button>
           <Button variant="outline" className="rounded-2xl" onClick={handleExportSubAdmins}>
-            <Download className="h-4 w-4 mr-2" /> Export Field Officers
+            <Download className="h-4 w-4 mr-2" /> Export Sub Admins
           </Button>
         </div>
       </div>

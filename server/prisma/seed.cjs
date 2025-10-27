@@ -39,7 +39,7 @@ async function main() {
     },
   });
 
-  // ---- Students
+  // ---- Students (remove needUSD field - legacy field removed)
   const s1 = await prisma.student.create({
     data: {
       name: "Ayesha Khan",
@@ -52,7 +52,6 @@ async function main() {
       gradYear: 2026,
       city: "Islamabad",
       province: "Islamabad Capital Territory",
-      needUSD: 2400,
     },
   });
 
@@ -68,7 +67,6 @@ async function main() {
       gradYear: 2025,
       city: "Lahore",
       province: "Punjab",
-      needUSD: 1800,
     },
   });
 
@@ -84,7 +82,6 @@ async function main() {
       gradYear: 2027,
       city: "Karachi",
       province: "Sindh",
-      needUSD: 5000,
     },
   });
 
@@ -100,7 +97,6 @@ async function main() {
       gradYear: 2026,
       city: "Peshawar",
       province: "Khyber Pakhtunkhwa",
-      needUSD: 3200,
     },
   });
 
@@ -123,10 +119,10 @@ async function main() {
 
   // ---- Applications
   const a1 = await prisma.application.create({
-    data: { studentId: s1.id, term: "Fall 2025", needUSD: 2400, status: "PENDING" },
+    data: { studentId: s1.id, term: "Fall 2025", amount: 2400, currency: "USD", status: "APPROVED" },
   });
   const a2 = await prisma.application.create({
-    data: { studentId: s3.id, term: "Fall 2025", needUSD: 5000, status: "PROCESSING" },
+    data: { studentId: s3.id, term: "Fall 2025", amount: 5000, currency: "USD", status: "PROCESSING" },
   });
 
   // ---- Messages (linking to one application)

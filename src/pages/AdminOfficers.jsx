@@ -13,7 +13,7 @@ export default function AdminOfficers() {
   const isAdmin = user?.role === "ADMIN";
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-  const [officers, setOfficers] = useState([]);
+  const [subAdmins, setSubAdmins] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -28,10 +28,10 @@ export default function AdminOfficers() {
         return;
       }
       const j = await res.json();
-      setOfficers(Array.isArray(j?.users) ? j.users : []);
+      setSubAdmins(Array.isArray(j?.users) ? j.users : []);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to load officers");
+      toast.error("Failed to load sub admins");
     } finally {
       setLoading(false);
     }
@@ -39,14 +39,14 @@ export default function AdminOfficers() {
 
   useEffect(() => { if (isAdmin) load(); }, [isAdmin, token]);
 
-  async function createOfficer() {
+  async function createSubAdmin() {
     try {
       if (!form.email || !form.password) {
         toast.error("Email and password are required");
         return;
       }
       setCreating(true);
-      const res = await fetch(`${API.baseURL}/api/users/field-officers`, {
+      const res = await fetch(`${API.baseURL}/api/users/sub-admins`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(form),
@@ -78,7 +78,7 @@ export default function AdminOfficers() {
       });
       if (!res.ok) throw new Error(await res.text());
       const j = await res.json();
-      setOfficers(prev => prev.map(x => x.id === o.id ? { ...j.user } : x));
+      setSubAdmins(prev => prev.map(x => x.id === o.id ? { ...j.user } : x));
       toast.success("Saved");
     } catch (e) {
       console.error(e);
@@ -90,7 +90,7 @@ export default function AdminOfficers() {
     return <Card className="p-6">Admins only.</Card>;
   }
 
-  const editable = officers.map(o => ({
+  const editable = subAdmins.map(o => ({
     ...o,
     _name: o._name ?? o.name ?? "",
     _email: o._email ?? o.email ?? "",
@@ -109,7 +109,7 @@ export default function AdminOfficers() {
         </Button>
       </div>
 
-      {/* Add New Field Officer */}
+      {/* Add New Sub Admin */}
       <Card className="border-l-4 border-l-green-500 bg-green-50">
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export default function AdminOfficers() {
             <div>
               <Button 
                 className="w-full rounded-2xl bg-green-600 hover:bg-green-700" 
-                onClick={createOfficer} 
+                onClick={createSubAdmin} 
                 disabled={creating || !form.email || !form.password}
               >
                 <UserPlus className="h-4 w-4 mr-2" />
@@ -166,7 +166,7 @@ export default function AdminOfficers() {
         </div>
       </Card>
 
-      {/* Existing Field Officers */}
+      {/* Existing Sub Admins */}
       <Card>
         <div className="px-6 py-4 border-b bg-slate-50">
           <div className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export default function AdminOfficers() {
               <div className="col-span-3">
                 <Input 
                   value={o._name} 
-                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} 
+                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} 
                   className="rounded-2xl" 
                   placeholder="Enter name"
                 />
@@ -195,7 +195,7 @@ export default function AdminOfficers() {
               <div className="col-span-4">
                 <Input 
                   value={o._email} 
-                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} 
+                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} 
                   className="rounded-2xl"
                   type="email"
                 />
@@ -211,7 +211,7 @@ export default function AdminOfficers() {
                   type="password" 
                   placeholder="New password (optional)" 
                   value={o._newPassword} 
-                  onChange={(e)=>setOfficers(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} 
+                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} 
                   className="rounded-2xl text-sm"
                 />
                 <Button 

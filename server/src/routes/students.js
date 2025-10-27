@@ -32,8 +32,7 @@ router.get("/approved/:id", async (req, res) => {
           select: {
             id: true,
             term: true,
-            needUSD: true,
-            needPKR: true,
+            amount: true,
             currency: true,
             status: true,
             submittedAt: true,
@@ -57,11 +56,6 @@ router.get("/approved/:id", async (req, res) => {
     }
 
     const app = student.applications[0] || null;
-    const totalSponsored = student.sponsorships.reduce(
-      (sum, sp) => sum + Number(sp.amount || 0),
-      0
-    );
-    const remainingNeed = Math.max(0, Number(app?.needUSD || 0) - totalSponsored);
 
     // Return donor-safe information only
     const donorSafeData = {
@@ -85,22 +79,21 @@ router.get("/approved/:id", async (req, res) => {
       currentAcademicYear: student.currentAcademicYear,
       specificField: student.specificField,
       // Financial information
-      needUSD: app?.needUSD || 0,
-      needPKR: app?.needPKR || 0,
+      amount: app?.amount || 0,
       currency: app?.currency || "USD",
-      totalSponsored,
-      remainingNeed,
       // Application info
       application: app ? {
         id: app.id,
         term: app.term,
         status: app.status,
         submittedAt: app.submittedAt,
+        amount: app.amount,
+        currency: app.currency,
       } : null,
       // Sponsorship summary (no donor details for privacy)
       sponsorshipCount: student.sponsorships.length,
       isApproved: true,
-      sponsored: remainingNeed <= 0,
+      sponsored: student.sponsored || student.sponsorships.length > 0,
     };
 
     res.json({ student: donorSafeData });
@@ -114,8 +107,8 @@ router.get("/approved/:id", async (req, res) => {
  * GET /api/students/approved
  * - Students who have at least one APPROVED application
  * - For each student, return the most recent APPROVED application (submittedAt desc)
- * - Compute remainingNeed = app.needUSD - sum(all sponsorships.amount for that student)
- * - Shape fields for marketplace cards (needUsd/needUSD, isApproved, sponsored, etc.)
+ * - Simple sponsored status: either student.sponsored=true OR sponsorships exist
+ * - Complete sponsorship model: no partial funding calculations needed
  */
 router.get("/approved", async (_req, res) => {
   try {
@@ -133,43 +126,20 @@ router.get("/approved", async (_req, res) => {
           select: {
             id: true,
             term: true,
-            needUSD: true,
-            needPKR: true,
-            amount: true, // New single currency field
+            amount: true,
             currency: true,
             status: true,
             submittedAt: true,
           },
         },
         sponsorships: {
-          select: { amount: true }, // amounts assumed USD
+          select: { id: true }, // Only need to check if sponsorships exist
         },
       },
     });
 
     const shaped = students.map((s) => {
       const app = s.applications[0] || null;
-      // Sum all sponsorships for this student (USD)
-      const totalSponsored = s.sponsorships.reduce(
-        (sum, sp) => sum + Number(sp.amount || 0),
-        0
-      );
-
-      // Handle both old (needUSD) and new (amount + currency) application structures
-      let baseNeedUSD = 0;
-      if (app) {
-        if (app.needUSD) {
-          // Old structure: use needUSD directly
-          baseNeedUSD = Number(app.needUSD);
-        } else if (app.amount && app.currency) {
-          // New structure: use amount (assume USD equivalent for now, or convert if needed)
-          // For marketplace compatibility, we'll use the amount directly
-          // TODO: Add currency conversion if needed in the future
-          baseNeedUSD = Number(app.amount);
-        }
-      }
-      
-      const remainingNeed = Math.max(0, baseNeedUSD - totalSponsored);
 
       return {
         id: s.id,
@@ -188,23 +158,16 @@ router.get("/approved", async (_req, res) => {
           ? {
               id: app.id,
               term: app.term,
-              // For backward compatibility, provide both old and new fields
-              needUSD: app.needUSD ?? app.amount ?? 0,
-              needPKR: app.needPKR ?? null,
-              amount: app.amount ?? app.needUSD ?? 0, // New field
-              currency: app.currency ?? "USD", // New field
+              amount: app.amount,
+              currency: app.currency,
               status: app.status,
               submittedAt: app.submittedAt,
             }
           : null,
 
-        // computed fields used by Marketplace UI
+        // computed fields used by UI
         isApproved: true,
-        totalSponsored,
-        remainingNeed,
-        needUsd: remainingNeed,
-        needUSD: remainingNeed,
-        sponsored: remainingNeed <= 0 || Boolean(s?.sponsored),
+        sponsored: s.sponsored || s.sponsorships.length > 0,
       };
     });
 

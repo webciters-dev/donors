@@ -56,15 +56,8 @@ function DonorPayment() {
       fullEducationCost = student?.application?.amount || 0;
     }
     
-    const stillNeeded = student?.remainingNeed || 0;
-    
-    // If the student still needs funding and it's less than the full cost, 
-    // this is a "Year 2" payment scenario - charge only what's still needed
-    if (stillNeeded > 0 && stillNeeded < fullEducationCost) {
-      return stillNeeded; // Charge remaining amount (e.g., $2,000)
-    }
-    
-    // Otherwise, calculate based on the full education cost for new sponsorships
+    // Complete sponsorship model: always pay the full education cost
+    // No partial payments - one donor sponsors entire education
     switch (paymentFrequency) {
       case "monthly":
         return Math.ceil(fullEducationCost / 24); // 24 months over 2 years
@@ -371,8 +364,7 @@ function DonorPayment() {
     totalNeed = student?.application?.amount || 0;
   }
   
-  const remainingNeed = student?.remainingNeed || 0; // Amount still needed (e.g., 2000)
-  const isAlreadySponsored = student?.sponsored || (remainingNeed <= 0);
+  const isAlreadySponsored = student?.sponsored;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">

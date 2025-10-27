@@ -20,7 +20,6 @@ model Student {
   city                  String?
   country               String
   province              String?
-  needUSD               Int
   sponsored             Boolean           @default(false)
   studentPhase          StudentPhase?     @default(APPLICATION)
   createdAt             DateTime          @default(now())
@@ -61,14 +60,12 @@ model Application {
   id                 String            @id @default(cuid())
   studentId          String
   term               String
-  amount             Int?              // NEW: Single currency amount
-  needUSD            Int?              // Legacy: make optional for backwards compatibility
+  amount             Int               // Required: Education cost in specified currency
+  currency           Currency          // Required: Currency of the education cost
   status             ApplicationStatus @default(PENDING)
   submittedAt        DateTime          @default(now())
   notes              String?
   fxRate             Float?
-  currency           Currency?
-  needPKR            Int?
   amountOriginal     Int?
   currencyOriginal   Currency?
   amountBaseUSD      Int?

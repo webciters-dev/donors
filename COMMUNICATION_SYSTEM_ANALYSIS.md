@@ -4,7 +4,7 @@
 
 ### **1. MESSAGE ROLES & PARTICIPANTS**
 - `fromRole: 'admin'` - Main administrators
-- `fromRole: 'sub_admin'` - Field officers/sub-admins  
+- `fromRole: 'sub_admin'` - Sub-admins  
 - `fromRole: 'student'` - Students
 - `fromRole: 'donor'` - Donors
 
@@ -122,10 +122,10 @@ ADMIN (👨‍💼)
 └── Assigns sub-admins to applications
 
 SUB_ADMIN (🏢)  
-├── Field officers
+├── Sub-admins with application review authority
 ├── Can message assigned students
 ├── Reports to admin
-└── Conducts field verification
+└── Conducts application verification
 
 STUDENT (👤)
 ├── Receives messages from admin/sub-admin

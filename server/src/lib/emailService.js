@@ -134,7 +134,7 @@ export async function sendFieldOfficerWelcomeEmail({
     };
     
   } catch (error) {
-    console.error('❌ Failed to send field officer email:', error);
+    console.error('❌ Failed to send sub admin email:', error);
     throw new Error('Failed to send welcome email');
   }
 }
@@ -219,7 +219,7 @@ export async function sendDocumentUploadNotification({
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}/field-officer/review/${applicationId}" 
+              <a href="${loginUrl}/sub-admin/review/${applicationId}" 
                  style="background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
                 Review Document
               </a>

@@ -42,14 +42,14 @@ async function viewStudentsTable() {
       console.log(`   📚 Field: ${student.field} (${student.program})`);
       console.log(`   📊 GPA: ${student.gpa}/4.0`);
       console.log(`   🌍 Location: ${student.city || 'N/A'}, ${student.country}`);
-      console.log(`   💰 Need: $${student.needUSD.toLocaleString()}`);
+      console.log(`   💰 Need: Applications show individual amounts`);
       console.log(`   ✅ Sponsored: ${student.sponsored ? 'Yes' : 'No'}`);
       console.log(`   📅 Phase: ${student.studentPhase}`);
       console.log(`   🎯 Graduation: ${student.gradYear}`);
       
       if (student.applications.length > 0) {
         const latestApp = student.applications[0];
-        console.log(`   📝 Latest Application: ${latestApp.status} ($${latestApp.amount?.toLocaleString() || 'N/A'})`);
+        console.log(`   📝 Latest Application: ${latestApp.status} (${latestApp.amount ? `${latestApp.currency} ${latestApp.amount.toLocaleString()}` : 'No amount specified'})`);
       }
       
       console.log(`   📨 Messages: ${student.messages.length}`);
@@ -68,7 +68,7 @@ async function viewStudentsTable() {
     console.log(`Application Phase: ${students.filter(s => s.studentPhase === 'APPLICATION').length}`);
     console.log(`Graduated: ${students.filter(s => s.studentPhase === 'GRADUATED').length}`);
     
-    const totalFundingNeed = students.reduce((sum, s) => sum + (s.needUSD || 0), 0);
+    const totalFundingNeed = 0; // Individual application amounts vary by currency
     console.log(`Total Funding Need: $${totalFundingNeed.toLocaleString()}`);
     
     const avgGPA = students.reduce((sum, s) => sum + s.gpa, 0) / students.length;

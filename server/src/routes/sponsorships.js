@@ -141,12 +141,12 @@ router.post("/", requireAuth, async (req, res) => {
     }
 
     const approvedApp = student.applications[0];
-    const requiredAmount = approvedApp.needUSD;
+    const requiredAmount = approvedApp.amount;
 
-    // Ensure sponsor is paying the full required amount
+    // Ensure sponsor is paying the full required amount in the application's currency
     if (Number(amount) !== requiredAmount) {
       return res.status(400).json({ 
-        error: `Sponsorship amount must be exactly ${requiredAmount} USD (the complete education cost)` 
+        error: `Sponsorship amount must be exactly ${requiredAmount} ${approvedApp.currency} (the complete education cost)` 
       });
     }
 

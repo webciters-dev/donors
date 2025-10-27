@@ -1,4 +1,4 @@
-// src/pages/FieldOfficerDashboard.jsx
+// src/pages/SubAdminDashboard.jsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
 
-export default function FieldOfficerDashboard() {
+export default function SubAdminDashboard() {
   const navigate = useNavigate();
   const { token, user } = useAuth();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
@@ -151,7 +151,7 @@ export default function FieldOfficerDashboard() {
       loadReviews(); // Refresh to show updated status
       
       // Navigate to edit the review
-      navigate(`/field-officer/review/${reviewId}`);
+      navigate(`/sub-admin/review/${reviewId}`);
     } catch (e) {
       console.error("Reopen failed:", e);
       toast.error("Failed to reopen review");

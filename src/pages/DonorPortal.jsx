@@ -116,15 +116,14 @@ export default function DonorPortal() {
           const transformedStudents = apiStudents
             .filter(s => {
               // Hide sponsored students - only show available for sponsorship
-              const remainingNeed = Number(s?.remainingNeed || s?.application?.amount || 0);
-              const isSponsored = Boolean(s?.sponsored) || remainingNeed <= 0;
+              const isSponsored = Boolean(s?.sponsored);
               return !isSponsored; // Only show unsponsored students
             })
             .map(s => ({
               ...s,
               currency: s.application?.currency || 'USD',
-              need: s.remainingNeed || s.application?.amount || 0,
-              fundedUSD: s.totalSponsored || 0,
+              need: s.application?.amount || 0,
+              fundedUSD: 0, // Complete sponsorship model - no partial funding
               targetUniversity: s.university,
               targetProgram: s.program,
               gpaTrend: s.gpa ? [s.gpa] : [],

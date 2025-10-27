@@ -493,7 +493,7 @@ export const MyApplication = () => {
     }
   }
 
-  // --- Requests parsing from admin/field officer messages ---
+  // --- Requests parsing from admin/sub-admin messages ---
   function normalizeItem(s) {
     return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   }
@@ -1216,7 +1216,7 @@ export const MyApplication = () => {
       {/* Old section removed - now using enhanced Action Required section above */}
       {false && <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium">Requests from Admin/Field Officer</h3>
+          <h3 className="font-medium">Requests from Admin/Sub Admin</h3>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{requestedItems.filter(r=>!r.addressed).length} open</Badge>
             <Button variant="outline" size="sm" className="rounded-2xl" onClick={reloadMessages} disabled={reloadingMsgs}>
