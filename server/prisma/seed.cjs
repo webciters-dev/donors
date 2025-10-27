@@ -100,6 +100,38 @@ async function main() {
     },
   });
 
+  const s5 = await prisma.student.create({
+    data: {
+      name: "Fatima Shah",
+      email: "fatima.shah@example.com",
+      gender: "F",
+      university: "University of Baltistan",
+      field: "Medicine",
+      program: "MBBS",
+      gpa: 3.9,
+      gradYear: 2027,
+      city: "Skardu",
+      country: "Pakistan",
+      province: "Gilgit-Baltistan",
+    },
+  });
+
+  const s6 = await prisma.student.create({
+    data: {
+      name: "Omar Malik",
+      email: "omar.malik@example.com", 
+      gender: "M",
+      university: "University of Azad Kashmir",
+      field: "Engineering",
+      program: "Civil Engineering",
+      gpa: 3.7,
+      gradYear: 2026,
+      city: "Muzaffarabad",
+      country: "Pakistan",
+      province: "Azad Jammu & Kashmir",
+    },
+  });
+
   // ---- Sponsorships
   await prisma.sponsorship.create({
     data: { studentId: s1.id, donorId: d1.id, amount: 1200, date: new Date("2025-08-08") },

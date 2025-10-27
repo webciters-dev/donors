@@ -369,8 +369,11 @@ export const Marketplace = () => {
             <option value="">Province</option>
             <option>Punjab</option>
             <option>Sindh</option>
-            <option>KPK</option>
+            <option>Khyber Pakhtunkhwa</option>
             <option>Balochistan</option>
+            <option>Gilgit-Baltistan</option>
+            <option>Azad Jammu & Kashmir</option>
+            <option>Islamabad Capital Territory</option>
           </select>
 
           {/* City */}

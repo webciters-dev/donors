@@ -31,7 +31,7 @@ const mockData = {
       gpa: 3.6,
       gradYear: 2024,
       city: 'Islamabad',
-      province: 'Islamabad',
+      province: 'Islamabad Capital Territory',
       needUSD: 3000,
       sponsored: false
     }

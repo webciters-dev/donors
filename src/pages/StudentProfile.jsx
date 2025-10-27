@@ -262,7 +262,7 @@ export default function StudentProfile() {
               <p className="text-xs text-rose-600 mt-1">{errors.dateOfBirth}</p>
             )}
             {!errors.dateOfBirth && (
-              <p className="text-xs text-slate-500 mt-1">YYYY-MM-DD</p>
+              <p className="text-xs text-slate-500 mt-1">DD-MM-YYYY</p>
             )}
           </div>
 
@@ -348,12 +348,20 @@ export default function StudentProfile() {
           {/* Province */}
           <div>
             <label className="block text-sm mb-1">Province</label>
-            <Input
+            <select
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
               value={form.province}
               onChange={(e) => setVal("province", e.target.value)}
-              className="rounded-2xl"
-              placeholder="Punjab, Sindh, KPK, Balochistan"
-            />
+            >
+              <option value="">Select Province</option>
+              <option value="Punjab">Punjab</option>
+              <option value="Sindh">Sindh</option>
+              <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</option>
+              <option value="Balochistan">Balochistan</option>
+              <option value="Gilgit-Baltistan">Gilgit-Baltistan</option>
+              <option value="Azad Jammu & Kashmir">Azad Jammu & Kashmir</option>
+              <option value="Islamabad Capital Territory">Islamabad Capital Territory</option>
+            </select>
             {errors.province && (
               <p className="text-xs text-rose-600 mt-1">{errors.province}</p>
             )}
