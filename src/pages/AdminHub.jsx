@@ -167,8 +167,6 @@ export const AdminHub = ({ go }) => {
     }
 
     try {
-      toast.info("Preparing comprehensive data export...");
-      
       // Use server-side export endpoint for better performance and completeness
       const response = await fetch(`${API.baseURL}/api/export/applications`, { 
         headers: authHeader 
@@ -222,8 +220,6 @@ export const AdminHub = ({ go }) => {
     }
 
     try {
-      toast.info("Preparing donors export...");
-      
       const response = await fetch(`${API.baseURL}/api/export/donors`, { 
         headers: authHeader 
       });
@@ -265,8 +261,6 @@ export const AdminHub = ({ go }) => {
     }
 
     try {
-      toast.info("Preparing sub admins export...");
-      
       const response = await fetch(`${API.baseURL}/api/export/sub-admins`, { 
         headers: authHeader 
       });
@@ -303,40 +297,39 @@ export const AdminHub = ({ go }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Admin Hub</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Admin Hub</h1>
         <div className="flex items-center gap-3">
           {/* NEW: jump to the live Applications manager page */}
           <Button
-            className="rounded-2xl"
+            className="bg-green-600 hover:bg-green-700"
             onClick={() => navigate("/admin/applications")}
           >
-            Manage Applications
+            Applications
           </Button>
           {/* NEW: manage sub admins */}
           <Button
-            className="rounded-2xl"
             variant="secondary"
             onClick={() => navigate("/admin/officers")}
           >
-            Manage Sub Admins
+            Staff Management
           </Button>
-          <Button variant="outline" className="rounded-2xl" onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" /> Export Applications
+          <Button variant="outline" onClick={handleExportData}>
+            <Download className="h-4 w-4 mr-2" /> Download Applications
           </Button>
-          <Button variant="outline" className="rounded-2xl" onClick={handleExportDonors}>
-            <Download className="h-4 w-4 mr-2" /> Export Donors
+          <Button variant="outline" onClick={handleExportDonors}>
+            <Download className="h-4 w-4 mr-2" /> Download Donors
           </Button>
-          <Button variant="outline" className="rounded-2xl" onClick={handleExportSubAdmins}>
-            <Download className="h-4 w-4 mr-2" /> Export Sub Admins
+          <Button variant="outline" onClick={handleExportSubAdmins}>
+            <Download className="h-4 w-4 mr-2" /> Download Staff
           </Button>
         </div>
       </div>
 
       {/* Priority Messages from Students */}
       {recentMessages.length > 0 && (
-        <Card className="border-l-4 border-l-blue-500 bg-blue-50">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
+        <Card className="border-l-4 border-l-blue-500 bg-blue-50 hover:shadow-lg transition-shadow duration-300">
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-4">
               <MessageSquare className="h-5 w-5 text-blue-600" />
               <h2 className="font-semibold text-blue-800">Recent Student Messages</h2>
               <Badge variant="default" className="ml-auto bg-blue-600">
@@ -381,26 +374,26 @@ export const AdminHub = ({ go }) => {
       {/* Statistics Dashboard */}
       {/* Main Action Items - Most Important */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-orange-600">
+        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-3xl font-bold text-amber-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.status === 'PENDING').length}
           </div>
-          <div className="text-sm text-slate-600">Pending Review</div>
-          <div className="text-xs text-slate-500">Needs admin action</div>
+          <div className="text-sm text-gray-600 font-medium">Pending Review</div>
+          <div className="text-xs text-gray-500">Needs admin action</div>
         </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-600">
+        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length}
           </div>
-          <div className="text-sm text-slate-600">Approved</div>
-          <div className="text-xs text-slate-500">Ready for sponsorship</div>
+          <div className="text-sm text-gray-600 font-medium">Approved</div>
+          <div className="text-xs text-gray-500">Ready for sponsorship</div>
         </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-purple-600">
+        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.student?.sponsored === true).length}
           </div>
-          <div className="text-sm text-slate-600">Sponsored</div>
-          <div className="text-xs text-slate-500">Education funded</div>
+          <div className="text-sm text-gray-600 font-medium">Sponsored</div>
+          <div className="text-xs text-gray-500">Education funded</div>
         </Card>
       </div>
       

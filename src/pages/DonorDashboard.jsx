@@ -144,22 +144,21 @@ export const DonorDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Donor Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Donor Dashboard</h1>
         <div className="flex items-center gap-2">
           <Input
             placeholder="Search my sponsored students…"
-            className="w-80 rounded-2xl"
+            className="w-80"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
           <Button
-            className="rounded-2xl"
+            className="bg-green-600 hover:bg-green-700"
             onClick={() => navigate("/donor/portal")}
           >
             Go to Donor Portal
           </Button>
           <Button
-            className="rounded-2xl"
             variant="outline"
             onClick={() => navigate("/marketplace")}
           >
@@ -170,39 +169,39 @@ export const DonorDashboard = () => {
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4">
-          <div className="text-sm text-slate-600">Total Sponsored (USD)</div>
-          <div className="text-2xl font-semibold">
+        <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
+          <div className="text-sm text-gray-600 font-medium">Total Sponsored (USD)</div>
+          <div className="text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
             ${fmt(totalFunded)}
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="text-sm text-slate-600">Students Sponsored</div>
-          <div className="text-2xl font-semibold">
+        <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
+          <div className="text-sm text-gray-600 font-medium">Students Sponsored</div>
+          <div className="text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
             {fmt(sponsorshipCount)}
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="text-sm text-slate-600">Account</div>
-          <div className="text-base font-medium truncate">
+        <Card className="p-6 hover:shadow-lg transition-all duration-300">
+          <div className="text-sm text-gray-600 font-medium">Account</div>
+          <div className="text-lg font-semibold text-gray-900 truncate">
             {user?.name || user?.email}
           </div>
-          <div className="text-xs text-slate-500 truncate">
+          <div className="text-sm text-gray-500 truncate">
             {user?.email}
           </div>
         </Card>
       </div>
 
       {/* Donor Portal Navigation Card */}
-      <Card className="p-6 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-white">
+      <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-emerald-800">Access Full Donor Portal</h3>
-            <p className="text-sm text-emerald-700">
+            <h3 className="text-lg font-semibold text-green-800">Access Full Donor Portal</h3>
+            <p className="text-sm text-green-700 leading-relaxed">
               Visit the complete donor portal with tabs for browsing students, managing sponsorships, 
               viewing payment history, and tracking student progress.
             </p>
-            <div className="flex items-center gap-2 text-xs text-emerald-600">
+            <div className="flex items-center gap-2 text-xs text-green-600">
               <span>✓ Browse Students</span>
               <span>✓ My Students</span>
               <span>✓ Payments</span>
@@ -211,7 +210,7 @@ export const DonorDashboard = () => {
           </div>
           <Button 
             onClick={() => navigate("/donor/portal")}
-            className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl"
+            className="bg-green-600 hover:bg-green-700"
           >
             Open Portal →
           </Button>

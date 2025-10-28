@@ -22,7 +22,7 @@ const PasswordInput = ({ placeholder, value, onChange, autoComplete, showPasswor
     />
     <button
       type="button"
-      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
       onClick={onToggleVisibility}
     >
       {showPassword ? (
@@ -136,10 +136,10 @@ export default function Login() {
 
   return (
     <div className="mx-auto max-w-md w-full">
-      <Card className="p-6 space-y-5">
+      <Card className="p-6 space-y-5 hover:shadow-lg transition-shadow duration-300">
         <div>
-          <h1 className="text-xl font-semibold">Sign in</h1>
-          <p className="text-sm text-slate-600">Use your email and password.</p>
+          <h1 className="text-xl font-bold text-gray-900">Sign in</h1>
+          <p className="text-sm text-gray-600">Use your email and password.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,7 +159,7 @@ export default function Login() {
             onToggleVisibility={() => setShowPassword(!showPassword)}
           />
 
-          <Button type="submit" disabled={loading} className="w-full rounded-2xl">
+          <Button type="submit" disabled={loading} className="w-full bg-green-600 hover:bg-green-700">
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
@@ -167,7 +167,7 @@ export default function Login() {
         <div className="flex items-center justify-between text-sm">
           <button
             type="button"
-            className="text-emerald-700 hover:underline"
+            className="text-green-700 hover:underline"
             onClick={goForgotPassword}
           >
             Forgot password?

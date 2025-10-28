@@ -144,7 +144,7 @@ export default function StudentProgress() {
   if (!user || user.role !== 'STUDENT') {
     return (
       <Card className="p-6">
-        <p className="text-slate-700">Students only.</p>
+        <p className="text-gray-700">Students only.</p>
       </Card>
     );
   }
@@ -157,23 +157,23 @@ export default function StudentProgress() {
         </Button>
         <div>
           <h1 className="text-2xl font-semibold">Academic Progress</h1>
-          <p className="text-slate-600">Share your academic journey with your sponsors</p>
+          <p className="text-gray-600 leading-relaxed">Share your academic journey with your sponsors</p>
         </div>
       </div>
 
       {/* Sponsorship Status */}
       {sponsorship && (
-        <Card className="p-4 border-l-4 border-l-emerald-500 bg-emerald-50">
+        <Card className="p-4 border-l-4 border-l-green-500 bg-green-50 hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-emerald-800">
+              <h3 className="font-medium text-green-800">
                 Sponsored by {sponsorship.donor?.name}
               </h3>
-              <p className="text-sm text-emerald-700">
+              <p className="text-sm text-green-700 leading-relaxed">
                 Your sponsor is interested in your progress. Regular updates help maintain a strong relationship!
               </p>
             </div>
-            <Badge variant="default" className="bg-emerald-600">
+            <Badge variant="default" className="bg-green-600">
               ${sponsorship.amount?.toLocaleString()} Funded
             </Badge>
           </div>

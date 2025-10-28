@@ -59,6 +59,7 @@ import ActiveStudentDashboard from "@/pages/ActiveStudentDashboard";
 import { AuthProvider } from "@/lib/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
+import { useAuth } from "@/lib/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -118,10 +119,36 @@ function Shell() {
   const [disburseOpen, setDisburseOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const active = keyFromPath(location.pathname);
 
   const setActive = (key) => {
+    // Handle role-specific "home" navigation
+    if (key === "home") {
+      if (user?.role === "SUB_ADMIN") {
+        navigate("/sub-admin");
+        return;
+      }
+      if (user?.role === "ADMIN") {
+        navigate("/admin");
+        return;
+      }
+      if (user?.role === "DONOR") {
+        navigate("/marketplace");
+        return;
+      }
+      if (user?.role === "STUDENT") {
+        if (user?.studentPhase === 'ACTIVE') {
+          navigate("/student/active");
+          return;
+        } else {
+          navigate("/my-application");
+          return;
+        }
+      }
+    }
+    
     const path = pathFromKey[key] ?? "/";
     navigate(path);
   };

@@ -102,7 +102,7 @@ export default function AdminOfficers() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Sub Admin Management</h1>
-          <p className="text-slate-600 mt-1">Manage sub admins who review student applications</p>
+          <p className="text-gray-600 mt-1">Manage sub admins who review student applications</p>
         </div>
         <Button variant="outline" className="rounded-2xl" onClick={load} disabled={loading}>
           {loading ? "Refreshing…" : "Refresh"}
@@ -119,7 +119,7 @@ export default function AdminOfficers() {
           
           <div className="grid md:grid-cols-4 gap-3 items-end">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <Input 
                 placeholder="Enter full name" 
                 value={form.name} 
@@ -128,7 +128,7 @@ export default function AdminOfficers() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <Input 
                 type="email"
                 placeholder="Enter email" 
@@ -138,7 +138,7 @@ export default function AdminOfficers() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <Input 
                 type="password" 
                 placeholder="Enter password" 
@@ -170,13 +170,13 @@ export default function AdminOfficers() {
       <Card>
         <div className="px-6 py-4 border-b bg-slate-50">
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-slate-600" />
-            <h2 className="font-semibold text-slate-800">Existing Sub Admins ({editable.length})</h2>
+            <Shield className="h-5 w-5 text-gray-600" />
+            <h2 className="font-semibold text-gray-800">Existing Sub Admins ({editable.length})</h2>
           </div>
         </div>
         
         <div className="divide-y">
-          <div className="grid grid-cols-12 gap-3 px-6 py-3 text-sm font-medium text-slate-600 bg-slate-50">
+          <div className="grid grid-cols-12 gap-3 px-6 py-3 text-sm font-medium text-gray-600 bg-gray-50">
             <div className="col-span-3">Name</div>
             <div className="col-span-4">Email</div>
             <div className="col-span-2">Status</div>

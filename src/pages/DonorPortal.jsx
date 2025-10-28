@@ -218,11 +218,11 @@ export default function DonorPortal() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Donor Portal</h1>
-          <p className="text-slate-600">Connect with students and track your impact</p>
+          <h1 className="text-2xl font-bold text-gray-900">Donor Portal</h1>
+          <p className="text-gray-600 leading-relaxed">Connect with students and track your impact</p>
         </div>
-        <div className="text-sm text-slate-600 flex items-center gap-4">
-          {user && <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+        <div className="text-sm text-gray-600 flex items-center gap-4">
+          {user && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
             Welcome, {user.name || user.email}
           </Badge>}
         </div>
@@ -232,30 +232,30 @@ export default function DonorPortal() {
       {token && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Sponsored/Pledged Amount */}
-          <Card className="p-6 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 to-white">
+          <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-800">Total Pledged</span>
+                <DollarSign className="h-5 w-5 text-green-600" />
+                <span className="text-sm font-medium text-green-800">Total Pledged</span>
               </div>
-              <div className="text-3xl font-bold text-emerald-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
-              <div className="text-xs text-slate-600">Total amount sponsored/pledged</div>
+              <div className="text-3xl font-bold text-green-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
+              <div className="text-xs text-gray-600">Total amount sponsored/pledged</div>
             </div>
           </Card>
           
           {/* Payment Complete Status - GREEN DISPLAY */}
-          <Card className="p-6 border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50 via-emerald-25 to-white shadow-lg ring-2 ring-emerald-200">
+          <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 via-green-25 to-white shadow-lg ring-2 ring-green-200 hover:shadow-xl transition-shadow duration-300">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-6 w-6 text-emerald-600" />
-                <span className="text-sm font-bold text-emerald-800 uppercase tracking-wide">✅ Fully Paid</span>
+                <CreditCard className="h-6 w-6 text-green-600" />
+                <span className="text-sm font-bold text-green-800 uppercase tracking-wide">✅ Fully Paid</span>
               </div>
-              <div className="text-4xl font-bold text-emerald-700 mb-1">
+              <div className="text-4xl font-bold text-green-700 mb-1">
                 {fmtAmount(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
               </div>
-              <div className="text-xs text-emerald-700 font-semibold leading-tight">
+              <div className="text-xs text-green-700 font-semibold leading-tight">
                 COMPLETE SPONSORSHIP<br/>
-                <span className="text-emerald-600">EDUCATION PROGRAM</span>
+                <span className="text-green-600">EDUCATION PROGRAM</span>
               </div>
             </div>
           </Card>

@@ -21,7 +21,7 @@ const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
     />
     <button
       type="button"
-      className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600"
+      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
       onClick={() => setShow(!show)}
     >
       {show ? (
@@ -653,14 +653,14 @@ export const ApplicationForm = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Student Application</h1>
 
-      <Card className="p-6 space-y-6">
+      <Card className="p-6 space-y-6 hover:shadow-lg transition-shadow duration-300">
         {/* stepper */}
         <div className="flex items-center gap-3">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
               className={`h-8 w-8 rounded-full grid place-items-center text-sm ${
-                n <= step ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-600"
+                n <= step ? "bg-green-600 text-white" : "bg-gray-200 text-gray-600"
               }`}
             >
               {n}
@@ -890,7 +890,7 @@ export const ApplicationForm = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
             {/* Currency Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Currency</label>
+              <label className="text-sm font-medium text-gray-700">Currency</label>
               <select
                 className="w-full md:w-1/2 rounded-2xl border px-3 py-2 text-sm"
                 value={form.currency}
@@ -912,11 +912,11 @@ export const ApplicationForm = () => {
 
             {/* Financial Breakdown */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-800">Financial Details</h3>
+              <h3 className="text-lg font-medium text-gray-800">Financial Details</h3>
               
               {/* University Fee */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-sm font-medium text-gray-700">
                   University Fee ({form.currency})
                 </label>
                 <Input

@@ -18,29 +18,29 @@ export const Nav = ({ active, setActive }) => {
     if (user?.studentPhase === 'ACTIVE') {
       // Active students see clean dashboard and communication
       return [
-        { key: "activestudent", label: "My Dashboard" },
-        { key: "studentprofile", label: "My Profile" },
+        { key: "activestudent", label: "Dashboard" },
+        { key: "studentprofile", label: "Profile" },
       ];
     } else {
       // Application phase students see application interface
       return [
-        { key: "myapplication", label: "My Application" },
-        { key: "studentprofile", label: "My Profile" },
+        { key: "myapplication", label: "Application Status" },
+        { key: "studentprofile", label: "Profile" },
       ];
     }
   })();
 
   const donorTabs = [
-    { key: "marketplace", label: "Sponsor a Student" },
-    { key: "donor", label: "My Dashboard" }
+    { key: "marketplace", label: "Find Students" },
+    { key: "donor", label: "Dashboard" }
   ];
   
-  const adminTabs = [{ key: "admin", label: "Admin" }];
+  const adminTabs = [{ key: "admin", label: "Administration" }];
 
   // For unauthenticated users - show public browse and apply
   const unauthedTabs = [
-    { key: "browse", label: "Sponsor a Student" },
-    { key: "apply", label: "Request Financial Aid" }
+    { key: "browse", label: "Find Students" },
+    { key: "apply", label: "Apply for Aid" }
   ];
 
   const tabs = [
@@ -57,13 +57,13 @@ export const Nav = ({ active, setActive }) => {
   }
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left: Brand + Tabs */}
           <div className="flex items-center space-x-8">
             <div
-              className="text-xl font-bold text-emerald-600 cursor-pointer"
+              className="text-xl font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors duration-200"
               onClick={() => setActive("home")}
             >
               AWAKE Connect
@@ -75,7 +75,7 @@ export const Nav = ({ active, setActive }) => {
                   key={tab.key}
                   variant={active === tab.key ? "default" : "ghost"}
                   onClick={() => setActive(tab.key)}
-                  className="rounded-2xl"
+                  className={active === tab.key ? "bg-green-600 hover:bg-green-700" : ""}
                 >
                   {tab.label}
                 </Button>
@@ -84,7 +84,7 @@ export const Nav = ({ active, setActive }) => {
           </div>
 
           {/* Right: Auth-aware controls */}
-          <div className="flex items-center gap-3 text-sm text-slate-700">
+          <div className="flex items-center gap-3 text-sm text-gray-700">
             {user ? (
               <>
                 {/* Admin navigation links */}
@@ -92,28 +92,25 @@ export const Nav = ({ active, setActive }) => {
                   <div className="hidden sm:flex items-center gap-2">
                     <Button
                       variant="outline"
-                      className="rounded-2xl"
                       onClick={() => navigate("/admin/payments")}
                     >
                       Payments
                     </Button>
                     <Button
                       variant="outline"
-                      className="rounded-2xl"
                       onClick={() => navigate("/admin/disbursements")}
                     >
                       Disbursements
                     </Button>
                     <Button
                       variant="outline"
-                      className="rounded-2xl"
                       onClick={() => navigate("/admin/donors")}
                     >
                       Donors
                     </Button>
                     <Button
                       variant={active === "admin" ? "default" : "outline"}
-                      className="rounded-2xl"
+                      className={active === "admin" ? "bg-green-600 hover:bg-green-700" : ""}
                       onClick={() => navigate("/admin/applications")}
                     >
                       Applications
@@ -123,7 +120,7 @@ export const Nav = ({ active, setActive }) => {
 
                 <div className="hidden sm:flex items-center gap-2">
                   <span
-                    className="text-slate-600 truncate max-w-[180px]"
+                    className="text-gray-600 truncate max-w-[180px]"
                     title={user.email}
                   >
                     {user.email}
@@ -131,7 +128,7 @@ export const Nav = ({ active, setActive }) => {
                   {role && <Badge variant="secondary">{role === 'SUB_ADMIN' ? 'Sub Admin' : role}</Badge>}
                 </div>
 
-                <Button variant="outline" className="rounded-2xl" onClick={handleLogout}>
+                <Button variant="outline" onClick={handleLogout}>
                   Logout
                 </Button>
               </>
@@ -140,13 +137,13 @@ export const Nav = ({ active, setActive }) => {
                 {/* Donor signup CTA for logged-out visitors */}
                 <Button
                   variant="outline"
-                  className="rounded-2xl hidden sm:inline-flex"
+                  className="hidden sm:inline-flex"
                   onClick={() => navigate("/donor-signup")}
                 >
-                  Donor Signup
+                  Become a Donor
                 </Button>
-                <Button className="rounded-2xl" onClick={() => navigate("/login")}>
-                  Sign In
+                <Button className="bg-green-600 hover:bg-green-700" onClick={() => navigate("/login")}>
+                  Login
                 </Button>
               </>
             )}

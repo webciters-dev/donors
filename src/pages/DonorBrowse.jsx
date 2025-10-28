@@ -51,17 +51,17 @@ export default function DonorBrowse() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200 rounded-xl p-6 mb-6">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6 mb-6 hover:shadow-lg transition-shadow duration-300">
         <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold text-emerald-900">Sponsor a Student Today</h1>
+          <h1 className="text-2xl font-bold text-green-900">Sponsor a Student Today</h1>
           <Button 
             onClick={() => navigate("/donor-signup")} 
-            className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-6"
+            className="bg-green-600 hover:bg-green-700 px-6"
           >
             Join as Donor
           </Button>
         </div>
-        <p className="text-emerald-800 text-sm max-w-2xl">
+        <p className="text-green-800 text-sm max-w-2xl leading-relaxed">
           💡 Transform lives through education. Browse verified students who need your support to achieve their academic dreams. 
           <strong> Create your donor account to unlock detailed profiles and start making an impact.</strong>
         </p>
@@ -75,18 +75,18 @@ export default function DonorBrowse() {
       ) : students.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🎓</div>
-          <h3 className="text-xl font-semibold text-slate-700 mb-2">No Students Available Yet</h3>
-          <p className="text-slate-600 max-w-md mx-auto mb-6">
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Students Available Yet</h3>
+          <p className="text-gray-600 max-w-md mx-auto mb-6 leading-relaxed">
             We're currently processing student applications. Check back soon to see deserving students who need your support!
           </p>
           <div className="space-y-3">
             <Button 
               onClick={() => navigate("/donor-signup")} 
-              className="bg-emerald-600 hover:bg-emerald-700 rounded-2xl px-6"
+              className="bg-green-600 hover:bg-green-700 px-6"
             >
               Donor Signup
             </Button>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-gray-500">
               Get notified when verified students are ready for sponsorship
             </p>
           </div>
@@ -94,35 +94,35 @@ export default function DonorBrowse() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {students.map((student) => (
-            <Card key={student.id} className="p-6 flex flex-col">
+            <Card key={student.id} className="p-6 flex flex-col hover:shadow-lg transition-all duration-300">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="text-lg font-semibold text-slate-900">Student Profile</div>
-                  <div className="text-sm text-slate-600">{student.program} • {student.university}</div>
+                  <div className="text-lg font-semibold text-gray-900">Student Profile</div>
+                  <div className="text-sm text-gray-600">{student.program} • {student.university}</div>
                 </div>
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                   {getCurrencyFlag(student.currency)} {fmtAmount(student.displayAmount, student.currency)}
                 </Badge>
               </div>
               
               <div className="space-y-2 mb-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Location</span>
-                  <span>{student.city}, {student.province}</span>
+                  <span className="text-gray-600">Location</span>
+                  <span className="text-gray-900">{student.city}, {student.province}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Field of Study</span>
+                  <span className="text-gray-600">Field of Study</span>
                   <span className="font-medium">{student.program}</span>
                 </div>
                 {student.gradYear && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Graduation Year</span>
+                    <span className="text-gray-600">Graduation Year</span>
                     <span>{student.gradYear}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Funding Goal</span>
-                  <span className="text-emerald-600 font-medium">
+                  <span className="text-gray-600">Funding Goal</span>
+                  <span className="text-green-600 font-medium">
                     {getCurrencyFlag(student.currency)} {fmtAmount(student.displayAmount, student.currency)}
                   </span>
                 </div>
@@ -131,12 +131,12 @@ export default function DonorBrowse() {
               <div className="mt-auto space-y-2">
                 <Button 
                   variant="default" 
-                  className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700" 
+                  className="w-full bg-green-600 hover:bg-green-700" 
                   onClick={() => navigate("/login", { state: { redirectTo: "/marketplace" } })}
                 >
                   Start Sponsoring
                 </Button>
-                <p className="text-xs text-slate-500 text-center">
+                <p className="text-xs text-gray-500 text-center">
                   Sign in to view complete profile and make a difference
                 </p>
               </div>

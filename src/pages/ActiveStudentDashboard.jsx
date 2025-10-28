@@ -203,22 +203,22 @@ const ActiveStudentDashboard = () => {
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       
       {/* Welcome Header */}
-      <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-l-green-500">
+      <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <CheckCircle className="h-6 w-6 text-green-600" />
               Welcome Back, {user?.name}! 🎓
             </h1>
-            <p className="text-gray-700 mt-1">
+            <p className="text-gray-700 mt-1 leading-relaxed">
               {application.program} at {application.university} • <strong>APPROVED</strong>
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="default" className="bg-green-100 text-green-800">
+            <div className="flex items-center gap-2 mt-3">
+              <Badge variant="default" className="bg-green-600 text-white">
                 <Award className="w-4 h-4 mr-1" />
                 Active Student
               </Badge>
-              <Badge variant="outline">
+              <Badge variant="outline" className="border-green-300 text-green-700">
                 <Heart className="w-4 h-4 mr-1" />
                 Amount: {fmtAmount(application.amount, application.currency)}
               </Badge>
@@ -228,10 +228,10 @@ const ActiveStudentDashboard = () => {
       </Card>
 
       {/* Main Communication Interface */}
-      <Card>
+      <Card className="hover:shadow-lg transition-shadow duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-gray-900">
+            <MessageSquare className="h-5 w-5 text-green-600" />
             Messages from Your Support Team
           </CardTitle>
         </CardHeader>
@@ -272,40 +272,40 @@ const ActiveStudentDashboard = () => {
           
           {/* Reply Box */}
           <div className="border-t pt-4">
-            <div className="space-y-3">
-              <Textarea
-                placeholder="Send a message to your donor or support team..."
-                value={replyText}
-                onChange={(e) => setReplyText(e.target.value)}
-                rows={3}
-                className="resize-none"
-              />
-              <div className="flex gap-2">
-                <Button 
-                  onClick={sendReply}
-                  disabled={!replyText.trim() || sendingReply}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {sendingReply ? 'Sending...' : 'Send Message'}
-                </Button>
+              <div className="space-y-3">
+                <Textarea
+                  placeholder="Send a message to your donor or support team..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={3}
+                  className="resize-none border-gray-200 focus:border-green-500 focus:ring-green-500"
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={sendReply}
+                    disabled={!replyText.trim() || sendingReply}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {sendingReply ? 'Sending...' : 'Send Message'}
+                  </Button>
+                </div>
               </div>
-            </div>
           </div>
           
         </CardContent>
       </Card>
 
       {/* Success Tips */}
-      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-l-blue-500">
+      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center text-blue-800">
+          <CardTitle className="flex items-center text-green-800">
             <Award className="w-5 h-5 mr-2" />
             🎓 Active Student Tips
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-blue-700">
-            <div className="space-y-2">
+          <div className="grid md:grid-cols-2 gap-4 text-sm text-green-700">
+            <div className="space-y-3">
               <div className="flex items-start">
                 <span className="font-medium mr-2">📚</span>
                 <span>Keep your donor updated on your academic progress</span>
@@ -315,7 +315,7 @@ const ActiveStudentDashboard = () => {
                 <span>Communicate regularly and proactively</span>
               </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-start">
                 <span className="font-medium mr-2">🎯</span>
                 <span>Share both challenges and achievements</span>

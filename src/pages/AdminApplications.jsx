@@ -373,7 +373,7 @@ export const AdminApplications = () => {
   if (!isAdmin) {
     return (
       <Card className="p-6">
-        <p className="text-slate-700">Admins only.</p>
+        <p className="text-gray-700">Admins only.</p>
       </Card>
     );
   }
@@ -403,7 +403,7 @@ export const AdminApplications = () => {
           <TabsTrigger value="approved" className="flex items-center gap-2">
             Approved
             {stats.approved > 0 && (
-              <Badge variant="default" className="ml-1 bg-emerald-100 text-emerald-800">
+              <Badge variant="default" className="ml-1 bg-green-100 text-green-800">
                 {stats.approved}
               </Badge>
             )}
@@ -437,7 +437,7 @@ export const AdminApplications = () => {
         <TabsContent value={activeTab}>
 
       <Card className="divide-y">
-        <div className="grid grid-cols-1 lg:grid-cols-11 gap-3 px-4 py-3 text-sm font-medium text-slate-600">
+        <div className="grid grid-cols-1 lg:grid-cols-11 gap-3 px-4 py-3 text-sm font-medium text-gray-600">
           <div className="lg:col-span-3">Student</div>
           <div className="lg:col-span-2 hidden lg:block">Term</div>
           <div className="lg:col-span-2 hidden lg:block">Need</div>
@@ -618,7 +618,7 @@ export const AdminApplications = () => {
                 {/* Actions */}
                 <div className="col-span-1 lg:col-span-1 flex flex-col gap-2 items-stretch justify-start mt-3 lg:mt-0 lg:ml-2 lg:mr-2">
                   <Button
-                    className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 font-medium text-sm w-full"
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 font-medium text-sm w-full"
                     onClick={() => navigate(`/admin/applications/${row.id}`)}
                   >
                     View Profile
@@ -626,7 +626,7 @@ export const AdminApplications = () => {
                   <Button
                     variant="outline"
                     onClick={() => toggleDocs(row)}
-                    className="rounded-2xl border-emerald-600 text-emerald-700 hover:bg-emerald-50 px-3 py-2 font-medium text-sm w-full"
+                    className="border-green-600 text-green-700 hover:bg-green-50 px-3 py-2 font-medium text-sm w-full"
                   >
                     {expandedId === row.id ? "Hide Docs" : "Docs"}
                     {loadingDocsId === row.id
@@ -640,7 +640,7 @@ export const AdminApplications = () => {
 
               {/* Docs panel */}
               {expandedId === row.id && (
-                <div className="mt-3 rounded-md border bg-slate-50 p-3">
+                <div className="mt-3 rounded-md border bg-gray-50 p-3">
                   {loadingDocsId === row.id ? (
                     <p className="text-sm text-slate-600">Loading documents…</p>
                   ) : docs.length === 0 ? (
@@ -655,12 +655,12 @@ export const AdminApplications = () => {
                           className="bg-white border rounded-lg p-3 hover:shadow-sm transition-shadow"
                         >
                           <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                            <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                             <a
                               href={docHref(d.url)}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-emerald-700 hover:underline font-medium text-sm"
+                              className="text-green-700 hover:underline font-medium text-sm"
                             >
                               📁 {d.originalName || d.url}
                             </a>

@@ -800,8 +800,8 @@ export const MyApplication = () => {
       <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">{application.student.name}</h2>
-            <p className="text-sm text-slate-600">
+            <h2 className="text-lg font-semibold text-gray-900">{application.student.name}</h2>
+            <p className="text-sm text-gray-600">
               {application.student.program} · {application.student.university}
             </p>
           </div>
@@ -818,7 +818,7 @@ export const MyApplication = () => {
           </Badge>
         </div>
 
-        <div className="text-sm text-slate-700 space-y-1">
+        <div className="text-sm text-gray-700 space-y-1">
           <p>
             <strong>Need:</strong> {needText}
           </p>
@@ -1044,7 +1044,7 @@ export const MyApplication = () => {
                         >
                           <div className="flex items-center gap-3">
                             {isUploaded ? (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
+                              <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                             ) : (
                               <Circle className="h-4 w-4 text-amber-600 flex-shrink-0" />
                             )}
@@ -1055,7 +1055,7 @@ export const MyApplication = () => {
                                   href={`${API.baseURL}${uploaded.url}`}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="text-emerald-700 hover:underline text-xs"
+                                  className="text-green-700 hover:underline text-xs"
                                 >
                                   📄 {uploaded.originalName || 'Download'}
                                 </a>
