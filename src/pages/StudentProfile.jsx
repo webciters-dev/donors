@@ -102,8 +102,10 @@ export default function StudentProfile() {
           program: s.program || "",
           gpa: s.gpa ?? "",
           gradYear: s.gradYear ?? "",
-          // Personal Introduction
-          personalIntroduction: s.personalIntroduction || "",
+          // Personal Introduction - filter out default placeholder text
+          personalIntroduction: s.personalIntroduction && 
+            s.personalIntroduction !== "Tell us about yourself and your family (Optional but recommended)" 
+            ? s.personalIntroduction : "",
           // Enhanced Details for Donors
           familySize: s.familySize ?? "",
           parentsOccupation: s.parentsOccupation || "",
@@ -489,7 +491,7 @@ export default function StudentProfile() {
           {/* Personal Introduction */}
           <div className="md:col-span-2">
             <label className="block text-sm mb-1">
-              Tell us about yourself and your family <span className="text-gray-500">(This helps potential sponsors understand your story)</span>
+              Tell us about yourself and your family (This helps potential sponsors understand your story)
             </label>
             <textarea
               className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
