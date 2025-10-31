@@ -125,12 +125,12 @@ export const DonorDashboard = () => {
 
   if (!isDonor) {
     return (
-      <Card className="p-6">
-        <p className="text-slate-700">
+      <Card className="p-4 sm:p-6 m-4 sm:m-0">
+        <p className="text-sm sm:text-base text-slate-700">
           Donor accounts only. Please{" "}
           <Button
             variant="link"
-            className="px-1"
+            className="px-1 min-h-[44px]"
             onClick={() => navigate("/login")}
           >
             sign in
@@ -142,18 +142,18 @@ export const DonorDashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Donor Dashboard</h1>
-        <div className="flex items-center gap-2">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Donor Dashboard</h1>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
           <Input
             placeholder="Search my sponsored students…"
-            className="w-80"
+            className="w-full sm:w-80"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
           <Button
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 min-h-[44px]"
             onClick={() => navigate("/donor/portal")}
           >
             Go to Donor Portal
@@ -161,6 +161,7 @@ export const DonorDashboard = () => {
           <Button
             variant="outline"
             onClick={() => navigate("/marketplace")}
+            className="min-h-[44px]"
           >
             Sponsor another student
           </Button>
@@ -168,40 +169,40 @@ export const DonorDashboard = () => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
-          <div className="text-sm text-gray-600 font-medium">Total Sponsored (USD)</div>
-          <div className="text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 group">
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Total Sponsored (USD)</div>
+          <div className="text-2xl sm:text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
             ${fmt(totalFunded)}
           </div>
         </Card>
-        <Card className="p-6 hover:shadow-lg transition-all duration-300 group">
-          <div className="text-sm text-gray-600 font-medium">Students Sponsored</div>
-          <div className="text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
+        <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 group">
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Students Sponsored</div>
+          <div className="text-2xl sm:text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
             {fmt(sponsorshipCount)}
           </div>
         </Card>
-        <Card className="p-6 hover:shadow-lg transition-all duration-300">
-          <div className="text-sm text-gray-600 font-medium">Account</div>
-          <div className="text-lg font-semibold text-gray-900 truncate">
+        <Card className="p-4 sm:p-6 hover:shadow-lg transition-all duration-300 sm:col-span-2 lg:col-span-1">
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Account</div>
+          <div className="text-base sm:text-lg font-semibold text-gray-900 truncate">
             {user?.name || user?.email}
           </div>
-          <div className="text-sm text-gray-500 truncate">
+          <div className="text-xs sm:text-sm text-gray-500 truncate">
             {user?.email}
           </div>
         </Card>
       </div>
 
       {/* Donor Portal Navigation Card */}
-      <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-green-800">Access Full Donor Portal</h3>
-            <p className="text-sm text-green-700 leading-relaxed">
+      <Card className="p-4 sm:p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <h3 className="text-base sm:text-lg font-semibold text-green-800">Access Full Donor Portal</h3>
+            <p className="text-xs sm:text-sm text-green-700 leading-relaxed">
               Visit the complete donor portal with tabs for browsing students, managing sponsorships, 
               viewing payment history, and tracking student progress.
             </p>
-            <div className="flex items-center gap-2 text-xs text-green-600">
+            <div className="flex flex-wrap gap-2 text-xs text-green-600">
               <span>✓ Browse Students</span>
               <span>✓ My Students</span>
               <span>✓ Payments</span>
@@ -210,7 +211,7 @@ export const DonorDashboard = () => {
           </div>
           <Button 
             onClick={() => navigate("/donor/portal")}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto"
           >
             Open Portal →
           </Button>
@@ -218,15 +219,15 @@ export const DonorDashboard = () => {
       </Card>
 
       {/* Sponsored students list */}
-      <Card className="p-4">
-        <h3 className="text-lg font-semibold mb-3">My Sponsored Students</h3>
+      <Card className="p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold mb-3">My Sponsored Students</h3>
 
         {filtered.length === 0 ? (
-          <p className="text-sm text-slate-600">
+          <p className="text-xs sm:text-sm text-slate-600">
             No sponsorships yet. Visit the{" "}
             <Button
               variant="link"
-              className="px-1"
+              className="px-1 min-h-[44px]"
               onClick={() => navigate("/marketplace")}
             >
               Marketplace
@@ -239,14 +240,14 @@ export const DonorDashboard = () => {
               const s = sp.student || {};
               return (
                 <Card key={sp.id} className="p-4 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-base font-semibold">{s.name}</div>
-                      <div className="text-sm text-slate-600">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="text-sm sm:text-base font-semibold">{s.name}</div>
+                      <div className="text-xs sm:text-sm text-slate-600">
                         {s.program} · {s.university}
                       </div>
                     </div>
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="self-start">
                       ${fmt(sp.amount)} funded
                     </Badge>
                   </div>
@@ -281,9 +282,9 @@ export const DonorDashboard = () => {
                     </div>
                   </div>
 
-                  <div className="pt-2 grid grid-cols-2 gap-2">
+                  <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <Button
-                      className="rounded-2xl"
+                      className="rounded-2xl min-h-[44px]"
                       variant="outline"
                       onClick={() => navigate(`/students/${s.id}`)}
                     >
@@ -291,7 +292,7 @@ export const DonorDashboard = () => {
                       Details
                     </Button>
                     <Button
-                      className="rounded-2xl"
+                      className="rounded-2xl min-h-[44px]"
                       variant="outline"
                       onClick={() => navigate(`/donor/progress/${sp.id}`)}
                     >

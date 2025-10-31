@@ -50,18 +50,18 @@ export default function DonorBrowse() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-6 mb-6 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-bold text-green-900">Sponsor a Student Today</h1>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 sm:p-6 mb-6 hover:shadow-lg transition-shadow duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-green-900">Sponsor a Student Today</h1>
           <Button 
             onClick={() => navigate("/donor-signup")} 
-            className="bg-green-600 hover:bg-green-700 px-6"
+            className="bg-green-600 hover:bg-green-700 px-6 min-h-[44px] w-full sm:w-auto"
           >
             Join as Donor
           </Button>
         </div>
-        <p className="text-green-800 text-sm max-w-2xl leading-relaxed">
+        <p className="text-green-800 text-xs sm:text-sm max-w-2xl leading-relaxed">
           💡 Transform lives through education. Browse verified students who need your support to achieve their academic dreams. 
           <strong> Create your donor account to unlock detailed profiles and start making an impact.</strong>
         </p>
@@ -73,20 +73,20 @@ export default function DonorBrowse() {
           <div className="text-2xl mb-4">Loading...</div>
         </div>
       ) : students.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">🎓</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">No Students Available Yet</h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-6 leading-relaxed">
+        <div className="text-center py-12 sm:py-16 px-4">
+          <div className="text-5xl sm:text-6xl mb-4">🎓</div>
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No Students Available Yet</h3>
+          <p className="text-gray-600 max-w-md mx-auto mb-6 leading-relaxed text-sm sm:text-base">
             We're currently processing student applications. Check back soon to see deserving students who need your support!
           </p>
           <div className="space-y-3">
             <Button 
               onClick={() => navigate("/donor-signup")} 
-              className="bg-green-600 hover:bg-green-700 px-6"
+              className="bg-green-600 hover:bg-green-700 px-6 min-h-[44px] w-full sm:w-auto"
             >
               Donor Signup
             </Button>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">
               Get notified when verified students are ready for sponsorship
             </p>
           </div>

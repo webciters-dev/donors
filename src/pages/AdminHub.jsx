@@ -295,13 +295,13 @@ export const AdminHub = ({ go }) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Admin Hub</h1>
-        <div className="flex items-center gap-3">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Admin Hub</h1>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {/* NEW: jump to the live Applications manager page */}
           <Button
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 min-h-[44px]"
             onClick={() => navigate("/admin/applications")}
           >
             Applications
@@ -310,29 +310,34 @@ export const AdminHub = ({ go }) => {
           <Button
             variant="secondary"
             onClick={() => navigate("/admin/officers")}
+            className="min-h-[44px]"
           >
             Staff Management
           </Button>
-          <Button variant="outline" onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" /> Download Applications
-          </Button>
-          <Button variant="outline" onClick={handleExportDonors}>
-            <Download className="h-4 w-4 mr-2" /> Download Donors
-          </Button>
-          <Button variant="outline" onClick={handleExportSubAdmins}>
-            <Download className="h-4 w-4 mr-2" /> Download Staff
-          </Button>
+          <div className="grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:gap-3">
+            <Button variant="outline" onClick={handleExportData} className="min-h-[44px]">
+              <Download className="h-4 w-4 mr-2" /> Download Applications
+            </Button>
+            <Button variant="outline" onClick={handleExportDonors} className="min-h-[44px]">
+              <Download className="h-4 w-4 mr-2" /> Download Donors
+            </Button>
+            <Button variant="outline" onClick={handleExportSubAdmins} className="min-h-[44px]">
+              <Download className="h-4 w-4 mr-2" /> Download Staff
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Priority Messages from Students */}
       {recentMessages.length > 0 && (
         <Card className="border-l-4 border-l-blue-500 bg-blue-50 hover:shadow-lg transition-shadow duration-300">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-5 w-5 text-blue-600" />
-              <h2 className="font-semibold text-blue-800">Recent Student Messages</h2>
-              <Badge variant="default" className="ml-auto bg-blue-600">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-blue-600" />
+                <h2 className="text-sm sm:text-base font-semibold text-blue-800">Recent Student Messages</h2>
+              </div>
+              <Badge variant="default" className="self-start sm:ml-auto bg-blue-600">
                 {recentMessages.length} New
               </Badge>
             </div>
@@ -340,9 +345,9 @@ export const AdminHub = ({ go }) => {
               {recentMessages.map((msg, idx) => (
                 <div key={idx} className="bg-white rounded-lg p-3 border border-blue-200">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant={msg.fromRole === 'donor' ? 'default' : 'secondary'}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                        <Badge variant={msg.fromRole === 'donor' ? 'default' : 'secondary'} className="text-xs self-start">
                           {msg.fromRole === 'donor' ? '💝' : '👤'} {msg.fromRole === 'donor' ? 'Donor' : 'Student'}: {msg.senderName || 'Unknown'}
                         </Badge>
                         <span className="text-xs text-slate-500">
@@ -354,7 +359,7 @@ export const AdminHub = ({ go }) => {
                           → To: {msg.studentName}
                         </div>
                       )}
-                      <p className="text-slate-800 text-sm font-medium line-clamp-2">{msg.text}</p>
+                      <p className="text-slate-800 text-xs sm:text-sm font-medium line-clamp-2 break-words">{msg.text}</p>
                     </div>
                   </div>
                 </div>
@@ -362,7 +367,7 @@ export const AdminHub = ({ go }) => {
             </div>
             <Button 
               onClick={() => navigate('/admin/applications')}
-              className="w-full mt-3 bg-blue-600 hover:bg-blue-700"
+              className="w-full mt-3 bg-blue-600 hover:bg-blue-700 min-h-[44px]"
             >
               <MessageSquare className="h-4 w-4 mr-2" />
               View All Applications & Messages
@@ -373,26 +378,26 @@ export const AdminHub = ({ go }) => {
 
       {/* Statistics Dashboard */}
       {/* Main Action Items - Most Important */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
-          <div className="text-3xl font-bold text-amber-600 group-hover:scale-110 transition-transform duration-300">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <Card className="p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-2xl sm:text-3xl font-bold text-amber-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.status === 'PENDING').length}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Pending Review</div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Pending Review</div>
           <div className="text-xs text-gray-500">Needs admin action</div>
         </Card>
-        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
-          <div className="text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
+        <Card className="p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-2xl sm:text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Approved</div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Approved</div>
           <div className="text-xs text-gray-500">Ready for sponsorship</div>
         </Card>
-        <Card className="p-6 text-center hover:shadow-lg transition-all duration-300 group">
-          <div className="text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
+        <Card className="p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group">
+          <div className="text-2xl sm:text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
             {loading ? '...' : applications.filter(app => app.student?.sponsored === true).length}
           </div>
-          <div className="text-sm text-gray-600 font-medium">Sponsored</div>
+          <div className="text-xs sm:text-sm text-gray-600 font-medium">Sponsored</div>
           <div className="text-xs text-gray-500">Education funded</div>
         </Card>
       </div>
@@ -400,26 +405,26 @@ export const AdminHub = ({ go }) => {
       {/* Secondary Statistics - Process Tracking & Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3 text-center bg-slate-50">
-          <div className="text-lg font-semibold text-slate-600">
+          <div className="text-base sm:text-lg font-semibold text-slate-600">
             {loading ? '...' : applications.length}
           </div>
           <div className="text-xs text-slate-500">Total Applications</div>
         </Card>
         <Card className="p-3 text-center">
-          <div className="text-lg font-semibold text-blue-600">
+          <div className="text-base sm:text-lg font-semibold text-blue-600">
             {loading ? '...' : applications.filter(app => app.fieldReviews?.some(r => r.status === 'COMPLETED')).length}
           </div>
           <div className="text-xs text-slate-600">Verified by Sub Admin</div>
         </Card>
         <Card className="p-3 text-center">
-          <div className="text-lg font-semibold text-teal-600">
+          <div className="text-base sm:text-lg font-semibold text-teal-600">
             {loading ? '...' : recentMessages.length}
           </div>
           <div className="text-xs text-slate-600">Recent Messages</div>
           <div className="text-xs text-slate-400">Student ↔ Donor/Admin</div>
         </Card>
         <Card className="p-3 text-center">
-          <div className="text-lg font-semibold text-red-600">
+          <div className="text-base sm:text-lg font-semibold text-red-600">
             {loading ? '...' : applications.filter(app => app.status === 'REJECTED').length}
           </div>
           <div className="text-xs text-slate-600">Rejected</div>
@@ -427,19 +432,19 @@ export const AdminHub = ({ go }) => {
       </div>
 
       <Tabs defaultValue="approved">
-        <TabsList>
-          <TabsTrigger value="approved">Approved Students</TabsTrigger>
-          <TabsTrigger value="sponsored">Sponsored Students</TabsTrigger>
-          <TabsTrigger value="communications">Communications</TabsTrigger>
-          <TabsTrigger value="applications">All Applications</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+          <TabsTrigger value="approved" className="text-xs sm:text-sm">Approved Students</TabsTrigger>
+          <TabsTrigger value="sponsored" className="text-xs sm:text-sm">Sponsored Students</TabsTrigger>
+          <TabsTrigger value="communications" className="text-xs sm:text-sm">Communications</TabsTrigger>
+          <TabsTrigger value="applications" className="text-xs sm:text-sm">All Applications</TabsTrigger>
         </TabsList>
 
         <TabsContent value="approved" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-emerald-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h3 className="text-base sm:text-lg font-semibold text-emerald-800">
               ✅ Approved Students Ready for Sponsorship
             </h3>
-            <Badge variant="default" className="bg-emerald-600">
+            <Badge variant="default" className="bg-emerald-600 self-start sm:self-auto">
               {applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length} Ready
             </Badge>
           </div>
@@ -740,7 +745,7 @@ export const AdminHub = ({ go }) => {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search applications..."
-                className="pl-10 rounded-2xl"
+                className="pl-10 rounded-2xl min-h-[44px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

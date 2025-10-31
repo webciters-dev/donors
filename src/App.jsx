@@ -174,11 +174,11 @@ function Shell() {
   return (
     <>
       <Toaster />
-      <Sonner richColors position="top-center" closeButton />
+      <Sonner richColors position="top-right" closeButton />
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <Nav active={active} setActive={setActive} />
 
-        <main className="mx-auto max-w-7xl px-4 py-8 space-y-8">
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8">
           <Routes>
             {/* PUBLIC */}
             <Route path="/" element={<Landing go={setActive} />} />

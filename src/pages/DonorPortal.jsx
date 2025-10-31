@@ -215,14 +215,14 @@ export default function DonorPortal() {
   const studentsHelped = new Set(sponsorships.map(s => s.studentId)).size;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Donor Portal</h1>
-          <p className="text-gray-600 leading-relaxed">Connect with students and track your impact</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Donor Portal</h1>
+          <p className="text-sm sm:text-base text-gray-600 leading-relaxed">Connect with students and track your impact</p>
         </div>
         <div className="text-sm text-gray-600 flex items-center gap-4">
-          {user && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+          {user && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs sm:text-sm">
             Welcome, {user.name || user.email}
           </Badge>}
         </div>
@@ -230,27 +230,27 @@ export default function DonorPortal() {
 
       {/* Enhanced Payment Status Cards - TOP LEFT PRIORITY */}
       {token && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Sponsored/Pledged Amount */}
-          <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
+          <Card className="p-4 sm:p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-white hover:shadow-lg transition-shadow duration-300">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Total Pledged</span>
+                <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                <span className="text-xs sm:text-sm font-medium text-green-800">Total Pledged</span>
               </div>
-              <div className="text-3xl font-bold text-green-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-green-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
               <div className="text-xs text-gray-600">Total amount sponsored/pledged</div>
             </div>
           </Card>
           
           {/* Payment Complete Status - GREEN DISPLAY */}
-          <Card className="p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 via-green-25 to-white shadow-lg ring-2 ring-green-200 hover:shadow-xl transition-shadow duration-300">
+          <Card className="p-4 sm:p-6 border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 via-green-25 to-white shadow-lg ring-2 ring-green-200 hover:shadow-xl transition-shadow duration-300">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-6 w-6 text-green-600" />
-                <span className="text-sm font-bold text-green-800 uppercase tracking-wide">✅ Fully Paid</span>
+                <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                <span className="text-xs sm:text-sm font-bold text-green-800 uppercase tracking-wide">✅ Fully Paid</span>
               </div>
-              <div className="text-4xl font-bold text-green-700 mb-1">
+              <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">
                 {fmtAmount(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
               </div>
               <div className="text-xs text-green-700 font-semibold leading-tight">
@@ -261,13 +261,13 @@ export default function DonorPortal() {
           </Card>
           
           {/* Students Helped */}
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Impact</span>
+                <Users className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                <span className="text-xs sm:text-sm font-medium text-blue-800">Impact</span>
               </div>
-              <div className="text-3xl font-bold">{studentsHelped}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{studentsHelped}</div>
               <div className="text-xs text-slate-600">
                 {studentsHelped === 1 ? 'Student Helped' : 'Students Helped'}
               </div>
@@ -275,13 +275,13 @@ export default function DonorPortal() {
           </Card>
 
           {/* Active Sponsorships */}
-          <Card className="p-6">
+          <Card className="p-4 sm:p-6">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <GraduationCap className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium text-purple-800">Active</span>
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                <span className="text-xs sm:text-sm font-medium text-purple-800">Active</span>
               </div>
-              <div className="text-3xl font-bold">{sponsorships.length}</div>
+              <div className="text-2xl sm:text-3xl font-bold">{sponsorships.length}</div>
               <div className="text-xs text-slate-600">
                 {sponsorships.length === 1 ? 'Active Sponsorship' : 'Active Sponsorships'}
               </div>
@@ -311,7 +311,7 @@ export default function DonorPortal() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="browse">Browse Students</TabsTrigger>
           <TabsTrigger value="sponsored">My Students</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -320,14 +320,14 @@ export default function DonorPortal() {
 
         <TabsContent value="browse" className="space-y-4">
           {/* Search Bar */}
-          <div className="max-w-md">
+          <div className="w-full sm:max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search by name, program, university, or location..."
+                placeholder="Search by name, program, university..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full min-h-[44px]"
               />
             </div>
           </div>
@@ -358,7 +358,7 @@ export default function DonorPortal() {
                       {/* Amount badge hidden - payment details shown in top area cards */}
                     </div>
 
-                    <div className="text-sm text-slate-700 grid grid-cols-[120px,1fr] gap-y-1 items-start min-h-[140px] mt-3">
+                    <div className="text-sm text-slate-700 grid grid-cols-1 sm:grid-cols-[120px,1fr] gap-y-1 items-start min-h-[140px] mt-3">
                       <div className="text-slate-600">City</div><div className="text-right">{s.city || '—'}</div>
                       <div className="text-slate-600">Province</div><div className="text-right">{s.province || '—'}</div>
                       <div className="text-slate-600">University</div><div className="text-right">{s.university}</div>
@@ -368,7 +368,7 @@ export default function DonorPortal() {
 
                     <div className="pt-3 mt-auto space-y-2">
                       <Button 
-                        className="w-full" 
+                        className="w-full min-h-[44px]" 
                         onClick={() => navigate(`/students/${s.id}`)}
                       >
                         View Details
@@ -398,9 +398,14 @@ export default function DonorPortal() {
               <Button onClick={() => navigate('/login')}>Log In</Button>
             </Card>
           ) : sponsorships.length === 0 ? (
-            <Card className="p-8 text-center">
+            <Card className="p-6 sm:p-8 text-center">
               <div className="text-slate-600 mb-4">You haven't sponsored any students yet</div>
-              <Button onClick={() => setActiveTab("browse")}>Browse Students</Button>
+              <Button 
+                onClick={() => setActiveTab("browse")}
+                className="min-h-[44px] w-full sm:w-auto"
+              >
+                Browse Students
+              </Button>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -427,7 +432,7 @@ export default function DonorPortal() {
                     {/* Payment Breakdown */}
                     <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
                       <div className="text-xs font-medium text-slate-700 mb-2">Payment Status</div>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="bg-emerald-100 p-2 rounded text-center">
                           <div className="font-semibold text-emerald-700">{fmtAmount(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-emerald-600">Paid</div>
@@ -446,7 +451,7 @@ export default function DonorPortal() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="w-full"
+                        className="w-full min-h-[44px]"
                         onClick={() => navigate(`/students/${sponsorship.studentId}`)}
                       >
                         View Progress

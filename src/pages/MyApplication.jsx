@@ -697,17 +697,17 @@ export const MyApplication = () => {
   if (!application) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">My Application</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold px-1">My Application</h1>
         
         {/* Welcome Message for New Students */}
-        <Card className="p-6 bg-green-50 border-green-200">
+        <Card className="p-4 sm:p-6 bg-green-50 border-green-200">
           <div className="flex items-start space-x-3">
-            <User className="h-6 w-6 text-green-600 mt-0.5" />
+            <User className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="font-medium text-green-900">
+              <h3 className="font-medium text-green-900 text-sm sm:text-base">
                 Welcome, {user?.name || "Student"}!
               </h3>
-              <p className="text-sm text-green-700 mt-1">
+              <p className="text-xs sm:text-sm text-green-700 mt-1">
                 Your account has been created successfully. Complete your application to apply for funding.
               </p>
             </div>
@@ -715,26 +715,26 @@ export const MyApplication = () => {
         </Card>
 
         {/* Complete Application Call-to-Action */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <MessageCircle className="h-8 w-8 text-blue-600" />
+            <div className="mx-auto w-14 h-14 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
             </div>
             
             <div>
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-base sm:text-lg font-medium text-gray-900">
                 Complete Your Application
               </h3>
-              <p className="text-gray-600 mt-2">
+              <p className="text-sm sm:text-base text-gray-600 mt-2 px-2">
                 You've successfully created your account! Now complete your application 
                 with your academic details and funding requirements.
               </p>
             </div>
 
-            <div className="flex gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
                 onClick={() => navigate("/apply?step=2")}  
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Complete Application
@@ -742,6 +742,7 @@ export const MyApplication = () => {
               <Button 
                 variant="outline" 
                 onClick={() => navigate("/student/profile")}
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 Update Profile
               </Button>

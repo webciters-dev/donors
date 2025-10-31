@@ -162,7 +162,6 @@ router.post("/register-student", async (req, res) => {
         gradYear: typeof gradYear === "number" ? gradYear : new Date().getFullYear() + 1,
         field: field ?? "",
         personalIntroduction: personalIntroduction ?? "",
-        needUSD: 0, // Legacy field - set to 0 as we now use currency field in applications
       },
     });
 

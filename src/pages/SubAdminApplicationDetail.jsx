@@ -440,31 +440,33 @@ export default function SubAdminApplicationDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)} className="min-h-[44px] self-start sm:self-auto">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
-          <h1 className="text-2xl font-semibold">Field Verification</h1>
-          <Badge variant={review.status === "PENDING" ? "secondary" : review.status === "COMPLETED" ? "default" : "outline"}>
-            {review.status}
-          </Badge>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <h1 className="text-lg sm:text-2xl font-semibold">Field Verification</h1>
+            <Badge variant={review.status === "PENDING" ? "secondary" : review.status === "COMPLETED" ? "default" : "outline"}>
+              {review.status}
+            </Badge>
+          </div>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           {submitted ? (
-            <Button onClick={() => navigate("/sub-admin")} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => navigate("/sub-admin")} className="bg-green-600 hover:bg-green-700 min-h-[44px]">
               Return to Dashboard
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={() => saveFieldVerification(false)} disabled={saving}>
+              <Button variant="outline" onClick={() => saveFieldVerification(false)} disabled={saving} className="min-h-[44px]">
                 {saving ? "Saving..." : "Save Draft"}
               </Button>
-              <Button onClick={() => saveFieldVerification(true)} disabled={saving}>
+              <Button onClick={() => saveFieldVerification(true)} disabled={saving} className="min-h-[44px]">
                 {saving ? "Submitting..." : "Submit Review"}
               </Button>
             </>
@@ -473,22 +475,22 @@ export default function SubAdminApplicationDetail() {
       </div>
 
       {/* Student Information Summary */}
-      <Card className="p-6 bg-slate-50">
-        <div className="flex items-center justify-between mb-4">
+      <Card className="p-4 sm:p-6 bg-slate-50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
           <div className="flex items-center gap-2">
             <User className="h-5 w-5 text-slate-600" />
-            <h2 className="text-lg font-semibold">{student.name}</h2>
+            <h2 className="text-base sm:text-lg font-semibold">{student.name}</h2>
           </div>
-          <div className="text-sm text-slate-600">
+          <div className="text-xs sm:text-sm text-slate-600">
             {student.university} • {student.program}
           </div>
         </div>
         
         {/* Enhanced Financial Breakdown */}
         {(application?.universityFee || application?.livingExpenses || application?.totalExpense) ? (
-          <div className="mb-4 p-4 bg-white rounded-lg border">
-            <h4 className="font-medium text-slate-700 text-sm uppercase tracking-wide mb-3">Financial Breakdown</h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div className="mb-4 p-3 sm:p-4 bg-white rounded-lg border">
+            <h4 className="font-medium text-slate-700 text-xs sm:text-sm uppercase tracking-wide mb-3">Financial Breakdown</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
               <div className="space-y-2">
                 {application?.universityFee && (
                   <div className="flex justify-between">
@@ -542,30 +544,30 @@ export default function SubAdminApplicationDetail() {
           </div>
         )}
         
-        <div className="grid md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs sm:text-sm">
           <div>
             <span className="text-slate-500">CNIC:</span>
-            <div className="font-medium">{student.cnic || 'Not provided'}</div>
+            <div className="font-medium break-words">{student.cnic || 'Not provided'}</div>
           </div>
           <div>
             <span className="text-slate-500">Phone:</span>
-            <div className="font-medium">{student.phone || 'Not provided'}</div>
+            <div className="font-medium break-words">{student.phone || 'Not provided'}</div>
           </div>
           <div>
             <span className="text-slate-500">Address:</span>
-            <div className="font-medium">{student.address || 'Not provided'}</div>
+            <div className="font-medium break-words">{student.address || 'Not provided'}</div>
           </div>
           <div>
             <span className="text-slate-500">Guardian:</span>
-            <div className="font-medium">{student.guardianName || 'Not provided'}</div>
+            <div className="font-medium break-words">{student.guardianName || 'Not provided'}</div>
           </div>
         </div>
         
         {/* Personal Introduction */}
         {student.personalIntroduction && (
           <div className="mt-4 pt-4 border-t border-slate-200">
-            <span className="text-slate-500 text-sm">Personal Introduction:</span>
-            <div className="mt-2 text-sm leading-relaxed text-slate-700 bg-white p-3 rounded border whitespace-pre-wrap">
+            <span className="text-slate-500 text-xs sm:text-sm">Personal Introduction:</span>
+            <div className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-700 bg-white p-3 rounded border whitespace-pre-wrap break-words">
               {student.personalIntroduction}
             </div>
           </div>
@@ -573,7 +575,7 @@ export default function SubAdminApplicationDetail() {
       </Card>
 
       {/* Enhanced Background Details */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <GraduationCap className="h-5 w-5 text-blue-600" />
           <h3 className="text-lg font-semibold">Detailed Background</h3>
@@ -806,22 +808,25 @@ export default function SubAdminApplicationDetail() {
       </Card>
 
       {/* Document Verification */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Shield className="h-5 w-5 text-indigo-600" />
-          <h3 className="text-lg font-semibold">Document Verification</h3>
-          <label className="flex items-center gap-2 text-sm ml-4">
+      <Card className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-indigo-600" />
+            <h3 className="text-base sm:text-lg font-semibold">Document Verification</h3>
+          </div>
+          <label className="flex items-center gap-2 text-xs sm:text-sm sm:ml-4">
             <input
               type="checkbox"
               checked={fieldVerification.documentsVerified}
               onChange={(e) => updateField('documentsVerified', e.target.checked)}
+              className="min-w-[16px] min-h-[16px]"
             />
             <CheckCircle className="h-4 w-4 text-green-600" />
             All Documents Verified
           </label>
         </div>
         
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documents.length === 0 ? (
             <div className="text-sm text-slate-600">No documents uploaded yet</div>
           ) : (
@@ -833,28 +838,28 @@ export default function SubAdminApplicationDetail() {
               
               return (
                 <div key={idx} className={`flex items-center justify-between p-3 border rounded-lg hover:shadow-md transition-all ${newDocumentClasses}`}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
                     {doc.url ? (
                       <>
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                         <a
                           href={`${API.baseURL}${doc.url}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                          className="text-green-700 hover:text-green-900 hover:underline font-medium text-xs sm:text-sm truncate"
                         >
                           📁 {doc.originalName || doc.type.replace('_', ' ')}
                         </a>
                         {isNew && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                             ✨ New
                           </span>
                         )}
                       </>
                     ) : (
                       <>
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <span className="font-medium text-red-600">{doc.type.replace('_', ' ')} - Missing</span>
+                        <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
+                        <span className="font-medium text-red-600 text-xs sm:text-sm truncate">{doc.type.replace('_', ' ')} - Missing</span>
                       </>
                     )}
                   </div>
@@ -948,11 +953,11 @@ export default function SubAdminApplicationDetail() {
         </div>
         
         <div className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Recommendation</label>
               <select
-                className="w-full rounded-lg border px-3 py-2 text-sm"
+                className="w-full rounded-lg border px-3 py-2 text-sm min-h-[44px]"
                 value={fieldVerification.fielderRecommendation}
                 onChange={(e) => updateField('fielderRecommendation', e.target.value)}
               >
@@ -973,7 +978,7 @@ export default function SubAdminApplicationDetail() {
                 max="100"
                 value={fieldVerification.verificationScore}
                 onChange={(e) => updateField('verificationScore', Number(e.target.value))}
-                className="w-full"
+                className="w-full min-h-[44px] touch-action-none"
               />
             </div>
           </div>
@@ -1001,10 +1006,10 @@ export default function SubAdminApplicationDetail() {
       </Card>
 
       {/* Communication */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="h-5 w-5 text-slate-600" />
-          <h2 className="text-lg font-semibold">Student Communication</h2>
+          <h2 className="text-base sm:text-lg font-semibold">Student Communication</h2>
         </div>
         
         <div className="space-y-4">
@@ -1053,14 +1058,15 @@ export default function SubAdminApplicationDetail() {
             </div>
           )}
           
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               placeholder="Type your message to the student..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+              className="min-h-[44px] flex-1"
             />
-            <Button onClick={sendMessage} disabled={!newMessage.trim()}>
+            <Button onClick={sendMessage} disabled={!newMessage.trim()} className="min-h-[44px] w-full sm:w-auto">
               Send
             </Button>
           </div>
@@ -1068,17 +1074,17 @@ export default function SubAdminApplicationDetail() {
       </Card>
 
       {/* Action Buttons at Bottom - Mirror of top buttons */}
-      <Card className="p-6 bg-slate-50 border-2 border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-600">
+      <Card className="p-4 sm:p-6 bg-slate-50 border-2 border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="text-xs sm:text-sm text-slate-600">
             Complete field verification and submit your review
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             {submitted ? (
               <Button 
                 onClick={() => navigate("/sub-admin")} 
-                className="bg-green-600 hover:bg-green-700 px-6"
+                className="bg-green-600 hover:bg-green-700 px-6 min-h-[44px] w-full sm:w-auto"
                 size="lg"
               >
                 Return to Dashboard
@@ -1090,7 +1096,7 @@ export default function SubAdminApplicationDetail() {
                   onClick={() => saveFieldVerification(false)} 
                   disabled={saving}
                   size="lg"
-                  className="px-6"
+                  className="px-6 min-h-[44px] w-full sm:w-auto"
                 >
                   {saving ? "Saving..." : "Save Draft"}
                 </Button>
@@ -1098,7 +1104,7 @@ export default function SubAdminApplicationDetail() {
                   onClick={() => saveFieldVerification(true)} 
                   disabled={saving}
                   size="lg"
-                  className="px-6"
+                  className="px-6 min-h-[44px] w-full sm:w-auto"
                 >
                   {saving ? "Submitting..." : "Submit Review"}
                 </Button>

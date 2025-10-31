@@ -200,20 +200,20 @@ const ActiveStudentDashboard = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       
       {/* Welcome Header */}
-      <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
-        <div className="flex items-center justify-between">
+      <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
               Welcome Back, {user?.name}! 🎓
             </h1>
-            <p className="text-gray-700 mt-1 leading-relaxed">
+            <p className="text-sm sm:text-base text-gray-700 mt-1 leading-relaxed">
               {application.program} at {application.university} • <strong>APPROVED</strong>
             </p>
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex flex-wrap items-center gap-2 mt-3">
               <Badge variant="default" className="bg-green-600 text-white">
                 <Award className="w-4 h-4 mr-1" />
                 Active Student
@@ -229,24 +229,24 @@ const ActiveStudentDashboard = () => {
 
       {/* Main Communication Interface */}
       <Card className="hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-gray-900">
-            <MessageSquare className="h-5 w-5 text-green-600" />
+        <CardHeader className="pb-4 sm:pb-6">
+          <CardTitle className="flex items-center gap-2 text-gray-900 text-base sm:text-lg">
+            <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             Messages from Your Support Team
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           
           {/* Messages List */}
-          <div className="space-y-4 max-h-96 overflow-y-auto mb-4">
+          <div className="space-y-3 sm:space-y-4 max-h-80 sm:max-h-96 overflow-y-auto mb-4">
             {messages.length > 0 ? (
               messages.slice().reverse().map((msg, idx) => (
-                <div key={idx} className={`p-4 rounded-lg ${
+                <div key={idx} className={`p-3 sm:p-4 rounded-lg ${
                   msg.isFromStudent ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'bg-gray-50 border-l-4 border-l-green-500'
                 }`}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="text-sm text-gray-600 mb-2">
+                      <div className="text-xs sm:text-sm text-gray-600 mb-2">
                         <strong>{msg.isFromStudent ? 'You' : (msg.senderName || 'Admin')}</strong>
                         {!msg.isFromStudent && (
                           <Badge variant="secondary" className="ml-2 text-xs">
@@ -254,7 +254,7 @@ const ActiveStudentDashboard = () => {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-gray-800">{msg.content || msg.message}</p>
+                      <p className="text-sm sm:text-base text-gray-800">{msg.content || msg.message}</p>
                       <div className="text-xs text-gray-500 mt-2">
                         {new Date(msg.createdAt || msg.timestamp).toLocaleDateString()}
                       </div>
@@ -263,9 +263,9 @@ const ActiveStudentDashboard = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                <p>No messages yet. Your communication history will appear here.</p>
+              <div className="text-center py-6 sm:py-8 text-gray-500">
+                <MessageCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 text-gray-400" />
+                <p className="text-sm sm:text-base">No messages yet. Your communication history will appear here.</p>
               </div>
             )}
           </div>
@@ -278,13 +278,13 @@ const ActiveStudentDashboard = () => {
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   rows={3}
-                  className="resize-none border-gray-200 focus:border-green-500 focus:ring-green-500"
+                  className="resize-none border-gray-200 focus:border-green-500 focus:ring-green-500 min-h-[44px]"
                 />
                 <div className="flex gap-2">
                   <Button 
                     onClick={sendReply}
                     disabled={!replyText.trim() || sendingReply}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto"
                   >
                     {sendingReply ? 'Sending...' : 'Send Message'}
                   </Button>
@@ -297,14 +297,14 @@ const ActiveStudentDashboard = () => {
 
       {/* Success Tips */}
       <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center text-green-800">
-            <Award className="w-5 h-5 mr-2" />
+        <CardHeader className="pb-4 sm:pb-6">
+          <CardTitle className="flex items-center text-green-800 text-base sm:text-lg">
+            <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
             🎓 Active Student Tips
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4 text-sm text-green-700">
+        <CardContent className="px-4 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-green-700">
             <div className="space-y-3">
               <div className="flex items-start">
                 <span className="font-medium mr-2">📚</span>

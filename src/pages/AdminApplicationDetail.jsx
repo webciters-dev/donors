@@ -240,28 +240,28 @@ export default function AdminApplicationDetail() {
   if (!app) return <Card className="p-6">Loading…</Card>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Application Detail</h1>
-        <Button variant="outline" className="rounded-2xl" onClick={() => navigate(-1)}>Back</Button>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Application Detail</h1>
+        <Button variant="outline" className="rounded-2xl min-h-[44px] self-start sm:self-auto" onClick={() => navigate(-1)}>Back</Button>
       </div>
 
       {/* Summary */}
-      <Card className="p-6 space-y-2">
-        <div className="flex items-center justify-between">
+      <Card className="p-4 sm:p-6 space-y-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <div className="text-lg font-semibold">{app.student?.name}</div>
-            <div className="text-sm text-slate-600">{app.student?.program} · {app.student?.university}</div>
+            <div className="text-base sm:text-lg font-semibold">{app.student?.name}</div>
+            <div className="text-xs sm:text-sm text-slate-600">{app.student?.program} · {app.student?.university}</div>
           </div>
-          <Badge>{app.status}</Badge>
+          <Badge className="self-start sm:self-auto">{app.status}</Badge>
         </div>
-        <div className="text-sm text-slate-700">Profile completeness: {completeness.percent}%</div>
+        <div className="text-xs sm:text-sm text-slate-700">Profile completeness: {completeness.percent}%</div>
       </Card>
 
       {/* Student Details */}
-      <Card className="p-6">
-        <div className="font-medium mb-3">Student details</div>
-        <div className="grid md:grid-cols-3 gap-3 text-sm">
+      <Card className="p-4 sm:p-6">
+        <div className="font-medium mb-3 text-sm sm:text-base">Student details</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
           <div>
             <div className="text-slate-500">Email</div>
             <div>{app.student?.email || "-"}</div>

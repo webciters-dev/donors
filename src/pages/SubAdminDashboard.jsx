@@ -168,20 +168,20 @@ export default function SubAdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Sub Admin Dashboard</h1>
-        <div className="flex gap-2">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Sub Admin Dashboard</h1>
+        <div className="flex flex-col sm:flex-row gap-2">
           {(!token || !user) && (
             <Button 
               onClick={() => navigate("/login")} 
               variant="destructive"
-              className="text-sm rounded-2xl"
+              className="text-sm rounded-2xl min-h-[44px] w-full sm:w-auto"
             >
               Fix Login Issue
             </Button>
           )}
-          <Button variant="outline" className="rounded-2xl" onClick={loadReviews} disabled={loading}>
+          <Button variant="outline" className="rounded-2xl min-h-[44px] w-full sm:w-auto" onClick={loadReviews} disabled={loading}>
             {loading ? "Refreshing…" : "Refresh"}
           </Button>
         </div>
@@ -189,46 +189,46 @@ export default function SubAdminDashboard() {
 
       {/* Auth Issue Banner */}
       {(!token || !user) && (
-        <Card className="p-4 border-l-4 border-l-red-500 bg-red-50">
-          <div className="flex items-center gap-2 text-red-700">
-            <AlertTriangle className="h-5 w-5" />
+        <Card className="p-3 sm:p-4 border-l-4 border-l-red-500 bg-red-50">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-red-700">
+            <AlertTriangle className="h-5 w-5 shrink-0" />
             <div>
-              <h3 className="font-medium">Authentication Issue Detected</h3>
-              <p className="text-sm">You appear to be logged in but your session is invalid. Please log in again to access your reviews.</p>
+              <h3 className="text-sm sm:text-base font-medium">Authentication Issue Detected</h3>
+              <p className="text-xs sm:text-sm">You appear to be logged in but your session is invalid. Please log in again to access your reviews.</p>
             </div>
           </div>
         </Card>
       )}
 
       {/* Status Overview Cards */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <Card className="p-4 border-l-4 border-l-orange-500">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <Card className="p-3 sm:p-4 border-l-4 border-l-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold text-orange-600">{pendingReviews.length}</div>
-              <div className="text-sm text-slate-600">Pending Reviews</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600">{pendingReviews.length}</div>
+              <div className="text-xs sm:text-sm text-slate-600">Pending Reviews</div>
             </div>
-            <AlertCircle className="h-8 w-8 text-orange-500" />
+            <AlertCircle className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
           </div>
         </Card>
         
-        <Card className="p-4 border-l-4 border-l-green-500">
+        <Card className="p-3 sm:p-4 border-l-4 border-l-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold text-green-600">{completedReviews.length}</div>
-              <div className="text-sm text-slate-600">Completed Reviews</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600">{completedReviews.length}</div>
+              <div className="text-xs sm:text-sm text-slate-600">Completed Reviews</div>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-500" />
+            <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-500" />
           </div>
         </Card>
         
-        <Card className="p-4 border-l-4 border-l-blue-500">
+        <Card className="p-3 sm:p-4 border-l-4 border-l-blue-500 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-2xl font-bold text-blue-600">{reviews.length}</div>
-              <div className="text-sm text-slate-600">Total Assignments</div>
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">{reviews.length}</div>
+              <div className="text-xs sm:text-sm text-slate-600">Total Assignments</div>
             </div>
-            <FileText className="h-8 w-8 text-blue-500" />
+            <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500" />
           </div>
         </Card>
       </div>
@@ -236,28 +236,30 @@ export default function SubAdminDashboard() {
       {/* Priority Assignments - Show at Top */}
       {pendingReviews.length > 0 && (
         <Card className="border-l-4 border-l-orange-500 bg-orange-50">
-          <div className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-              <h2 className="font-semibold text-orange-800">Urgent: Pending Reviews</h2>
-              <Badge variant="destructive" className="ml-auto">
+          <div className="p-3 sm:p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
+                <h2 className="text-sm sm:text-base font-semibold text-orange-800">Urgent: Pending Reviews</h2>
+              </div>
+              <Badge variant="destructive" className="self-start sm:ml-auto">
                 {pendingReviews.length} Assignments
               </Badge>
             </div>
             <div className="space-y-3">
               {pendingReviews.slice(0, 3).map((review, idx) => (
                 <div key={idx} className="bg-white rounded-lg p-3 border border-orange-200">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="secondary">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                        <Badge variant="secondary" className="self-start">
                           📚 {review.student?.name || 'Student'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           CNIC: {review.student?.cnic || 'Not provided'}
                         </span>
                       </div>
-                      <p className="text-slate-800 text-sm font-medium">
+                      <p className="text-slate-800 text-xs sm:text-sm font-medium">
                         {review.student?.program} at {review.student?.university}
                       </p>
                       <p className="text-slate-600 text-xs">
@@ -267,7 +269,7 @@ export default function SubAdminDashboard() {
                     <Button 
                       size="sm" 
                       onClick={() => openReview(review)}
-                      className="bg-orange-600 hover:bg-orange-700"
+                      className="bg-orange-600 hover:bg-orange-700 min-h-[44px] w-full sm:w-auto"
                     >
                       Review Now
                     </Button>
@@ -276,7 +278,7 @@ export default function SubAdminDashboard() {
               ))}
               {pendingReviews.length > 3 && (
                 <div className="text-center pt-2">
-                  <span className="text-sm text-orange-700">
+                  <span className="text-xs sm:text-sm text-orange-700">
                     +{pendingReviews.length - 3} more assignments below
                   </span>
                 </div>
@@ -286,36 +288,36 @@ export default function SubAdminDashboard() {
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Pending Reviews */}
-        <Card className="p-6">
+        <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
-            <div className="font-medium">Pending Reviews ({pendingReviews.length})</div>
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-amber-600" />
+            <div className="text-sm sm:text-base font-medium">Pending Reviews ({pendingReviews.length})</div>
           </div>
           
           {pendingReviews.length === 0 ? (
-            <div className="text-sm text-slate-600">No pending reviews assigned.</div>
+            <div className="text-xs sm:text-sm text-slate-600">No pending reviews assigned.</div>
           ) : (
             <div className="space-y-3">
               {pendingReviews.map(review => (
-                <div key={review.id} className="border rounded-lg p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium">{review.student?.name}</div>
-                    <Badge variant={review.status === "PENDING" ? "secondary" : "default"}>
+                <div key={review.id} className="border rounded-lg p-3 sm:p-4 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="text-sm sm:text-base font-medium">{review.student?.name}</div>
+                    <Badge variant={review.status === "PENDING" ? "secondary" : "default"} className="self-start sm:self-auto">
                       {review.status}
                     </Badge>
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-slate-600">
                     {review.student?.program} · {review.student?.university}
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-xs sm:text-sm text-slate-600">
                     👤 {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <Button 
                       size="sm" 
-                      className="rounded-2xl" 
+                      className="rounded-2xl min-h-[44px] w-full sm:w-auto" 
                       onClick={() => openReview(review)}
                     >
                       Review Application
@@ -323,7 +325,7 @@ export default function SubAdminDashboard() {
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="rounded-2xl"
+                      className="rounded-2xl min-h-[44px] w-full sm:w-auto"
                       onClick={() => navigate(`/sub-admin/review/${review.id}`)}
                     >
                       View Details
@@ -336,55 +338,59 @@ export default function SubAdminDashboard() {
         </Card>
 
         {/* Completed Reviews */}
-        <Card className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <CheckCircle className="h-5 w-5 text-emerald-600" />
-            <div className="font-medium">Completed Reviews ({completedReviews.length})</div>
+        <Card className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+              <div className="text-sm sm:text-base font-medium">Completed Reviews ({completedReviews.length})</div>
+            </div>
             {completedReviews.length > 0 && (
-              <Badge variant="outline" className="ml-2">
+              <Badge variant="outline" className="self-start sm:self-auto">
                 Editable until Admin decides
               </Badge>
             )}
           </div>
           
           {completedReviews.length === 0 ? (
-            <div className="text-center py-8 text-slate-600">
-              <CheckCircle className="h-12 w-12 mx-auto mb-2 text-slate-400" />
-              <div className="text-sm">No completed reviews yet.</div>
+            <div className="text-center py-6 sm:py-8 text-slate-600">
+              <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 mx-auto mb-2 text-slate-400" />
+              <div className="text-xs sm:text-sm">No completed reviews yet.</div>
               <div className="text-xs text-slate-500">Complete pending reviews above to see them here</div>
             </div>
           ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
               {completedReviews.map(review => {
                 const applicationStatus = review.application?.status || 'PENDING';
                 const isAdminDecided = applicationStatus === 'APPROVED' || applicationStatus === 'REJECTED';
                 
                 return (
-                  <div key={review.id} className={`border rounded-lg p-4 ${
+                  <div key={review.id} className={`border rounded-lg p-3 sm:p-4 ${
                     isAdminDecided ? 'bg-slate-50 border-slate-200' : 'bg-green-50 border-green-200'
                   }`}>
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-3 gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={`font-medium ${isAdminDecided ? 'text-slate-800' : 'text-green-800'}`}>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
+                          <div className={`text-sm sm:text-base font-medium ${isAdminDecided ? 'text-slate-800' : 'text-green-800'}`}>
                             {review.student?.name}
                           </div>
-                          <Badge 
-                            variant={review.fielderRecommendation === 'STRONGLY_APPROVE' ? 'default' : 
-                                   review.fielderRecommendation === 'APPROVE' ? 'secondary' :
-                                   review.fielderRecommendation === 'CONDITIONAL' ? 'outline' : 'destructive'}
-                            className="text-xs"
-                          >
-                            {review.fielderRecommendation?.replace('_', ' ') || 'No Recommendation'}
-                          </Badge>
-                          {review.verificationScore && (
-                            <Badge variant="outline" className="text-xs">
-                              Score: {review.verificationScore}%
+                          <div className="flex flex-wrap gap-2">
+                            <Badge 
+                              variant={review.fielderRecommendation === 'STRONGLY_APPROVE' ? 'default' : 
+                                     review.fielderRecommendation === 'APPROVE' ? 'secondary' :
+                                     review.fielderRecommendation === 'CONDITIONAL' ? 'outline' : 'destructive'}
+                              className="text-xs"
+                            >
+                              {review.fielderRecommendation?.replace('_', ' ') || 'No Recommendation'}
                             </Badge>
-                          )}
+                            {review.verificationScore && (
+                              <Badge variant="outline" className="text-xs">
+                                Score: {review.verificationScore}%
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         
-                        <div className="text-sm text-slate-600 mb-2">
+                        <div className="text-xs sm:text-sm text-slate-600 mb-2">
                           {review.student?.program} at {review.student?.university}
                         </div>
                         
@@ -394,7 +400,7 @@ export default function SubAdminDashboard() {
                         </div>
                         
                         {review.recommendationReason && (
-                          <div className={`text-sm text-slate-700 rounded p-2 border ${
+                          <div className={`text-xs sm:text-sm text-slate-700 rounded p-2 border break-words ${
                             isAdminDecided ? 'bg-white border-slate-200' : 'bg-white border-green-200'
                           }`}>
                             <strong>Reason:</strong> {review.recommendationReason}
@@ -402,17 +408,17 @@ export default function SubAdminDashboard() {
                         )}
                         
                         {review.adminNotesRequired && (
-                          <div className="text-xs text-amber-700 bg-amber-50 rounded p-2 mt-2 border border-amber-200">
+                          <div className="text-xs text-amber-700 bg-amber-50 rounded p-2 mt-2 border border-amber-200 break-words">
                             <strong>Admin Attention:</strong> {review.adminNotesRequired}
                           </div>
                         )}
                       </div>
                       
-                      <div className="flex flex-col gap-2 ml-4">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:ml-4">
                         <Button 
                           size="sm" 
                           variant="outline" 
-                          className="rounded-2xl text-xs"
+                          className="rounded-2xl text-xs min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
                           onClick={() => navigate(`/sub-admin/review/${review.id}`)}
                         >
                           View Details
@@ -421,14 +427,14 @@ export default function SubAdminDashboard() {
                         {!isAdminDecided ? (
                           <Button 
                             size="sm" 
-                            className="rounded-2xl text-xs bg-amber-600 hover:bg-amber-700 text-white"
+                            className="rounded-2xl text-xs bg-amber-600 hover:bg-amber-700 text-white min-h-[44px] sm:min-h-[36px] w-full sm:w-auto"
                             onClick={() => reopenReview(review.id)}
                             disabled={loading}
                           >
                             ✏️ Edit Review
                           </Button>
                         ) : (
-                          <Badge variant="outline" className="text-xs justify-center">
+                          <Badge variant="outline" className="text-xs justify-center w-full sm:w-auto">
                             Final Decision Made
                           </Badge>
                         )}
@@ -436,7 +442,7 @@ export default function SubAdminDashboard() {
                         <Badge 
                           variant={applicationStatus === 'APPROVED' ? 'default' : 
                                  applicationStatus === 'REJECTED' ? 'destructive' : 'secondary'}
-                          className="text-xs justify-center"
+                          className="text-xs justify-center w-full sm:w-auto"
                         >
                           {applicationStatus === 'APPROVED' ? '✅ Approved' :
                            applicationStatus === 'REJECTED' ? '❌ Rejected' :
@@ -535,18 +541,18 @@ function ReviewModal({
   const OPTIONAL_DOCS = ["TRANSCRIPT", "DEGREE_CERTIFICATE", "ENROLLMENT_CERTIFICATE"];
   
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Review Application</h3>
-        <Button variant="ghost" onClick={() => setSelectedReview(null)}>×</Button>
+        <h3 className="text-base sm:text-lg font-semibold">Review Application</h3>
+        <Button variant="ghost" onClick={() => setSelectedReview(null)} className="min-h-[44px] sm:min-h-[36px]">×</Button>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <div className="text-sm font-medium text-slate-700">Student Information</div>
-          <div className="text-sm text-slate-600 mt-1">
+          <div className="text-xs sm:text-sm text-slate-600 mt-1 space-y-1">
             <div><strong>Name:</strong> {selectedReview.student?.name}</div>
-            <div><strong>Email:</strong> {selectedReview.student?.email}</div>
+            <div><strong>Email:</strong> <span className="break-all">{selectedReview.student?.email}</span></div>
             <div><strong>Program:</strong> {selectedReview.student?.program}</div>
             <div><strong>University:</strong> {selectedReview.student?.university}</div>
             <div><strong>GPA:</strong> {selectedReview.student?.gpa}</div>
@@ -555,22 +561,22 @@ function ReviewModal({
         
         <div>
           <div className="text-sm font-medium text-slate-700">Application Details</div>
-          <div className="text-sm text-slate-600 mt-1">
-            <div><strong>Student:</strong> {selectedReview.student?.name} • CNIC: {selectedReview.student?.cnic || 'Not provided'}</div>
+          <div className="text-xs sm:text-sm text-slate-600 mt-1 space-y-1">
+            <div><strong>Student:</strong> {selectedReview.student?.name}</div>
+            <div><strong>CNIC:</strong> {selectedReview.student?.cnic || 'Not provided'}</div>
             <div><strong>Status:</strong> {selectedReview.application?.status}</div>
             <div><strong>Term:</strong> {selectedReview.application?.term}</div>
-            <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}
-            </div>
+            <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}</div>
           </div>
         </div>
       </div>
 
       {/* Documents Section */}
-      <Card className="p-4 bg-slate-50">
+      <Card className="p-3 sm:p-4 bg-slate-50">
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium text-slate-900">📄 Student Documents</h4>
-            <div className="text-sm text-slate-600">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h4 className="text-sm sm:text-base font-medium text-slate-900">📄 Student Documents</h4>
+            <div className="text-xs sm:text-sm text-slate-600">
               {docs.length} uploaded • {REQUIRED_DOCS.filter(d => docs.some(doc => doc.type === d)).length}/{REQUIRED_DOCS.length} required
             </div>
           </div>
@@ -590,27 +596,27 @@ function ReviewModal({
                 return (
                   <div
                     key={docType}
-                    className={`flex items-center justify-between rounded-md border p-2 text-sm ${
+                    className={`flex items-center justify-between rounded-md border p-2 text-xs sm:text-sm ${
                       isUploaded ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       {isUploaded ? (
-                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
                       ) : (
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
                       )}
                       {isUploaded ? (
                         <a
                           href={`${API.baseURL}${uploaded.url}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-green-700 hover:text-green-900 hover:underline font-medium"
+                          className="text-green-700 hover:text-green-900 hover:underline font-medium truncate"
                         >
                           📁 {uploaded.originalName || docType.replaceAll("_", " ")}
                         </a>
                       ) : (
-                        <span className="font-medium text-red-600">{docType.replaceAll("_", " ")} - Missing</span>
+                        <span className="font-medium text-red-600 truncate">{docType.replaceAll("_", " ")} - Missing</span>
                       )}
                     </div>
                   </div>
@@ -628,15 +634,15 @@ function ReviewModal({
                     return (
                       <div
                         key={docType}
-                        className="flex items-center justify-between rounded-md border p-2 text-sm bg-blue-50 border-blue-200"
+                        className="flex items-center justify-between rounded-md border p-2 text-xs sm:text-sm bg-blue-50 border-blue-200"
                       >
-                        <div className="flex items-center gap-2">
-                          <CheckCircle className="h-4 w-4 text-blue-600" />
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <CheckCircle className="h-4 w-4 text-blue-600 flex-shrink-0" />
                           <a
                             href={`${API.baseURL}${uploaded.url}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-blue-700 hover:text-blue-900 hover:underline font-medium"
+                            className="text-blue-700 hover:text-blue-900 hover:underline font-medium truncate"
                           >
                             📁 {uploaded.originalName || docType.replaceAll("_", " ")}
                           </a>
@@ -660,15 +666,15 @@ function ReviewModal({
                     {additionalDocs.map((d) => (
                       <div
                         key={d.id}
-                        className="flex items-center justify-between rounded-md border p-2 text-sm bg-gray-50 border-gray-200"
+                        className="flex items-center justify-between rounded-md border p-2 text-xs sm:text-sm bg-gray-50 border-gray-200"
                       >
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-gray-600" />
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <FileText className="h-4 w-4 text-gray-600 flex-shrink-0" />
                           <a
                             href={`${API.baseURL}${d.url}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-gray-700 hover:text-gray-900 hover:underline font-medium"
+                            className="text-gray-700 hover:text-gray-900 hover:underline font-medium truncate"
                           >
                             📁 {d.originalName || d.type.replaceAll("_", " ")}
                           </a>
@@ -687,7 +693,7 @@ function ReviewModal({
         <div>
           <label className="text-sm font-medium text-slate-700">Review Notes</label>
           <textarea 
-            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm" 
+            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm min-h-[44px]" 
             rows={4}
             placeholder="Enter your review notes..."
             value={notes}
@@ -698,7 +704,7 @@ function ReviewModal({
         <div>
           <label className="text-sm font-medium text-slate-700">Recommendation</label>
           <select 
-            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-2xl border px-3 py-2 text-sm min-h-[44px]"
             value={recommendation}
             onChange={(e) => setRecommendation(e.target.value)}
           >
@@ -710,11 +716,11 @@ function ReviewModal({
         </div>
 
         {recommendation === "REQUEST_INFO" && (
-          <div className="border-l-4 border-amber-400 bg-amber-50 p-4 space-y-3">
+          <div className="border-l-4 border-amber-400 bg-amber-50 p-3 sm:p-4 space-y-3">
             <div className="text-sm font-medium text-amber-800">Request Missing Information</div>
             <div>
               <textarea 
-                className="w-full rounded-2xl border px-3 py-2 text-sm" 
+                className="w-full rounded-2xl border px-3 py-2 text-sm min-h-[44px]" 
                 rows={3}
                 placeholder="List missing items (comma or newline separated)..."
                 value={missingItems}
@@ -723,7 +729,7 @@ function ReviewModal({
             </div>
             <div>
               <textarea 
-                className="w-full rounded-2xl border px-3 py-2 text-sm" 
+                className="w-full rounded-2xl border px-3 py-2 text-sm min-h-[44px]" 
                 rows={2}
                 placeholder="Additional note to student (optional)..."
                 value={missingNote}
@@ -731,7 +737,7 @@ function ReviewModal({
               />
             </div>
             <Button 
-              className="rounded-2xl" 
+              className="rounded-2xl min-h-[44px] w-full sm:w-auto" 
               onClick={() => requestMissingInfo(selectedReview.id)}
             >
               Send Missing Info Request
@@ -740,9 +746,9 @@ function ReviewModal({
         )}
       </div>
 
-      <div className="flex gap-2 pt-4">
+      <div className="flex flex-col sm:flex-row gap-2 pt-4">
         <Button 
-          className="rounded-2xl" 
+          className="rounded-2xl min-h-[44px] w-full sm:w-auto" 
           onClick={() => updateReview(selectedReview.id)}
           disabled={!notes.trim() || !recommendation}
         >
@@ -750,7 +756,7 @@ function ReviewModal({
         </Button>
         <Button 
           variant="outline" 
-          className="rounded-2xl" 
+          className="rounded-2xl min-h-[44px] w-full sm:w-auto" 
           onClick={() => setSelectedReview(null)}
         >
           Cancel

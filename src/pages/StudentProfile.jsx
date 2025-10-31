@@ -219,11 +219,11 @@ export default function StudentProfile() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">My Profile</h1>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <h1 className="text-xl sm:text-2xl font-semibold">My Profile</h1>
 
-      <Card className={`p-4 border ${completeness.isComplete && !completeness.hasValidationErrors ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
-        <div className="text-sm text-slate-800">
+      <Card className={`p-3 sm:p-4 border ${completeness.isComplete && !completeness.hasValidationErrors ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+        <div className="text-xs sm:text-sm text-slate-800">
           Profile completeness: <strong>{completeness.percent}%</strong>
           <div className="mt-1 text-slate-600">
             {getCompletionMessage(completeness)}
@@ -231,16 +231,16 @@ export default function StudentProfile() {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <form onSubmit={onSubmit} className="grid gap-4 md:grid-cols-2">
+      <Card className="p-4 sm:p-6">
+        <form onSubmit={onSubmit} className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
           {/* CNIC */}
           <div>
-            <label className="block text-sm mb-1">CNIC</label>
+            <label className="block text-xs sm:text-sm mb-1">CNIC</label>
             <Input
               value={form.cnic}
               onChange={(e) => setVal("cnic", formatCNIC(e.target.value))}
               placeholder="12345-1234567-1"
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.cnic ? (
               <p className="text-xs text-rose-600 mt-1">{errors.cnic}</p>
@@ -253,12 +253,12 @@ export default function StudentProfile() {
 
           {/* DOB */}
           <div>
-            <label className="block text-sm mb-1">Date of Birth</label>
+            <label className="block text-xs sm:text-sm mb-1">Date of Birth</label>
             <Input
               type="date"
               value={form.dateOfBirth}
               onChange={(e) => setVal("dateOfBirth", e.target.value)}
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.dateOfBirth && (
               <p className="text-xs text-rose-600 mt-1">{errors.dateOfBirth}</p>
@@ -270,11 +270,11 @@ export default function StudentProfile() {
 
           {/* Guardian Name */}
           <div>
-            <label className="block text-sm mb-1">Guardian Name</label>
+            <label className="block text-xs sm:text-sm mb-1">Guardian Name</label>
             <Input
               value={form.guardianName}
               onChange={(e) => setVal("guardianName", e.target.value)}
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.guardianName && (
               <p className="text-xs text-rose-600 mt-1">
@@ -285,14 +285,14 @@ export default function StudentProfile() {
 
           {/* Guardian CNIC */}
           <div>
-            <label className="block text-sm mb-1">Guardian CNIC</label>
+            <label className="block text-xs sm:text-sm mb-1">Guardian CNIC</label>
             <Input
               value={form.guardianCnic}
               onChange={(e) =>
                 setVal("guardianCnic", formatCNIC(e.target.value))
               }
               placeholder="12345-1234567-1"
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.guardianCnic ? (
               <p className="text-xs text-rose-600 mt-1">
@@ -307,12 +307,12 @@ export default function StudentProfile() {
 
           {/* Phone */}
           <div>
-            <label className="block text-sm mb-1">Phone</label>
+            <label className="block text-xs sm:text-sm mb-1">Phone</label>
             <Input
               value={form.phone}
               onChange={(e) => setVal("phone", e.target.value)}
               placeholder="+92XXXXXXXXXX or 03XXXXXXXXX"
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.phone && (
               <p className="text-xs text-rose-600 mt-1">{errors.phone}</p>
@@ -320,13 +320,13 @@ export default function StudentProfile() {
           </div>
 
           {/* Address */}
-          <div className="md:col-span-1">
-            <label className="block text-sm mb-1">Address</label>
+          <div className="sm:col-span-1">
+            <label className="block text-xs sm:text-sm mb-1">Address</label>
             <textarea
               rows={3}
               value={form.address}
               onChange={(e) => setVal("address", e.target.value)}
-              className="w-full rounded-2xl border px-3 py-2 text-sm"
+              className="w-full rounded-2xl border px-3 py-2 text-sm min-h-[44px]"
               placeholder="House number, Street name/number, name of area"
             />
             {errors.address && (
@@ -336,11 +336,11 @@ export default function StudentProfile() {
 
           {/* City */}
           <div>
-            <label className="block text-sm mb-1">City</label>
+            <label className="block text-xs sm:text-sm mb-1">City</label>
             <Input
               value={form.city}
               onChange={(e) => setVal("city", e.target.value)}
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
             />
             {errors.city && (
               <p className="text-xs text-rose-600 mt-1">{errors.city}</p>
@@ -349,9 +349,9 @@ export default function StudentProfile() {
 
           {/* Province */}
           <div>
-            <label className="block text-sm mb-1">Province</label>
+            <label className="block text-xs sm:text-sm mb-1">Province</label>
             <select
-              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
               value={form.province}
               onChange={(e) => setVal("province", e.target.value)}
             >
@@ -370,17 +370,17 @@ export default function StudentProfile() {
           </div>
 
           {/* Current Education Section Header */}
-          <div className="md:col-span-2">
-            <h3 className="text-lg font-semibold text-blue-800 mb-3">Current Education</h3>
+          <div className="sm:col-span-2">
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Current Education</h3>
           </div>
 
           {/* Current Institution */}
           <div>
-            <label className="block text-sm mb-1">Current Institution</label>
+            <label className="block text-xs sm:text-sm mb-1">Current Institution</label>
             <Input
               value={form.currentInstitution}
               onChange={(e) => setVal("currentInstitution", e.target.value)}
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
               placeholder="e.g., ABC College"
             />
             {errors.currentInstitution && (
@@ -390,11 +390,11 @@ export default function StudentProfile() {
 
           {/* Current City */}
           <div>
-            <label className="block text-sm mb-1">Current Institution City</label>
+            <label className="block text-xs sm:text-sm mb-1">Current Institution City</label>
             <Input
               value={form.currentCity}
               onChange={(e) => setVal("currentCity", e.target.value)}
-              className="rounded-2xl"
+              className="rounded-2xl min-h-[44px]"
               placeholder="e.g., Lahore"
             />
             {errors.currentCity && (
@@ -604,10 +604,10 @@ export default function StudentProfile() {
           </div>
 
           {/* Career Goals */}
-          <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Career Goals & Aspirations</label>
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm mb-1">Career Goals & Aspirations</label>
             <textarea
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
               rows={3}
               placeholder="Describe your post-graduation career goals and how you plan to contribute to your community/field..."
               value={form.careerGoals}
@@ -623,10 +623,10 @@ export default function StudentProfile() {
           </div>
 
           {/* Academic Achievements */}
-          <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Academic Achievements & Awards</label>
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm mb-1">Academic Achievements & Awards</label>
             <textarea
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
               rows={2}
               placeholder="List any academic honors, awards, competitions, or special recognition you've received..."
               value={form.academicAchievements}
@@ -642,10 +642,10 @@ export default function StudentProfile() {
           </div>
 
           {/* Community Involvement */}
-          <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Community Involvement & Leadership</label>
+          <div className="sm:col-span-2">
+            <label className="block text-xs sm:text-sm mb-1">Community Involvement & Leadership</label>
             <textarea
-              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[44px]"
               rows={2}
               placeholder="Describe any volunteer work, community service, leadership roles, or social initiatives you've been involved in..."
               value={form.communityInvolvement}
@@ -660,8 +660,8 @@ export default function StudentProfile() {
             )}
           </div>
 
-          <div className="md:col-span-2 flex justify-end">
-            <Button type="submit" disabled={saving} className="rounded-2xl">
+          <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
+            <Button type="submit" disabled={saving} className="rounded-2xl min-h-[44px] w-full sm:w-auto">
               {saving ? "Saving…" : "Save Profile"}
             </Button>
           </div>

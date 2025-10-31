@@ -17,7 +17,7 @@ const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
       placeholder={placeholder}
       value={value}
       onChange={onChange}
-      className="pr-10"
+      className="pr-10 min-h-[44px]"
     />
     <button
       type="button"
@@ -200,7 +200,6 @@ export const ApplicationForm = () => {
       }
 
       setIsRegistered(true);
-      toast.success("✅ Account created successfully! Please continue with your application.");
       
       // Move to Step 2
       setStep(2);
@@ -650,16 +649,16 @@ export const ApplicationForm = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Student Application</h1>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <h1 className="text-xl sm:text-2xl font-semibold">Student Application</h1>
 
-      <Card className="p-6 space-y-6 hover:shadow-lg transition-shadow duration-300">
+      <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6 hover:shadow-lg transition-shadow duration-300">
         {/* stepper */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-2 sm:gap-3">
           {[1, 2, 3].map((n) => (
             <div
               key={n}
-              className={`h-8 w-8 rounded-full grid place-items-center text-sm ${
+              className={`h-8 w-8 sm:h-10 sm:w-10 rounded-full grid place-items-center text-xs sm:text-sm ${
                 n <= step ? "bg-green-600 text-white" : "bg-gray-200 text-gray-600"
               }`}
             >
@@ -670,18 +669,18 @@ export const ApplicationForm = () => {
 
         {/* STEP 1 — identity + credentials */}
         {step === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Student Login Option */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-medium text-blue-900">Already have an account?</h3>
-                  <p className="text-sm text-blue-700">Sign in to continue your application</p>
+                  <h3 className="text-sm sm:text-base font-medium text-blue-900">Already have an account?</h3>
+                  <p className="text-xs sm:text-sm text-blue-700">Sign in to continue your application</p>
                 </div>
                 <Button 
                   variant="outline" 
                   onClick={handleStudentLogin}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  className="border-blue-300 text-blue-700 hover:bg-blue-100 min-h-[44px] w-full sm:w-auto"
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Student Login
@@ -690,12 +689,13 @@ export const ApplicationForm = () => {
             </div>
 
             {/* Registration Form */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <Input
                 placeholder="Your Name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 required
+                className="min-h-[44px]"
               />
               <Input
                 placeholder="Your Email"
@@ -703,6 +703,7 @@ export const ApplicationForm = () => {
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
+                className="min-h-[44px]"
               />
               <PasswordInput
                 placeholder="Create Password"
@@ -720,7 +721,7 @@ export const ApplicationForm = () => {
               />
               
               <select
-                className="rounded-2xl border px-3 py-2 text-sm"
+                className="rounded-2xl border px-3 py-2 text-sm min-h-[44px] w-full"
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
                 required
@@ -733,12 +734,12 @@ export const ApplicationForm = () => {
             </div>
 
             {/* Personal Introduction */}
-            <div className="md:col-span-2 space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
+            <div className="sm:col-span-2 space-y-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">
                 Tell us about yourself and your family <span className="text-gray-500">(Optional but recommended)</span>
               </label>
               <textarea
-                className="w-full rounded-2xl border px-3 py-2 text-sm resize-none"
+                className="w-full rounded-2xl border px-3 py-2 text-sm resize-none min-h-[44px]"
                 rows={4}
                 placeholder="Share a brief introduction about yourself, your background, family situation, interests, and what motivates you to pursue higher education. This helps potential sponsors understand your story better."
                 value={form.personalIntroduction}
@@ -750,10 +751,11 @@ export const ApplicationForm = () => {
               </div>
             </div>
 
-            <div className="md:col-span-2 flex justify-end">
+            <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
               <Button
                 onClick={handleStep1Registration}
                 disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender}
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 {loading ? "Creating Account..." : "Create Account & Continue"}
               </Button>
@@ -763,15 +765,16 @@ export const ApplicationForm = () => {
 
         {/* STEP 2 — education basics */}
         {step === 2 && (
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Country Selection - Searchable Input */}
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <Input
                 placeholder="Country where target university is located (type to search: pk, pakistan, usa, uk...)"
                 value={form.country}
                 onChange={(e) => handleCountryChange(e.target.value)}
                 list="countries"
                 required
+                className="min-h-[44px]"
               />
               <datalist id="countries">
                 <option value="Pakistan">🇵🇰 Pakistan</option>
@@ -797,13 +800,14 @@ export const ApplicationForm = () => {
 
             {/* University Selection - Shows after country is selected */}
             {form.country && (
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2">
                 <Input
                   placeholder="Select or type university name"
                   value={form.university}
                   onChange={(e) => handleUniversityChange(e.target.value)}
                   list="universities"
                   required
+                  className="min-h-[44px]"
                 />
                 <datalist id="universities">
                   {universitiesByCountry[form.country]?.map((uni) => (
@@ -816,12 +820,13 @@ export const ApplicationForm = () => {
 
             {/* Custom University Input - Shows when "Other" is selected */}
             {form.university === "Other" && (
-              <div className="md:col-span-2">
+              <div className="sm:col-span-2">
                 <Input
                   placeholder="Enter university name"
                   value={form.customUniversity}
                   onChange={(e) => setForm({ ...form, customUniversity: e.target.value })}
                   required
+                  className="min-h-[44px]"
                 />
               </div>
             )}
@@ -832,6 +837,7 @@ export const ApplicationForm = () => {
               value={form.term}
               onChange={(e) => setForm({ ...form, term: e.target.value })}
               required
+              className="min-h-[44px]"
             />
 
             {/* Graduation Year Field - New Position */}
@@ -843,6 +849,7 @@ export const ApplicationForm = () => {
               value={form.gradYear}
               onChange={(e) => setForm({ ...form, gradYear: e.target.value })}
               required
+              className="min-h-[44px]"
             />
 
             {/* Specific Degree Program Field - New Position */}
@@ -851,6 +858,7 @@ export const ApplicationForm = () => {
               value={form.program}
               onChange={(e) => setForm({ ...form, program: e.target.value })}
               required
+              className="min-h-[44px]"
             />
 
             {/* GPA Field - Last Position */}
@@ -859,10 +867,11 @@ export const ApplicationForm = () => {
               value={form.gpa}
               onChange={(e) => setForm({ ...form, gpa: e.target.value })}
               required
+              className="min-h-[44px]"
             />
 
-            <div className="md:col-span-2 flex justify-between">
-              <Button variant="outline" onClick={back} disabled={user ? false : true}>
+            <div className="sm:col-span-2 flex flex-col sm:flex-row justify-between gap-3">
+              <Button variant="outline" onClick={back} disabled={user ? false : true} className="min-h-[44px] w-full sm:w-auto">
                 Back
               </Button>
               <Button 
@@ -876,6 +885,7 @@ export const ApplicationForm = () => {
                   !form.gpa || 
                   !form.gradYear
                 }
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 Next
               </Button>
@@ -887,12 +897,12 @@ export const ApplicationForm = () => {
         {step === 3 && (
           <div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Currency Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Currency</label>
+              <label className="text-xs sm:text-sm font-medium text-gray-700">Currency</label>
               <select
-                className="w-full md:w-1/2 rounded-2xl border px-3 py-2 text-sm"
+                className="w-full sm:w-1/2 rounded-2xl border px-3 py-2 text-sm min-h-[44px]"
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
@@ -912,11 +922,11 @@ export const ApplicationForm = () => {
 
             {/* Financial Breakdown */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-800">Financial Details</h3>
+              <h3 className="text-base sm:text-lg font-medium text-gray-800">Financial Details</h3>
               
               {/* University Fee */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-xs sm:text-sm font-medium text-gray-700">
                   University Fee ({form.currency})
                 </label>
                 <Input
@@ -926,6 +936,7 @@ export const ApplicationForm = () => {
                   value={form.universityFee}
                   onChange={(e) => handleUniversityFeeChange(e.target.value)}
                   required
+                  className="min-h-[44px]"
                 />
                 <p className="text-xs text-slate-500">
                   Include tuition, registration, lab fees, and other academic costs
@@ -934,7 +945,7 @@ export const ApplicationForm = () => {
 
               {/* Living Expenses */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">
                   Books + Living Expenses ({form.currency})
                 </label>
                 <Input
@@ -944,6 +955,7 @@ export const ApplicationForm = () => {
                   value={form.livingExpenses}
                   onChange={(e) => handleLivingExpensesChange(e.target.value)}
                   required
+                  className="min-h-[44px]"
                 />
                 <p className="text-xs text-slate-500">
                   Include books, accommodation, food, transport, and other living costs
@@ -952,7 +964,7 @@ export const ApplicationForm = () => {
 
               {/* Total (Auto-calculated) */}
               <div className="space-y-2 bg-slate-50 p-3 rounded-lg border-2 border-dashed border-slate-300">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">
                   Total Expense ({form.currency})
                 </label>
                 <div className="relative">
@@ -961,7 +973,7 @@ export const ApplicationForm = () => {
                     type="number"
                     value={form.totalExpense}
                     readOnly
-                    className="bg-white cursor-not-allowed font-medium"
+                    className="bg-white cursor-not-allowed font-medium min-h-[44px]"
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <span className="text-xs text-blue-600 font-medium">Auto-calculated</span>
@@ -974,7 +986,7 @@ export const ApplicationForm = () => {
 
               {/* Scholarship Amount */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">
                   Scholarship/Financial Aid Amount ({form.currency})
                 </label>
                 <Input
@@ -985,6 +997,7 @@ export const ApplicationForm = () => {
                   value={form.scholarshipAmount}
                   onChange={(e) => handleScholarshipChange(e.target.value)}
                   required
+                  className="min-h-[44px]"
                 />
                 <p className="text-xs text-slate-500">
                   Amount you've already secured from scholarships, family, or other sources
@@ -993,7 +1006,7 @@ export const ApplicationForm = () => {
 
               {/* Required Amount (Auto-calculated) */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">
                   Required Amount ({form.currency})
                 </label>
                 <div className="relative">
@@ -1002,7 +1015,7 @@ export const ApplicationForm = () => {
                     type="number"
                     value={form.amount}
                     readOnly
-                    className="bg-gray-50 cursor-not-allowed"
+                    className="bg-gray-50 cursor-not-allowed min-h-[44px]"
                   />
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     <span className="text-xs text-green-600 font-medium">Auto-calculated</span>
@@ -1015,9 +1028,9 @@ export const ApplicationForm = () => {
 
               {/* Financial Summary Card */}
               {form.totalExpense && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Financial Summary</h4>
-                  <div className="space-y-1 text-sm">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                  <h4 className="text-sm sm:text-base font-medium text-blue-900 mb-2">Financial Summary</h4>
+                  <div className="space-y-1 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span>Total Expense:</span>
                       <span className="font-medium">{Number(form.totalExpense || 0).toLocaleString()} {form.currency}</span>
@@ -1038,20 +1051,20 @@ export const ApplicationForm = () => {
 
             {/* Application Review */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-slate-800">Application Review</h3>
-              <div className="rounded-lg border p-4 text-sm space-y-2">
+              <h3 className="text-base sm:text-lg font-medium text-slate-800">Application Review</h3>
+              <div className="rounded-lg border p-3 sm:p-4 text-xs sm:text-sm space-y-2">
                 <p className="mb-3 text-slate-600 font-medium">Please review your application before submitting.</p>
                 
                 {/* Personal Information */}
                 <div className="space-y-1">
-                  <h4 className="font-medium text-slate-700 text-base">Personal Information</h4>
+                  <h4 className="font-medium text-slate-700 text-sm sm:text-base">Personal Information</h4>
                   <p><strong>Name:</strong> {user?.name || form.name || "[Your Name]"}</p>
                   <p><strong>Email:</strong> {user?.email || form.email || "[Your Email]"}</p>
                 </div>
 
                 {/* Academic Information */}
                 <div className="space-y-1 pt-2">
-                  <h4 className="font-medium text-slate-700 text-base">Academic Information</h4>
+                  <h4 className="font-medium text-slate-700 text-sm sm:text-base">Academic Information</h4>
                   <p><strong>Country:</strong> {form.country || "[University Country]"}</p>
                   <p><strong>University:</strong> {form.university === "Other" ? form.customUniversity : form.university || "[Your University]"}</p>
                   <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
@@ -1060,7 +1073,7 @@ export const ApplicationForm = () => {
 
                 {/* Financial Information */}
                 <div className="space-y-1 pt-2">
-                  <h4 className="font-medium text-slate-700 text-base">Financial Information</h4>
+                  <h4 className="font-medium text-slate-700 text-sm sm:text-base">Financial Information</h4>
                   <p><strong>Total Expense:</strong> {form.totalExpense ? `${Number(form.totalExpense).toLocaleString()} ${form.currency}` : "[Total Expense]"}</p>
                   <p><strong>Scholarship:</strong> {form.scholarshipAmount ? `${Number(form.scholarshipAmount).toLocaleString()} ${form.currency}` : "0 " + form.currency}</p>
                   <p><strong>Required Amount:</strong> <span className="text-blue-600 font-semibold">{form.amount ? `${Number(form.amount).toLocaleString()} ${form.currency}` : "[Required Amount]"}</span></p>
@@ -1070,13 +1083,14 @@ export const ApplicationForm = () => {
 
 
 
-            <div className="flex justify-between">
-              <Button type="button" variant="outline" onClick={back}>
+            <div className="flex flex-col sm:flex-row justify-between gap-3">
+              <Button type="button" variant="outline" onClick={back} className="min-h-[44px] w-full sm:w-auto">
                 Back
               </Button>
               <Button 
                 type="submit" 
                 disabled={loading}
+                className="min-h-[44px] w-full sm:w-auto"
               >
                 {loading ? "Submitting..." : "Submit Application"}
               </Button>

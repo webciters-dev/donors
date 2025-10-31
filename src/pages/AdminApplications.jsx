@@ -379,55 +379,55 @@ export const AdminApplications = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Applications Management</h1>
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <h1 className="text-xl sm:text-2xl font-semibold">Applications Management</h1>
         <Input
           placeholder="Search by student, term, university…"
-          className="w-80 rounded-2xl"
+          className="w-full sm:w-80 rounded-2xl min-h-[44px]"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="pending" className="flex items-center gap-2">
-            Pending Review
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1">
+          <TabsTrigger value="pending" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>Pending Review</span>
             {stats.pending > 0 && (
-              <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-800">
+              <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs">
                 {stats.pending}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="approved" className="flex items-center gap-2">
-            Approved
+          <TabsTrigger value="approved" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>Approved</span>
             {stats.approved > 0 && (
-              <Badge variant="default" className="ml-1 bg-green-100 text-green-800">
+              <Badge variant="default" className="bg-green-100 text-green-800 text-xs">
                 {stats.approved}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex items-center gap-2">
-            Rejected
+          <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>Rejected</span>
             {stats.rejected > 0 && (
-              <Badge variant="destructive" className="ml-1">
+              <Badge variant="destructive" className="text-xs">
                 {stats.rejected}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="all" className="flex items-center gap-2">
-            All Applications
+          <TabsTrigger value="all" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>All Applications</span>
             {stats.all > 0 && (
-              <Badge variant="outline" className="ml-1">
+              <Badge variant="outline" className="text-xs">
                 {stats.all}
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="sponsored" className="flex items-center gap-2">
-            Sponsored
+          <TabsTrigger value="sponsored" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>Sponsored</span>
             {stats.sponsored > 0 && (
-              <Badge variant="default" className="ml-1 bg-blue-100 text-blue-800">
+              <Badge variant="default" className="bg-blue-100 text-blue-800 text-xs">
                 {stats.sponsored}
               </Badge>
             )}

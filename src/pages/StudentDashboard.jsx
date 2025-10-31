@@ -182,8 +182,8 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Student Dashboard</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-semibold">Student Dashboard</h1>
         <div className="text-sm text-slate-600">
           Welcome back, {user?.name || user?.email}
         </div>
@@ -262,7 +262,7 @@ export default function StudentDashboard() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-slate-600">Submitted</div>
                     <div className="font-medium">
@@ -292,7 +292,7 @@ export default function StudentDashboard() {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  className="ml-2"
+                  className="ml-2 min-h-[44px]"
                   onClick={() => navigate('/apply')}
                 >
                   Create Application
@@ -399,7 +399,7 @@ export default function StudentDashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">

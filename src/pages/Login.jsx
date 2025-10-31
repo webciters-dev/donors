@@ -106,8 +106,6 @@ export default function Login() {
       // Save into auth context (this should persist token inside the context)
       login({ token: data.token, user: data.user });
 
-      toast.success("Welcome back!");
-
       // Prefer explicit redirect target, else route by role
       if (redirectTarget) {
         navigate(redirectTarget, { replace: true });

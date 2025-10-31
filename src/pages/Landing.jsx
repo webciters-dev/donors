@@ -38,22 +38,27 @@ export const Landing = ({ go }) => {
     <div className="space-y-12">
       {/* Hero Section */}
       <section className="text-center space-y-6">
-        <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-900 leading-tight px-4">
           Empowering Education Through
           <span className="text-green-600"> Compassionate Giving</span>
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
           Connect with deserving students across Pakistan and help them achieve their educational dreams. 
           Transparent funding platform by Akhuwat USA with 100% secure donations.
         </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button onClick={() => go("apply")} size="lg">
-            Request Financial Aid
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 px-4">
+          <Button 
+            onClick={() => go("apply")} 
+            size="lg"
+            className="w-full sm:w-auto min-h-[44px]"
+          >
+            Apply for Sponsorship
           </Button>
           <Button 
             onClick={() => navigate("/donor-signup")} 
             variant="outline" 
             size="lg"
+            className="w-full sm:w-auto min-h-[44px]"
           >
             Donor Signup
           </Button>
@@ -75,51 +80,51 @@ export const Landing = ({ go }) => {
       </section>
 
       {/* KPIs Section - Dynamic Statistics */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <Card className="p-6 text-center hover:shadow-xl transition-shadow duration-300">
-          <div className="text-3xl font-bold text-green-600">{stats.sponsored}</div>
-          <div className="text-sm text-gray-600 font-medium">Students Sponsored</div>
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 px-4">
+        <Card className="p-4 md:p-6 text-center hover:shadow-xl transition-shadow duration-300">
+          <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.sponsored}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Students Sponsored</div>
         </Card>
-        <Card className="p-6 text-center hover:shadow-xl transition-shadow duration-300">
-          <div className="text-3xl font-bold text-green-600">{stats.available}</div>
-          <div className="text-sm text-gray-600 font-medium">Students Available</div>
+        <Card className="p-4 md:p-6 text-center hover:shadow-xl transition-shadow duration-300">
+          <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.available}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Students Available</div>
         </Card>
-        <Card className="p-6 text-center hover:shadow-xl transition-shadow duration-300">
-          <div className="text-3xl font-bold text-green-600">{stats.universities}</div>
-          <div className="text-sm text-gray-600 font-medium">Universities</div>
+        <Card className="p-4 md:p-6 text-center hover:shadow-xl transition-shadow duration-300">
+          <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.universities}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Universities</div>
         </Card>
-        <Card className="p-6 text-center hover:shadow-xl transition-shadow duration-300">
-          <div className="text-3xl font-bold text-green-600">{stats.successRate}</div>
-          <div className="text-sm text-gray-600 font-medium">Success Rate</div>
+        <Card className="p-4 md:p-6 text-center hover:shadow-xl transition-shadow duration-300">
+          <div className="text-2xl md:text-3xl font-bold text-green-600">{stats.successRate}</div>
+          <div className="text-xs md:text-sm text-gray-600 font-medium">Success Rate</div>
         </Card>
       </section>
 
       {/* Features Section */}
-      <section className="grid md:grid-cols-3 gap-8">
+      <section className="grid md:grid-cols-3 gap-6 md:gap-8 px-4">
         <Card className="p-6 hover:shadow-xl transition-all duration-300 group">
-          <GraduationCap className="h-12 w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
+          <GraduationCap className="h-10 md:h-12 w-10 md:w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Whole-Student Sponsorships
           </h3>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed text-sm md:text-base">
             Sponsor complete educational journeys, not partial funding. Full transparency and direct impact.
           </p>
         </Card>
         <Card className="p-6 hover:shadow-xl transition-all duration-300 group">
-          <TrendingUp className="h-12 w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
+          <TrendingUp className="h-10 md:h-12 w-10 md:w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Interest-Free Repayments
           </h3>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed text-sm md:text-base">
             Students repay without interest, following Islamic principles. Sustainable and ethical financing.
           </p>
         </Card>
         <Card className="p-6 hover:shadow-xl transition-all duration-300 group">
-          <Building2 className="h-12 w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
+          <Building2 className="h-10 md:h-12 w-10 md:w-12 text-green-600 mb-4 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Built for Trust
           </h3>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed text-sm md:text-base">
             Rigorous verification, regular updates, and complete transparency in every transaction.
           </p>
         </Card>
