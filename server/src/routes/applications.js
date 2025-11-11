@@ -3,6 +3,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { optionalAuth } from "../middleware/auth.js";
 import { buildSnapshot } from "../lib/fx.js";
+import { sendApplicationConfirmationEmail } from "../lib/emailService.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -179,6 +180,25 @@ router.post("/", async (req, res) => {
       },
     });
 
+    // Send application confirmation email (async, non-blocking)
+    try {
+      await sendApplicationConfirmationEmail(
+        application.student.email,
+        application.student.name,
+        {
+          applicationId: application.id,
+          term: application.term,
+          amount: application.amount,
+          currency: application.currency,
+          university: application.student.university,
+          program: application.student.program
+        }
+      );
+    } catch (emailError) {
+      console.error("❌ Failed to send application confirmation email:", emailError);
+      // Don't fail the request if email fails
+    }
+
     res.status(201).json(application);
   } catch (error) {
     console.error("Error creating application:", error);
@@ -219,7 +239,7 @@ router.patch("/:id", async (req, res) => {
       }
 
       // Check required documents
-      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
       const uploadedTypes = application.student.documents.map(doc => doc.type);
       const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
 
@@ -328,7 +348,7 @@ router.patch("/:id/status", async (req, res) => {
       }
 
       // Check required documents
-      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
       const uploadedTypes = application.student.documents.map(doc => doc.type);
       const missingDocs = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
 

@@ -11,6 +11,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
+import AdminSettings from "@/components/AdminSettings";
+import InterviewManager from "@/components/InterviewManager";
 
 export const AdminHub = ({ go }) => {
   const navigate = useNavigate();
@@ -432,11 +434,13 @@ export const AdminHub = ({ go }) => {
       </div>
 
       <Tabs defaultValue="approved">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
           <TabsTrigger value="approved" className="text-xs sm:text-sm">Approved Students</TabsTrigger>
           <TabsTrigger value="sponsored" className="text-xs sm:text-sm">Sponsored Students</TabsTrigger>
           <TabsTrigger value="communications" className="text-xs sm:text-sm">Communications</TabsTrigger>
           <TabsTrigger value="applications" className="text-xs sm:text-sm">All Applications</TabsTrigger>
+          <TabsTrigger value="interviews" className="text-xs sm:text-sm">Interviews</TabsTrigger>
+          <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="approved" className="space-y-4">
@@ -800,6 +804,28 @@ export const AdminHub = ({ go }) => {
               ))
             )}
           </div>
+        </TabsContent>
+        
+        <TabsContent value="interviews" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">📅 Interview Management</h3>
+            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+              Admin Only
+            </Badge>
+          </div>
+          
+          <InterviewManager />
+        </TabsContent>
+        
+        <TabsContent value="settings" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">⚙️ Admin Settings</h3>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              Admin Only
+            </Badge>
+          </div>
+          
+          <AdminSettings />
         </TabsContent>
       </Tabs>
     </div>

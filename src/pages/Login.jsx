@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { Eye, EyeOff } from "lucide-react";
 import { API } from "@/lib/api";
+import { checkStudentProgress } from "@/lib/studentFlow";
 
 // Password input component with visibility toggle - moved outside to prevent re-creation
 const PasswordInput = ({ placeholder, value, onChange, autoComplete, showPassword, onToggleVisibility }) => (
@@ -37,7 +38,7 @@ const PasswordInput = ({ placeholder, value, onChange, autoComplete, showPasswor
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, login } = useAuth(); // expects login({ token, user })
+  const { user, login, token } = useAuth(); // Add token to get current auth token
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,19 +57,27 @@ export default function Login() {
       navigate(redirectTarget, { replace: true });
       return;
     }
-    goHomeByRole(user.role, user);
+    goHomeByRole(user.role, user, token);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const goHomeByRole = (role, userObj = null) => {
+  const goHomeByRole = async (role, userObj = null, token = null) => {
     if (role === "ADMIN") return navigate("/admin/applications", { replace: true });
     if (role === "STUDENT") {
-      // Route students based on their phase
+      // Route students based on their phase and progress
       const studentPhase = userObj?.studentPhase;
       if (studentPhase === 'ACTIVE') {
         return navigate("/student/active", { replace: true });
       } else {
-        return navigate("/my-application", { replace: true });
+        // For APPLICATION phase, check actual progress to determine correct step
+        try {
+          const redirectPath = await checkStudentProgress(userObj, token);
+          return navigate(redirectPath, { replace: true });
+        } catch (error) {
+          console.error('Error determining student step:', error);
+          // Fallback to my-application if progress check fails
+          return navigate("/my-application", { replace: true });
+        }
       }
     }
     if (role === "SUB_ADMIN") return navigate("/sub-admin", { replace: true });
@@ -110,7 +119,7 @@ export default function Login() {
       if (redirectTarget) {
         navigate(redirectTarget, { replace: true });
       } else {
-        goHomeByRole(data.user.role, data.user);
+        await goHomeByRole(data.user.role, data.user, data.token);
       }
     } catch (err) {
       console.error(err);

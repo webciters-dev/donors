@@ -24,6 +24,56 @@ router.get("/aggregate", async (_req, res) => {
 });
 
 /**
+ * GET /api/sponsorships/check
+ * Check if current donor has sponsored a specific student
+ * Required for donor-student messaging access control
+ */
+router.get("/check", requireAuth, async (req, res) => {
+  try {
+    const { role, id: userId } = req.user;
+    const { studentId } = req.query;
+
+    // Only donors can check sponsorship status
+    if (role !== "DONOR") {
+      return res.status(403).json({ error: "Only donors can check sponsorship status" });
+    }
+
+    if (!studentId) {
+      return res.status(400).json({ error: "studentId is required" });
+    }
+
+    // Get donor ID for this user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { donorId: true },
+    });
+
+    if (!user?.donorId) {
+      return res.json({ hasSponsorship: false });
+    }
+
+    // Check if this specific donor has sponsored this specific student
+    const sponsorship = await prisma.sponsorship.findFirst({
+      where: { 
+        donorId: user.donorId,
+        studentId: studentId,
+        status: "active"
+      }
+    });
+
+    console.log(`🔍 Sponsorship check: Donor ${user.donorId} -> Student ${studentId}: ${sponsorship ? 'HAS' : 'NO'} sponsorship`);
+
+    res.json({ 
+      hasSponsorship: !!sponsorship,
+      sponsorshipId: sponsorship?.id || null
+    });
+  } catch (error) {
+    console.error("❌ Failed to check sponsorship:", error);
+    res.status(500).json({ error: "Failed to check sponsorship status" });
+  }
+});
+
+/**
  * GET /api/sponsorships
  * - ADMIN: returns all sponsorships
  * - DONOR: returns only own sponsorships

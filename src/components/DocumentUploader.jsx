@@ -24,7 +24,6 @@ export default function DocumentUploader({ studentId, applicationId, onUploaded,
   const TYPES = [
     { key: "CNIC", label: "CNIC" },
     { key: "GUARDIAN_CNIC", label: "GUARDIAN CNIC" },
-    { key: "PHOTO", label: "PHOTO" },
     { key: "SSC_RESULT", label: "SSC RESULT" },
     { key: "HSSC_RESULT", label: "HSSC RESULT" },
     { key: "UNIVERSITY_CARD", label: "UNIVERSITY/COLLEGE CARD" },

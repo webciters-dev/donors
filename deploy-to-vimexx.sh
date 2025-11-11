@@ -62,12 +62,12 @@ JWT_SECRET=$(openssl rand -base64 64 | tr -d "\\n")
 MAX_FILE_SIZE=10485760
 UPLOAD_DIR=/var/www/awake/server/uploads
 
-# Email (configure if using email features)
-# EMAIL_HOST=smtp.your-email-provider.com
-# EMAIL_PORT=587
-# EMAIL_USER=your-email@domain.com  
-# EMAIL_PASS=your-email-password
-# EMAIL_FROM=noreply@${DOMAIN}
+# Email (Professional aircrew.nl configuration)
+EMAIL_HOST=mail.aircrew.nl
+EMAIL_PORT=587
+EMAIL_USER=noreply@aircrew.nl
+EMAIL_PASS=RoG*741#NoR
+EMAIL_FROM=AWAKE Connect <noreply@aircrew.nl>
 EOF
 
 echo "✅ Environment file created at /var/www/awake/server/.env.production"

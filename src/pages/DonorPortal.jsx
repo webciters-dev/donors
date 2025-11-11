@@ -24,7 +24,7 @@ import {
   BookOpen,
   Clock
 } from "lucide-react";
-import { CURRENCY_META, fmtAmount, getCurrencyFlag } from "@/lib/currency";
+import { CURRENCY_META, fmtAmount, fmtAmountDual, getCurrencyFlag } from "@/lib/currency";
 import { API } from "@/lib/api";
 
 // Program duration calculation helper - uses actual application data
@@ -238,7 +238,7 @@ export default function DonorPortal() {
                 <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                 <span className="text-xs sm:text-sm font-medium text-green-800">Total Pledged</span>
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-green-700">{fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
+                      <div className="text-2xl sm:text-3xl font-bold text-green-700">{fmtAmountDual(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')}</div>
               <div className="text-xs text-gray-600">Total amount sponsored/pledged</div>
             </div>
           </Card>
@@ -250,9 +250,9 @@ export default function DonorPortal() {
                 <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                 <span className="text-xs sm:text-sm font-bold text-green-800 uppercase tracking-wide">✅ Fully Paid</span>
               </div>
-              <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">
-                {fmtAmount(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
-              </div>
+                <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">
+                  {fmtAmountDual(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
+                </div>
               <div className="text-xs text-green-700 font-semibold leading-tight">
                 COMPLETE SPONSORSHIP<br/>
                 <span className="text-green-600">EDUCATION PROGRAM</span>
@@ -380,7 +380,7 @@ export default function DonorPortal() {
                           onClick={() => navigate(`/donor/payment/${s.id}`)}
                         >
                           <Heart className="h-4 w-4 mr-2" />
-                          Sponsor {fmtAmount(remaining, s.currency)}
+                          Sponsor {fmtAmountDual(remaining, s.currency)}
                         </Button>
                       )}
                     </div>
@@ -424,7 +424,7 @@ export default function DonorPortal() {
                       </div>
                       <div className="text-right space-y-1">
                         <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs">
-                          Total: {fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}
+                          Total: {fmtAmountDual(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}
                         </Badge>
                       </div>
                     </div>
@@ -434,11 +434,11 @@ export default function DonorPortal() {
                       <div className="text-xs font-medium text-slate-700 mb-2">Payment Status</div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div className="bg-emerald-100 p-2 rounded text-center">
-                          <div className="font-semibold text-emerald-700">{fmtAmount(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
+                          <div className="font-semibold text-emerald-700">{fmtAmountDual(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-emerald-600">Paid</div>
                         </div>
                         <div className="bg-orange-100 p-2 rounded text-center">
-                          <div className="font-semibold text-orange-700">{fmtAmount(yetToPayForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
+                          <div className="font-semibold text-orange-700">{fmtAmountDual(yetToPayForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-orange-600">Yet to pay</div>
                         </div>
                       </div>
@@ -541,7 +541,7 @@ export default function DonorPortal() {
                               ✓ FULLY SPONSORED
                             </Badge>
                           </div>
-                          <div className="text-2xl font-bold text-emerald-700">{fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
+                          <div className="text-2xl font-bold text-emerald-700">{fmtAmountDual(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
                           <div className="text-sm text-emerald-600">
                             <strong>Complete education sponsored</strong>
                           </div>

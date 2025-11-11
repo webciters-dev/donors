@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { API } from "@/lib/api";
+import { filterCountryOptions, getDonorFilterMessage } from "@/lib/countryFilter";
 
 // Country options with priority grouping
 const COUNTRY_OPTIONS = {
@@ -200,6 +201,10 @@ export default function DonorSignup() {
   const location = useLocation();
   const { login } = useAuth();
 
+  // Filter countries for Pakistan-only mode
+  const filteredCountryOptions = filterCountryOptions(COUNTRY_OPTIONS);
+  const filterMessage = getDonorFilterMessage();
+
   // If we were sent here from "Sponsor" we preserve the return target
   const redirectTo = location.state?.redirectTo || "/marketplace";
 
@@ -295,6 +300,19 @@ export default function DonorSignup() {
     <div className="space-y-6 mx-auto max-w-xl w-full">
       <h1 className="text-2xl font-semibold">Donor Sign Up</h1>
 
+      {/* Pakistan-only filter message */}
+      {filterMessage && (
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">{filterMessage.icon}</span>
+            <div>
+              <h3 className="font-medium text-green-900">{filterMessage.message}</h3>
+              <p className="text-sm text-green-700">{filterMessage.description}</p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-6">
         <form onSubmit={submit} className="grid gap-4">
           <Input
@@ -319,31 +337,37 @@ export default function DonorSignup() {
               <option value="">Select Country *</option>
               
               {/* Primary Donor Countries */}
-              <optgroup label="🔝 Primary Countries">
-                {COUNTRY_OPTIONS.primary.map((country) => (
-                  <option key={country.code} value={country.name}>
-                    {country.name}
-                  </option>
-                ))}
-              </optgroup>
+              {filteredCountryOptions.primary.length > 0 && (
+                <optgroup label="🔝 Primary Countries">
+                  {filteredCountryOptions.primary.map((country) => (
+                    <option key={country.code} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               
               {/* European Countries */}
-              <optgroup label="🇪🇺 European Countries">
-                {COUNTRY_OPTIONS.european.map((country) => (
-                  <option key={country.code} value={country.name}>
-                    {country.name}
-                  </option>
-                ))}
-              </optgroup>
+              {filteredCountryOptions.european.length > 0 && (
+                <optgroup label="🇪🇺 European Countries">
+                  {filteredCountryOptions.european.map((country) => (
+                    <option key={country.code} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
               
               {/* Other Countries */}
-              <optgroup label="🌍 Other Countries">
-                {COUNTRY_OPTIONS.other.map((country) => (
-                  <option key={country.code} value={country.name}>
-                    {country.name}
-                  </option>
-                ))}
-              </optgroup>
+              {filteredCountryOptions.other.length > 0 && (
+                <optgroup label="🌍 Other Countries">
+                  {filteredCountryOptions.other.map((country) => (
+                    <option key={country.code} value={country.name}>
+                      {country.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
             <Input
               placeholder="Phone number (optional)"

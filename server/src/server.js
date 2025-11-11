@@ -22,6 +22,12 @@ import requestsRouter from "./routes/requests.js";
 import exportRouter from "./routes/export.js";
 import studentProgressRouter from "./routes/student-progress.js";
 import studentRouter from "./routes/student.js";
+import statisticsRouter from "./routes/statistics.js";
+import universitiesRouter from "./routes/universities.js";
+import photosRouter from "./routes/photos.js";
+import videosRouter from "./routes/videos-simple.js";
+import boardMembersRouter from "./routes/boardMembers.js";
+import interviewsRouter from "./routes/interviews.js";
 
 
 dotenv.config();
@@ -53,6 +59,7 @@ const allowedOrigins = Array.from(
 app.use(
   helmet({
     contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin access for media files
   })
 );
 app.use(morgan("dev"));
@@ -105,11 +112,30 @@ app.use("/api/requests", requestsRouter);
 app.use("/api/export", exportRouter);
 app.use("/api/student-progress", studentProgressRouter);
 app.use("/api/student", studentRouter);
+app.use("/api/statistics", statisticsRouter);
+app.use("/api/universities", universitiesRouter);
+app.use("/api/photos", photosRouter);
+app.use("/api/videos", videosRouter);
+app.use("/api/board-members", boardMembersRouter);
+app.use("/api/interviews", interviewsRouter);
 
 
 // ⬇️ NEW for uploads
 app.use("/api/uploads", uploadsRouter);     // handles file upload API
-app.use("/uploads", express.static("uploads")); // serve uploaded files
+
+// Serve all static files including videos with proper headers
+app.use("/uploads", express.static("uploads", {
+  setHeaders: (res, path) => {
+    // Set proper headers for video files
+    if (path.includes('/videos/')) {
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Type', 'video/mp4');
+      // Enable CORS for video files
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Range');
+    }
+  }
+}));
 
 
 // ─────────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "../prismaClient.js";
+import { sendStudentWelcomeEmail, sendDonorWelcomeEmail, sendPasswordResetEmail } from "../lib/emailService.js";
 
 const router = express.Router();
 
@@ -126,7 +127,11 @@ router.post("/register-student", async (req, res) => {
       amount,
       currency,
       field,
+      degreeLevel,
       personalIntroduction,
+      photoUrl,
+      photoThumbnailUrl,
+      photoUploadedAt,
     } = req.body;
 
     if (!name || !email || !password) {
@@ -147,7 +152,11 @@ router.post("/register-student", async (req, res) => {
         gpa: typeof gpa === "number" ? gpa : undefined,
         gradYear: typeof gradYear === "number" ? gradYear : undefined,
         field: field ?? undefined,
+        degreeLevel: degreeLevel ?? undefined,
         personalIntroduction: personalIntroduction ?? undefined,
+        photoUrl: photoUrl ?? undefined,
+        photoThumbnailUrl: photoThumbnailUrl ?? undefined,
+        photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : undefined,
       },
       create: {
         name,
@@ -161,7 +170,11 @@ router.post("/register-student", async (req, res) => {
         gpa: typeof gpa === "number" ? gpa : 0,
         gradYear: typeof gradYear === "number" ? gradYear : new Date().getFullYear() + 1,
         field: field ?? "",
+        degreeLevel: degreeLevel ?? "",
         personalIntroduction: personalIntroduction ?? "",
+        photoUrl: photoUrl ?? null,
+        photoThumbnailUrl: photoThumbnailUrl ?? null,
+        photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : null,
       },
     });
 
@@ -189,6 +202,14 @@ router.post("/register-student", async (req, res) => {
           role: "STUDENT",
           studentId: student.id,
         },
+      });
+      
+      // Send welcome email to new student (async, don't block response)
+      sendStudentWelcomeEmail({
+        email: email,
+        name: name
+      }).catch(emailError => {
+        console.error('Failed to send student welcome email:', emailError);
       });
     }
 
@@ -244,6 +265,15 @@ router.post("/register-donor", async (req, res) => {
       select: { id: true, email: true, role: true },
     });
 
+    // Send welcome email to new donor (async, don't block response)
+    sendDonorWelcomeEmail({
+      email: email,
+      name: name,
+      organization: organization
+    }).catch(emailError => {
+      console.error('Failed to send donor welcome email:', emailError);
+    });
+
     const token = signToken({ sub: user.id, role: user.role, email: user.email });
     return res.status(201).json({
       token,
@@ -279,6 +309,16 @@ router.post("/request-password-reset", async (req, res) => {
         token,
         expiresAt,
       },
+    });
+
+    // Send password reset email (async, don't block response)
+    sendPasswordResetEmail({
+      email: email,
+      name: user.name || 'User',
+      resetToken: token,
+      userRole: user.role
+    }).catch(emailError => {
+      console.error('Failed to send password reset email:', emailError);
     });
 
     // In dev: return token so you can paste it in the reset form.

@@ -32,13 +32,29 @@ export const studentProfileAcademicSchema = z
     guardianCnic: z
       .string()
       .regex(CNIC_REGEX, "Guardian CNIC must be #####-#######-#"),
+    guardian2Name: z.string().optional(),
+    guardian2Cnic: z
+      .string()
+      .optional()
+      .refine((v) => !v || CNIC_REGEX.test(v), "Second Guardian CNIC must be #####-#######-#"),
     phone: z
       .string()
-      .refine((v) => digitsLenOk(v, 10, 15), "Enter a valid phone (10–15 digits)"),
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid phone (10–15 digits)"),
+    guardianPhone1: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid guardian phone (10–15 digits)"),
+    guardianPhone2: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid guardian phone (10–15 digits)"),
     address: z.string().min(1, "Address is required"),
     city: z.string().min(1, "City is required"),
     province: z.string().min(1, "Province is required"),
     university: z.string().min(1, "University is required"),
+    field: z.string().min(1, "Field of study is required"),
+    degreeLevel: z.string().optional(),
     program: z.string().min(1, "Program is required"),
     gpa: z
       .coerce.number({
@@ -72,8 +88,45 @@ export const studentProfileAcademicSchema = z
     careerGoals: z.string().max(500).optional(),
     academicAchievements: z.string().max(300).optional(),
     communityInvolvement: z.string().max(300).optional(),
-    currentAcademicYear: z.string().max(50).optional(),
     specificField: z.string().max(200).optional(),
+    // Social Media fields (all optional)
+    facebookUrl: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^https?:\/\/(www\.)?(facebook|fb)\.com\/.+/i), "Enter a valid Facebook profile URL"),
+    instagramHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9._]{1,30}$/), "Enter a valid Instagram handle (@username)"),
+    whatsappNumber: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid WhatsApp number (10–15 digits)"),
+    linkedinUrl: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i), "Enter a valid LinkedIn profile URL"),
+    twitterHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9_]{1,15}$/), "Enter a valid Twitter/X handle (@username)"),
+    tiktokHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9._]{1,24}$/), "Enter a valid TikTok handle (@username)"),
   })
   // keep the exact REQUIRED_KEYS logic consistent: all are required (except dateOfBirth)
-  .required();
+  .required()
+  .refine(
+    (data) => {
+      // At least one phone number must be provided
+      const hasStudentPhone = data.phone && data.phone.trim();
+      const hasGuardianPhone1 = data.guardianPhone1 && data.guardianPhone1.trim();
+      const hasGuardianPhone2 = data.guardianPhone2 && data.guardianPhone2.trim();
+      return hasStudentPhone || hasGuardianPhone1 || hasGuardianPhone2;
+    },
+    {
+      message: "At least one phone number is required (Student, Guardian 1, or Guardian 2)",
+      path: ["phone"], // This will show the error on the phone field
+    }
+  );

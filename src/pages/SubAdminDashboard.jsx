@@ -1,4 +1,4 @@
-// src/pages/SubAdminDashboard.jsx
+// src/pages/SubAdminDashboard.jsx - Now displays as Case Worker Dashboard
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +6,17 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
-import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle } from "lucide-react";
+import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle, FileCheck, User, Calendar } from "lucide-react";
 import { useAuth } from '@/lib/AuthContext';
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
+
+// Case Worker task types for display
+const TASK_TYPES = [
+  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "📄" },
+  { value: "FIELD_VISIT", label: "Field Visit", icon: "🏠" },
+  { value: "CNIC_VERIFICATION", label: "CNIC Verification", icon: "🆔" },
+];
 
 export default function SubAdminDashboard() {
   const navigate = useNavigate();
@@ -164,13 +171,13 @@ export default function SubAdminDashboard() {
   const completedReviews = reviews.filter(r => r.status === "COMPLETED");
 
   if (user?.role !== "SUB_ADMIN") {
-    return <Card className="p-6">Sub Admins only.</Card>;
+    return <Card className="p-6">Case Workers only.</Card>;
   }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-xl sm:text-2xl font-semibold">Sub Admin Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold">Case Worker Dashboard</h1>
         <div className="flex flex-col sm:flex-row gap-2">
           {(!token || !user) && (
             <Button 
@@ -303,7 +310,19 @@ export default function SubAdminDashboard() {
               {pendingReviews.map(review => (
                 <div key={review.id} className="border rounded-lg p-3 sm:p-4 space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="text-sm sm:text-base font-medium">{review.student?.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm sm:text-base font-medium">{review.student?.name}</div>
+                      {review.taskType && (
+                        <Badge variant="secondary" className="text-xs bg-green-50 border-green-200 text-green-700">
+                          {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
+                        </Badge>
+                      )}
+                      {!review.taskType && (
+                        <Badge variant="default" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                          🎯 Complete Verification
+                        </Badge>
+                      )}
+                    </div>
                     <Badge variant={review.status === "PENDING" ? "secondary" : "default"} className="self-start sm:self-auto">
                       {review.status}
                     </Badge>
@@ -374,6 +393,16 @@ export default function SubAdminDashboard() {
                             {review.student?.name}
                           </div>
                           <div className="flex flex-wrap gap-2">
+                            {review.taskType && (
+                              <Badge variant="secondary" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                                {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
+                              </Badge>
+                            )}
+                            {!review.taskType && (
+                              <Badge variant="default" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                                🎯 Complete Verification
+                              </Badge>
+                            )}
                             <Badge 
                               variant={review.fielderRecommendation === 'STRONGLY_APPROVE' ? 'default' : 
                                      review.fielderRecommendation === 'APPROVE' ? 'secondary' :

@@ -1,0 +1,306 @@
+import React, { useState } from 'react';
+import { Play, AlertCircle, Video } from 'lucide-react';
+import { API } from '@/lib/api';
+
+/**
+ * StudentVideo Component
+ * 
+ * Displays student introduction videos with thumbnail preview and full video player.
+ * Includes duration display and fallback handling.
+ * 
+ * Props:
+ * - student: Student object with video fields
+ * - size: 'small' | 'medium' | 'large'
+ * - className: Additional CSS classes
+ * - showPlaceholder: Whether to show placeholder when no video
+ * - autoplay: Whether to autoplay when opened (default: false)
+ */
+
+const StudentVideo = ({ 
+  student, 
+  size = 'medium', 
+  className = '', 
+  showPlaceholder = true,
+  autoplay = false
+}) => {
+  const [showVideo, setShowVideo] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const [videoLoading, setVideoLoading] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  // Early return if student is null/undefined
+  if (!student) {
+    if (!showPlaceholder) return null;
+    
+    return (
+      <div className={`
+        w-48 h-36
+        bg-gray-100 border-2 border-gray-200 rounded-lg 
+        flex flex-col items-center justify-center gap-2
+        ${className}
+      `}>
+        <Video size={24} className="text-gray-400" />
+        <span className="text-xs text-gray-500">No student data</span>
+      </div>
+    );
+  }
+
+  // Size configurations
+  const sizeClasses = {
+    small: 'w-32 h-24',
+    medium: 'w-48 h-36', 
+    large: 'w-64 h-48'
+  };
+
+  const iconSizes = {
+    small: 20,
+    medium: 24,
+    large: 32
+  };
+
+  // Get video URLs - Fixed URL construction
+  const videoUrl = student?.introVideoUrl ? 
+    (student.introVideoUrl.startsWith('http') ? 
+      student.introVideoUrl : 
+      `${API.baseURL}/${student.introVideoUrl.replace(/^\/+/, '')}`) : null;
+  
+  const thumbnailUrl = student?.introVideoThumbnailUrl ? 
+    (student.introVideoThumbnailUrl.startsWith('http') ? 
+      student.introVideoThumbnailUrl : 
+      `${API.baseURL}/${student.introVideoThumbnailUrl.replace(/^\/+/, '')}`) : null;
+      
+  const duration = student?.introVideoDuration;
+
+  // Debug logging
+  console.log('🎥 StudentVideo Debug:', {
+    studentId: student?.id,
+    rawVideoUrl: student?.introVideoUrl,
+    constructedVideoUrl: videoUrl,
+    rawThumbnailUrl: student?.introVideoThumbnailUrl,
+    constructedThumbnailUrl: thumbnailUrl,
+    duration: duration
+  });
+
+  // Format duration (seconds to mm:ss)
+  const formatDuration = (seconds) => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Handle thumbnail error
+  const handleThumbnailError = () => {
+    setThumbnailError(true);
+  };
+
+  // Handle video modal open
+  const handleVideoOpen = () => {
+    setShowVideo(true);
+    setVideoError(false);
+    setRetryCount(0);
+    console.log('🎥 Opening video modal:', videoUrl);
+  };
+
+  // Handle video modal close
+  const handleVideoClose = () => {
+    setShowVideo(false);
+    setVideoLoading(false);
+    setVideoError(false);
+    setRetryCount(0);
+  };
+
+  // Video event handlers
+  const handleVideoLoadStart = () => {
+    console.log('🎥 Video load started:', videoUrl);
+    setVideoLoading(true);
+  };
+
+  const handleVideoCanPlay = () => {
+    console.log('🎥 Video can play:', videoUrl);
+    setVideoLoading(false);
+  };
+
+  const handleVideoLoadedData = () => {
+    console.log('🎥 Video data loaded:', videoUrl);
+    setVideoLoading(false);
+  };
+
+  const handleVideoError = (e) => {
+    console.error('🎥 Video playback error:', e);
+    console.error('🎥 Video URL that failed:', videoUrl);
+    console.error('🎥 Error details:', e.target.error);
+    setVideoLoading(false);
+    setVideoError(true);
+  };
+
+  const handleVideoWaiting = () => {
+    console.log('🎥 Video waiting for data...');
+    // Don't set loading true here as it might interfere
+  };
+
+  const handleVideoPlaying = () => {
+    console.log('🎥 Video started playing');
+    setVideoLoading(false);
+  };
+
+  // If no video URL, show placeholder
+  if (!videoUrl) {
+    if (!showPlaceholder) return null;
+    
+    return (
+      <div className={`
+        ${sizeClasses[size]} 
+        bg-gray-100 border-2 border-gray-200 rounded-lg 
+        flex flex-col items-center justify-center gap-2
+        ${className}
+      `}>
+        <Video 
+          size={iconSizes[size]} 
+          className="text-gray-400" 
+        />
+        <span className="text-xs text-gray-500">No video</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Video Thumbnail/Preview */}
+      <div className={`
+        ${sizeClasses[size]} 
+        relative rounded-lg overflow-hidden border-2 border-gray-200
+        cursor-pointer hover:border-blue-300 transition-colors group
+        ${className}
+      `}
+        onClick={handleVideoOpen}
+      >
+        {/* Thumbnail or video preview */}
+        {thumbnailUrl && !thumbnailError ? (
+          <img
+            src={thumbnailUrl}
+            alt={`${student?.name || 'Student'}'s introduction video`}
+            className="w-full h-full object-cover"
+            onError={handleThumbnailError}
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+            <Video size={iconSizes[size]} className="text-gray-400" />
+          </div>
+        )}
+
+        {/* Play overlay */}
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center
+                        group-hover:bg-opacity-40 transition-all">
+          <div className="bg-white bg-opacity-90 rounded-full p-2 group-hover:bg-opacity-100 transition-all">
+            <Play size={iconSizes[size]} className="text-blue-600 ml-1" />
+          </div>
+        </div>
+
+        {/* Duration badge */}
+        {duration && (
+          <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-1.5 py-0.5 rounded">
+            {formatDuration(duration)}
+          </div>
+        )}
+      </div>
+
+      {/* Video Modal */}
+      {showVideo && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+          onClick={handleVideoClose}
+        >
+          <div className="relative max-w-4xl max-h-full w-full">
+            {/* Loading indicator - less intrusive */}
+            {videoLoading && (
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg z-20 flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span className="text-sm">Loading...</span>
+              </div>
+            )}
+
+            {/* Error state */}
+            {videoError && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg z-10">
+                <div className="bg-white bg-opacity-90 rounded-lg p-6 flex flex-col items-center gap-4 max-w-md">
+                  <AlertCircle size={32} className="text-red-500" />
+                  <div className="text-gray-800 font-medium">Video Load Error</div>
+                  <div className="text-gray-600 text-sm text-center">
+                    Unable to load the video. Please check your connection and try again.
+                  </div>
+                  <button
+                    onClick={handleVideoClose}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <video
+              src={videoUrl}
+              controls
+              autoPlay={autoplay}
+              preload="metadata"
+              playsInline
+              className="w-full h-auto max-h-full rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+              onError={handleVideoError}
+              onLoadStart={() => {
+                console.log('🎥 Video load started:', videoUrl);
+                setVideoLoading(true);
+              }}
+              onCanPlay={() => {
+                console.log('🎥 Video can play:', videoUrl);
+                setVideoLoading(false);
+              }}
+              onCanPlayThrough={() => {
+                console.log('🎥 Video can play through');
+                setVideoLoading(false);
+              }}
+              onLoadedData={() => {
+                console.log('🎥 Video data loaded:', videoUrl);
+                setVideoLoading(false);
+              }}
+              onPlaying={() => {
+                console.log('🎥 Video started playing');
+                setVideoLoading(false);
+              }}
+              onLoadedMetadata={() => {
+                console.log('🎥 Video metadata loaded');
+                setVideoLoading(false);
+              }}
+              style={{ 
+                maxHeight: '80vh',
+                objectFit: 'contain'
+              }}
+            >
+              Your browser does not support the video tag.
+            </video>
+            
+            {/* Close button */}
+            <button
+              onClick={handleVideoClose}
+              className="absolute top-4 right-4 bg-black bg-opacity-50 hover:bg-opacity-70 
+                         text-white rounded-full p-2 transition-colors z-20"
+            >
+              ×
+            </button>
+            
+            {/* Video info */}
+            <div className="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white p-3 rounded-lg z-20">
+              <div className="font-medium">{student?.name || 'Student'}'s Introduction</div>
+              {duration && (
+                <div className="text-sm opacity-90">Duration: {formatDuration(duration)}</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default StudentVideo;

@@ -10,7 +10,7 @@ import {
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
-import { CURRENCY_META, getCurrencyFromCountry, fmtAmount, getCurrencyFlag } from "@/lib/currency";
+import { CURRENCY_META, getCurrencyFromCountry, fmtAmount, fmtAmountDual, getCurrencyFlag } from "@/lib/currency";
 import { API } from "@/lib/api";
 
 /* ---------- small helper ---------- */
@@ -99,7 +99,7 @@ function StudentCard({ student, onSponsored }) {
         </div>
         <div className="shrink-0 rounded-full bg-amber-500 text-white text-xs font-semibold px-3 py-1 shadow-sm flex items-center gap-1">
           <span>{getCurrencyFlag(currency)}</span>
-          <span>{fmtAmount(displayAmount, currency)}</span>
+          <span>{fmtAmountDual(displayAmount, currency)}</span>
         </div>
       </div>
 

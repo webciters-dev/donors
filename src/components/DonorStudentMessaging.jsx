@@ -61,6 +61,8 @@ const DonorStudentMessaging = ({ student, user, token }) => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [showConversation, setShowConversation] = useState(false);
+  const [hasSponsorship, setHasSponsorship] = useState(false);
+  const [checkingSponsorship, setCheckingSponsorship] = useState(true);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -71,9 +73,51 @@ const DonorStudentMessaging = ({ student, user, token }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Check for existing conversation
+  // Check if current donor has sponsored this student
+  useEffect(() => {
+    const checkSponsorshipStatus = async () => {
+      if (!user || !student || !token || user.role !== 'DONOR') {
+        setCheckingSponsorship(false);
+        return;
+      }
+
+      try {
+        console.log('🔍 DonorStudentMessaging: Checking sponsorship status for donor:', user.id, 'student:', student.id);
+        
+        // Check if this donor has sponsored this specific student
+        const response = await fetch(`${API}/api/sponsorships/check?studentId=${student.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('🔍 DonorStudentMessaging: Sponsorship check result:', data);
+          setHasSponsorship(data.hasSponsorship === true);
+        } else {
+          console.warn('🔍 DonorStudentMessaging: Sponsorship check failed, defaulting to false');
+          setHasSponsorship(false);
+        }
+      } catch (error) {
+        console.error('🔍 DonorStudentMessaging: Error checking sponsorship:', error);
+        setHasSponsorship(false);
+      } finally {
+        setCheckingSponsorship(false);
+      }
+    };
+
+    checkSponsorshipStatus();
+  }, [user, student, token]);
+
+  // Check for existing conversation (only after sponsorship is confirmed)
   useEffect(() => {
     const checkExistingConversation = async () => {
+      // Only proceed if user has sponsored the student
+      if (!hasSponsorship || checkingSponsorship) {
+        return;
+      }
+
       try {
         const response = await fetch(`${API}/api/conversations`, {
           headers: {
@@ -97,10 +141,10 @@ const DonorStudentMessaging = ({ student, user, token }) => {
       }
     };
 
-    if (user && student && token) {
+    if (user && student && token && hasSponsorship) {
       checkExistingConversation();
     }
-  }, [user, student, token]);
+  }, [user, student, token, hasSponsorship, checkingSponsorship]);
 
   const loadConversationMessages = async (conversationId) => {
     try {
@@ -218,28 +262,69 @@ const DonorStudentMessaging = ({ student, user, token }) => {
     }
   };
 
-  // Only show for donors who haven't sponsored this student yet
+  // Only show for donors
   if (user?.role !== 'DONOR') return null;
+
+  // Show loading state while checking sponsorship
+  if (checkingSponsorship) {
+    return (
+      <Card className="p-6">
+        <SectionTitle 
+          icon={MessageCircle} 
+          title="Student Communication" 
+          subtitle="Checking access..."
+        />
+        <div className="mt-4 p-4 text-center text-slate-500">
+          <div className="animate-pulse">Checking communication access...</div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show message for non-sponsors
+  if (!hasSponsorship) {
+    return (
+      <Card className="p-6">
+        <SectionTitle 
+          icon={MessageCircle} 
+          title="Student Communication" 
+          subtitle="Available after sponsorship"
+        />
+        <div className="mt-4">
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
+            <h3 className="font-medium text-amber-900 mb-2">Communication Available After Sponsorship</h3>
+            <p className="text-sm text-amber-700 mb-3">
+              Direct messaging with {student.name} will be available once you complete their sponsorship. This ensures meaningful connections between committed sponsors and students.
+            </p>
+            <div className="flex items-center gap-2 text-xs text-amber-600">
+              <MessageCircle className="h-4 w-4" />
+              <span>For questions before sponsoring, please contact our admin team</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
       <SectionTitle 
         icon={MessageCircle} 
-        title="Ask Questions" 
-        subtitle="Connect with the student before sponsoring"
+        title="Communicate with Student" 
+        subtitle="Stay connected with your sponsored student"
       />
 
       <div className="mt-4">
         {!showConversation ? (
           <div className="space-y-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h3 className="font-medium text-blue-900 mb-2">Connect with {student.name}</h3>
-              <p className="text-sm text-blue-700 mb-3">
-                Have questions about their background, goals, or needs? Start a conversation to learn more before making your sponsorship decision.
+            <div className="bg-green-50 p-4 rounded-lg">
+              <h3 className="font-medium text-green-900 mb-2">Stay Connected with {student.name}</h3>
+              <p className="text-sm text-green-700 mb-3">
+                As {student.name}'s sponsor, you can communicate directly to track their progress, offer encouragement, and build a meaningful mentorship relationship.
               </p>
-              <div className="flex items-center gap-2 text-xs text-blue-600">
+              <div className="flex items-center gap-2 text-xs text-green-600">
                 <MessageCircle className="h-4 w-4" />
-                <span>Your messages will be private between you and the student</span>
+                <span>Your messages are private between you and {student.name}</span>
               </div>
             </div>
 
@@ -251,7 +336,7 @@ const DonorStudentMessaging = ({ student, user, token }) => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={`Hi ${student.name}, I'm interested in potentially sponsoring your education. I'd like to know more about...`}
+                placeholder={`Hi ${student.name}, I hope your studies are going well! I wanted to check in and see how...`}
                 className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
                 rows={4}
                 disabled={sending}
@@ -261,7 +346,7 @@ const DonorStudentMessaging = ({ student, user, token }) => {
                 disabled={!newMessage.trim() || sending}
                 className="w-full"
               >
-                {sending ? "Starting conversation..." : "Start Conversation"}
+                {sending ? "Starting conversation..." : "Send Message to Student"}
                 <Send className="h-4 w-4 ml-2" />
               </Button>
             </div>

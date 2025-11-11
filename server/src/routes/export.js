@@ -204,13 +204,13 @@ router.get("/statistics", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
         total: await prisma.message.count(),
         fromStudents: await prisma.message.count({ where: { fromRole: 'student' } }),
         fromAdmins: await prisma.message.count({ where: { fromRole: 'admin' } }),
-        fromSubAdmins: await prisma.message.count({ where: { fromRole: 'sub_admin' } }),
+        fromCaseWorkers: await prisma.message.count({ where: { fromRole: 'sub_admin' } }), // Internal role remains sub_admin
       },
       users: {
         total: await prisma.user.count(),
         admins: await prisma.user.count({ where: { role: 'ADMIN' } }),
         students: await prisma.user.count({ where: { role: 'STUDENT' } }),
-        subAdmins: await prisma.user.count({ where: { role: 'SUB_ADMIN' } }),
+        caseWorkers: await prisma.user.count({ where: { role: 'SUB_ADMIN' } }), // Internal role remains SUB_ADMIN
       },
       exportedAt: new Date().toISOString(),
     };
@@ -301,13 +301,68 @@ router.get("/donors", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
 });
 
 /**
- * GET /api/export/sub-admins
- * Export all sub-admin (field officers) data as CSV
+ * GET /api/export/case-workers
+ * Export all case worker data as CSV
+ * Admin only
+ */
+router.get("/case-workers", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const caseWorkers = await prisma.user.findMany({
+      where: { role: "SUB_ADMIN" }, // Internal role remains SUB_ADMIN
+      include: {
+        fieldReviews: {
+          include: {
+            student: { select: { name: true } },
+            application: { select: { id: true } }
+          }
+        }
+      }
+    });
+
+    const csvData = caseWorkers.map(officer => ({
+      Name: officer.name || 'Not provided',
+      Email: officer.email,
+      'Join Date': format(new Date(officer.createdAt), 'yyyy-MM-dd'),
+      'Total Assignments': officer.fieldReviews?.length || 0,
+      'Completed Reviews': officer.fieldReviews?.filter(r => r.status === 'COMPLETED').length || 0,
+      'Pending Reviews': officer.fieldReviews?.filter(r => r.status === 'PENDING').length || 0,
+      'Current Applications': officer.fieldReviews
+        ?.filter(r => r.status === 'PENDING')
+        .map(r => `${r.student?.name} (${r.application?.id})`)
+        .join('; ') || 'None'
+    }));
+
+    const csvString = csvData.length > 0 
+      ? [
+          Object.keys(csvData[0]).join(','),
+          ...csvData.map(row => 
+            Object.values(row).map(value => 
+              typeof value === 'string' && value.includes(',') 
+                ? `"${value.replace(/"/g, '""')}"` 
+                : value
+            ).join(',')
+          )
+        ].join('\n')
+      : 'No case workers found';
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="case-workers-${format(new Date(), 'yyyy-MM-dd')}.csv"`);
+    res.send(csvString);
+
+  } catch (error) {
+    console.error("Case worker export error:", error);
+    res.status(500).json({ error: "Failed to export case workers data" });
+  }
+});
+
+/**
+ * GET /api/export/sub-admins (Legacy endpoint - maintains compatibility)
+ * Export all case worker data as CSV
  * Admin only
  */
 router.get("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   try {
-    const subAdmins = await prisma.user.findMany({
+    const caseWorkers = await prisma.user.findMany({
       where: { role: "SUB_ADMIN" },
       include: {
         fieldReviews: {
@@ -326,7 +381,7 @@ router.get("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
     });
 
     // Transform data for CSV export
-    const csvData = subAdmins.map(officer => ({
+    const csvData = caseWorkers.map(officer => ({
       "Officer ID": officer.id,
       "Name": officer.name,
       "Email": officer.email,
@@ -375,8 +430,8 @@ router.get("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
     res.send(csvContent);
     
   } catch (error) {
-    console.error("Sub-admin export error:", error);
-    res.status(500).json({ error: "Failed to export sub-admins data" });
+    console.error("Case worker export error:", error);
+    res.status(500).json({ error: "Failed to export case workers data" });
   }
 });
 

@@ -20,7 +20,7 @@ import {
   Heart
 } from "lucide-react";
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -272,7 +272,7 @@ export default function StudentDashboard() {
                   <div>
                     <div className="text-slate-600">Amount Requested</div>
                     <div className="font-medium">
-                      {fmtAmount(application.amount, application.currency)}
+                      {fmtAmountDual(application.amount, application.currency)}
                     </div>
                   </div>
                 </div>

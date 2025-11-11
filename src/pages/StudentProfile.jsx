@@ -9,10 +9,16 @@ import { useNavigate } from "react-router-dom";
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
 import { 
   calculateProfileCompleteness, 
+  calculateOverallCompleteness,
   getCompletionMessage, 
   isProfileReadyForSubmission 
 } from "@/lib/profileValidation";
 import { API } from "@/lib/api";
+import { filterCountryList, getFilterMessage } from "@/lib/countryFilter";
+import UniversitySelector from "@/components/UniversitySelector";
+import VideoUploader from "@/components/VideoUploader";
+import PhotoUpload from "@/components/PhotoUpload";
+import StudentPhoto from "@/components/StudentPhoto";
 
 // Helpers
 function onlyDigits(s = "") {
@@ -30,8 +36,36 @@ function formatCNIC(raw = "") {
   return out;
 }
 
+// Helper function to derive degree level from program name
+const deriveDegreeLevel = (program) => {
+  if (!program) return "";
+  
+  const programLower = program.toLowerCase();
+  
+  if (programLower.includes('phd') || programLower.includes('doctorate') || programLower.includes('doctoral')) {
+    return "PhD";
+  }
+  if (programLower.includes('master') || programLower.includes("master's") || programLower.includes('ms ') || programLower.includes('msc') || programLower.includes('ma ') || programLower.includes('mba')) {
+    return "Master's Degree";
+  }
+  if (programLower.includes('bachelor') || programLower.includes("bachelor's") || programLower.includes('bs ') || programLower.includes('bsc') || programLower.includes('ba ') || programLower.includes('be ') || programLower.includes('btech')) {
+    return "Bachelor's Degree";
+  }
+  if (programLower.includes('associate')) {
+    return "Associate";
+  }
+  if (programLower.includes('diploma')) {
+    return "Diploma";
+  }
+  if (programLower.includes('certificate')) {
+    return "Certificate";
+  }
+  
+  return ""; // If we can't determine, leave empty
+};
+
 export default function StudentProfile() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
@@ -40,16 +74,28 @@ export default function StudentProfile() {
     dateOfBirth: "",
     guardianName: "",
     guardianCnic: "",
+    guardian2Name: "",
+    guardian2Cnic: "",
     phone: "",
+    guardianPhone1: "",
+    guardianPhone2: "",
     address: "",
     city: "",
     province: "",
-    // Current Education fields
+    // Photo fields
+    photoUrl: "",
+    photoThumbnailUrl: "",
+    photoUploadedAt: null,
+    // Completed Education fields
     currentInstitution: "",
     currentCity: "",
     currentCompletionYear: "",
     // Future Education fields
+    country: "Pakistan", // Default to Pakistan for existing users
     university: "",
+    customUniversity: "",
+    field: "", // Add the missing field
+    degreeLevel: "", // Add degree level field
     program: "",
     gpa: "",
     gradYear: "",
@@ -62,13 +108,28 @@ export default function StudentProfile() {
     careerGoals: "",
     academicAchievements: "",
     communityInvolvement: "",
-    currentAcademicYear: "",
     specificField: "",
+    // Social Media Fields
+    facebookUrl: "",
+    instagramHandle: "",
+    whatsappNumber: "",
+    linkedinUrl: "",
+    twitterHandle: "",
+    tiktokHandle: "",
+    // Introduction Video Fields
+    introVideoUrl: "",
+    introVideoThumbnailUrl: "",
+    introVideoUploadedAt: null,
+    introVideoDuration: null,
+    // Video upload handling
+    selectedVideoFile: null,
+    videoMetadata: null,
   });
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [documents, setDocuments] = useState([]);
 
   // Load current student profile
   useEffect(() => {
@@ -89,16 +150,24 @@ export default function StudentProfile() {
             : "",
           guardianName: s.guardianName || "",
           guardianCnic: s.guardianCnic || "",
+          guardian2Name: s.guardian2Name || "",
+          guardian2Cnic: s.guardian2Cnic || "",
           phone: s.phone || "",
+          guardianPhone1: s.guardianPhone1 || "",
+          guardianPhone2: s.guardianPhone2 || "",
           address: s.address || "",
           city: s.city || "",
           province: s.province || "",
-          // Current Education fields
+          // Completed Education fields
           currentInstitution: s.currentInstitution || "",
           currentCity: s.currentCity || "",
           currentCompletionYear: s.currentCompletionYear ?? "",
           // Future Education fields  
+          country: s.country || "Pakistan", // Default to Pakistan
           university: s.university || "",
+          customUniversity: s.customUniversity || "",
+          field: s.field || "", // Add the missing field
+          degreeLevel: s.degreeLevel || deriveDegreeLevel(s.program) || "", // Auto-derive from program if not set
           program: s.program || "",
           gpa: s.gpa ?? "",
           gradYear: s.gradYear ?? "",
@@ -113,8 +182,23 @@ export default function StudentProfile() {
           careerGoals: s.careerGoals || "",
           academicAchievements: s.academicAchievements || "",
           communityInvolvement: s.communityInvolvement || "",
-          currentAcademicYear: s.currentAcademicYear || "",
           specificField: s.specificField || "",
+          // Social Media Fields
+          facebookUrl: s.facebookUrl || "",
+          instagramHandle: s.instagramHandle || "",
+          whatsappNumber: s.whatsappNumber || "",
+          linkedinUrl: s.linkedinUrl || "",
+          twitterHandle: s.twitterHandle || "",
+          tiktokHandle: s.tiktokHandle || "",
+          // Photo fields
+          photoUrl: s.photoUrl || "",
+          photoThumbnailUrl: s.photoThumbnailUrl || "",
+          photoUploadedAt: s.photoUploadedAt || null,
+          // Introduction Video fields
+          introVideoUrl: s.introVideoUrl || "",
+          introVideoThumbnailUrl: s.introVideoThumbnailUrl || "",
+          introVideoUploadedAt: s.introVideoUploadedAt || null,
+          introVideoDuration: s.introVideoDuration || null,
         };
         if (!dead) setForm((prev) => ({ ...prev, ...initial }));
       } catch (e) {
@@ -130,6 +214,43 @@ export default function StudentProfile() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Load documents for completion calculation
+  useEffect(() => {
+    let dead = false;
+    async function loadDocs() {
+      try {
+        if (!user?.studentId) return;
+        
+        const res = await fetch(`${API.baseURL}/api/uploads?studentId=${user.studentId}`, {
+          headers: { ...authHeader }
+        });
+        
+        if (!res.ok) throw new Error("Failed to load documents");
+        
+        const data = await res.json();
+        const docs = Array.isArray(data?.documents) ? data.documents : [];
+        
+        if (!dead) setDocuments(docs);
+      } catch (e) {
+        console.error("Failed to load documents:", e);
+        // Don't show error toast as this is supplementary data
+      }
+    }
+    
+    loadDocs();
+    return () => { dead = true; };
+  }, [user?.studentId, authHeader]);
+
+  // Auto-populate degree level if missing but program exists
+  useEffect(() => {
+    if (!form.degreeLevel && form.program) {
+      const derivedLevel = deriveDegreeLevel(form.program);
+      if (derivedLevel) {
+        setForm(prev => ({ ...prev, degreeLevel: derivedLevel }));
+      }
+    }
+  }, [form.program, form.degreeLevel]);
 
   // Zod-powered validation
   function validateField(name, value) {
@@ -154,6 +275,10 @@ export default function StudentProfile() {
       const key = issue.path?.[0];
       if (key && !next[key]) next[key] = issue.message; // keep first message per field
     }
+    
+    // Debug: Log validation errors to console
+    console.log("Validation errors:", next);
+    
     setErrors(next);
     return false;
   }
@@ -177,8 +302,14 @@ export default function StudentProfile() {
 
     try {
       setSaving(true);
+      // Determine final university value
+      const finalUniversity = form.university === "Other" || form.country === "Other" 
+        ? form.customUniversity 
+        : form.university;
+
       const payload = {
         ...form,
+        university: finalUniversity, // Use the final university value
         // coerce numeric and normalize before send
         gpa: form.gpa === "" ? null : Number(form.gpa),
         gradYear: form.gradYear === "" ? null : Number(form.gradYear),
@@ -211,8 +342,8 @@ export default function StudentProfile() {
   }
 
   const completeness = useMemo(() => {
-    return calculateProfileCompleteness(form);
-  }, [form]);
+    return calculateOverallCompleteness(form, documents);
+  }, [form, documents]);
 
   if (loading) {
     return <Card className="p-6">Loading profile…</Card>;
@@ -222,11 +353,36 @@ export default function StudentProfile() {
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <h1 className="text-xl sm:text-2xl font-semibold">My Profile</h1>
 
+      {/* Pakistan-only filter message */}
+      {(() => {
+        const filterMessage = getFilterMessage();
+        return filterMessage && (
+          <Card className="p-4 bg-green-50 border-green-200">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{filterMessage.icon}</span>
+              <div>
+                <h3 className="font-medium text-green-900">{filterMessage.message}</h3>
+                <p className="text-sm text-green-700">{filterMessage.description}</p>
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
+
       <Card className={`p-3 sm:p-4 border ${completeness.isComplete && !completeness.hasValidationErrors ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
         <div className="text-xs sm:text-sm text-slate-800">
-          Profile completeness: <strong>{completeness.percent}%</strong>
+          Overall completeness: <strong>{completeness.percent}%</strong>
+          <div className="mt-1 text-slate-600 text-xs">
+            Profile: {completeness.profilePercent}% • Documents: {completeness.docPercent}% 
+            {completeness.missingDocs.length > 0 && (
+              <div className="mt-1">Missing documents: {completeness.missingDocs.join(", ")}</div>
+            )}
+          </div>
           <div className="mt-1 text-slate-600">
-            {getCompletionMessage(completeness)}
+            {completeness.isComplete 
+              ? "Profile is complete! You can now submit your application for review." 
+              : "Complete your profile and upload required documents to submit your application."
+            }
           </div>
         </div>
       </Card>
@@ -305,9 +461,47 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Phone */}
+          {/* Second Guardian Name */}
           <div>
-            <label className="block text-xs sm:text-sm mb-1">Phone</label>
+            <label className="block text-xs sm:text-sm mb-1">Second Guardian Name (Optional)</label>
+            <Input
+              value={form.guardian2Name}
+              onChange={(e) => setVal("guardian2Name", e.target.value)}
+              placeholder="Enter second guardian's name"
+              className="rounded-2xl min-h-[44px]"
+            />
+            {errors.guardian2Name && (
+              <p className="text-xs text-rose-600 mt-1">
+                {errors.guardian2Name}
+              </p>
+            )}
+          </div>
+
+          {/* Second Guardian CNIC */}
+          <div>
+            <label className="block text-xs sm:text-sm mb-1">Second Guardian CNIC (Optional)</label>
+            <Input
+              value={form.guardian2Cnic}
+              onChange={(e) =>
+                setVal("guardian2Cnic", formatCNIC(e.target.value))
+              }
+              placeholder="12345-1234567-1"
+              className="rounded-2xl min-h-[44px]"
+            />
+            {errors.guardian2Cnic ? (
+              <p className="text-xs text-rose-600 mt-1">
+                {errors.guardian2Cnic}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Format: 12345-1234567-1
+              </p>
+            )}
+          </div>
+
+          {/* Student Phone */}
+          <div>
+            <label className="block text-xs sm:text-sm mb-1">Student Phone</label>
             <Input
               value={form.phone}
               onChange={(e) => setVal("phone", e.target.value)}
@@ -316,6 +510,34 @@ export default function StudentProfile() {
             />
             {errors.phone && (
               <p className="text-xs text-rose-600 mt-1">{errors.phone}</p>
+            )}
+          </div>
+
+          {/* Guardian Phone 1 */}
+          <div>
+            <label className="block text-xs sm:text-sm mb-1">Guardian Phone 1</label>
+            <Input
+              value={form.guardianPhone1}
+              onChange={(e) => setVal("guardianPhone1", e.target.value)}
+              placeholder="+92XXXXXXXXXX or 03XXXXXXXXX"
+              className="rounded-2xl min-h-[44px]"
+            />
+            {errors.guardianPhone1 && (
+              <p className="text-xs text-rose-600 mt-1">{errors.guardianPhone1}</p>
+            )}
+          </div>
+
+          {/* Guardian Phone 2 */}
+          <div>
+            <label className="block text-xs sm:text-sm mb-1">Guardian Phone 2 (Optional)</label>
+            <Input
+              value={form.guardianPhone2}
+              onChange={(e) => setVal("guardianPhone2", e.target.value)}
+              placeholder="+92XXXXXXXXXX or 03XXXXXXXXX"
+              className="rounded-2xl min-h-[44px]"
+            />
+            {errors.guardianPhone2 && (
+              <p className="text-xs text-rose-600 mt-1">{errors.guardianPhone2}</p>
             )}
           </div>
 
@@ -369,18 +591,18 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Current Education Section Header */}
+          {/* Completed Education Section Header */}
           <div className="sm:col-span-2">
-            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Current Education</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Completed Education</h3>
           </div>
 
-          {/* Current Institution */}
+          {/* Completed Institution */}
           <div>
-            <label className="block text-xs sm:text-sm mb-1">Current Institution</label>
+            <label className="block text-xs sm:text-sm mb-1">Completed Institution</label>
             <Input
               value={form.currentInstitution}
               onChange={(e) => setVal("currentInstitution", e.target.value)}
-              className="rounded-2xl min-h-[44px]"
+              className={`rounded-2xl min-h-[44px] ${errors.currentInstitution ? 'border-red-500 focus:border-red-500' : ''}`}
               placeholder="e.g., ABC College"
             />
             {errors.currentInstitution && (
@@ -388,13 +610,13 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Current City */}
+          {/* Completed City */}
           <div>
-            <label className="block text-xs sm:text-sm mb-1">Current Institution City</label>
+            <label className="block text-xs sm:text-sm mb-1">Completed Institution City</label>
             <Input
               value={form.currentCity}
               onChange={(e) => setVal("currentCity", e.target.value)}
-              className="rounded-2xl min-h-[44px]"
+              className={`rounded-2xl min-h-[44px] ${errors.currentCity ? 'border-red-500 focus:border-red-500' : ''}`}
               placeholder="e.g., Lahore"
             />
             {errors.currentCity && (
@@ -402,14 +624,14 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Current Completion Year */}
+          {/* Completed Year */}
           <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Year of Completion (Current Education)</label>
+            <label className="block text-sm mb-1">Year of Completion (Completed Education)</label>
             <Input
               type="number"
               value={form.currentCompletionYear}
               onChange={(e) => setVal("currentCompletionYear", e.target.value)}
-              className="rounded-2xl"
+              className={`rounded-2xl ${errors.currentCompletionYear ? 'border-red-500 focus:border-red-500' : ''}`}
               placeholder="e.g., 2024"
             />
             {errors.currentCompletionYear && (
@@ -422,16 +644,100 @@ export default function StudentProfile() {
             <h3 className="text-lg font-semibold text-blue-800 mb-3">Future Education</h3>
           </div>
 
-          {/* University */}
+          {/* Country */}
           <div>
+            <label className="block text-sm mb-1">Country</label>
+            <select
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
+              value={form.country}
+              onChange={(e) => setVal("country", e.target.value)}
+            >
+              {filterCountryList([
+                "",
+                "Pakistan",
+                "USA", 
+                "UK",
+                "Canada",
+                "Germany",
+                "Australia", 
+                "Turkey",
+                "Other"
+              ]).map((country) => (
+                <option key={country} value={country}>
+                  {country === "" ? "Select Country" :
+                   country === "Pakistan" ? "🇵🇰 Pakistan" :
+                   country === "USA" ? "🇺🇸 United States" :
+                   country === "UK" ? "🇬🇧 United Kingdom" :
+                   country === "Canada" ? "🇨🇦 Canada" :
+                   country === "Germany" ? "🇩🇪 Germany" :
+                   country === "Australia" ? "🇦🇺 Australia" :
+                   country === "Turkey" ? "🇹🇷 Turkey" :
+                   country === "Other" ? "🌍 Other Country" :
+                   country}
+                </option>
+              ))}
+            </select>
+            {errors.country && (
+              <p className="text-xs text-rose-600 mt-1">{errors.country}</p>
+            )}
+          </div>
+
+          {/* University */}
+          <div className="sm:col-span-2">
             <label className="block text-sm mb-1">University</label>
-            <Input
+            <UniversitySelector
+              country={form.country}
               value={form.university}
-              onChange={(e) => setVal("university", e.target.value)}
+              customValue={form.customUniversity}
+              onChange={(university, customUniversity, universityId) => {
+                setVal("university", university);
+                setVal("customUniversity", customUniversity);
+                // Note: StudentProfile doesn't need universityId currently
+              }}
+              required={false}
               className="rounded-2xl"
             />
             {errors.university && (
               <p className="text-xs text-rose-600 mt-1">{errors.university}</p>
+            )}
+            {errors.customUniversity && (
+              <p className="text-xs text-rose-600 mt-1">{errors.customUniversity}</p>
+            )}
+          </div>
+
+          {/* Field of Study */}
+          <div>
+            <label className="block text-sm mb-1">Field of Study</label>
+            <Input
+              value={form.field}
+              onChange={(e) => setVal("field", e.target.value)}
+              placeholder="e.g., Computer Science, Business, Engineering"
+              className="rounded-2xl"
+            />
+            {errors.field && (
+              <p className="text-xs text-rose-600 mt-1">{errors.field}</p>
+            )}
+          </div>
+
+          {/* Degree Level */}
+          <div>
+            <label className="block text-sm mb-1">Degree Level</label>
+            <select 
+              value={form.degreeLevel}
+              onChange={(e) => setVal("degreeLevel", e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Select Degree Level</option>
+              <option value="Associate">Associate</option>
+              <option value="Certificate">Certificate</option>
+              <option value="Diploma">Diploma</option>
+              <option value="Bachelor's Degree">Bachelor's Degree</option>
+              <option value="Master's Degree">Master's Degree</option>
+              <option value="PhD">PhD</option>
+              <option value="Professional">Professional</option>
+            </select>
+            {errors.degreeLevel && (
+              <p className="text-xs text-rose-600 mt-1">{errors.degreeLevel}</p>
             )}
           </div>
 
@@ -440,8 +746,20 @@ export default function StudentProfile() {
             <label className="block text-sm mb-1">Program</label>
             <Input
               value={form.program}
-              onChange={(e) => setVal("program", e.target.value)}
+              onChange={(e) => {
+                const newProgram = e.target.value;
+                setVal("program", newProgram);
+                
+                // Auto-populate degree level if not already set
+                if (!form.degreeLevel && newProgram) {
+                  const derivedLevel = deriveDegreeLevel(newProgram);
+                  if (derivedLevel) {
+                    setVal("degreeLevel", derivedLevel);
+                  }
+                }
+              }}
               className="rounded-2xl"
+              placeholder="e.g., PhD Physics, Bachelor of Computer Science, MBA"
             />
             {errors.program && (
               <p className="text-xs text-rose-600 mt-1">{errors.program}</p>
@@ -509,6 +827,206 @@ export default function StudentProfile() {
             )}
           </div>
 
+          {/* Photo Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Your Photo</h3>
+            <p className="text-sm text-gray-600 mb-4">Your photo helps sponsors and administrators recognize you. You can update it anytime.</p>
+          </div>
+
+          {/* Current Photo Display & Upload */}
+          <div className="md:col-span-2">
+            <div className="flex flex-col sm:flex-row items-start gap-6">
+              {/* Current Photo Display */}
+              <div className="flex-shrink-0">
+                <label className="block text-sm mb-2">Current Photo</label>
+                {form.photoUrl ? (
+                  <div className="relative">
+                    <StudentPhoto 
+                      student={{
+                        id: 'current-student',
+                        photoUrl: form.photoUrl,
+                        photoThumbnailUrl: form.photoThumbnailUrl,
+                        name: 'Your Photo'
+                      }}
+                      size="large" 
+                      clickable={true}
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      Uploaded: {form.photoUploadedAt ? new Date(form.photoUploadedAt).toLocaleDateString() : 'Unknown'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <div className="text-center text-gray-500">
+                      <div className="text-2xl mb-1">📷</div>
+                      <div className="text-xs">No photo uploaded</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Photo Upload Component */}
+              <div className="flex-grow">
+                <label className="block text-sm mb-2">
+                  {form.photoUrl ? 'Update Photo' : 'Upload Photo'}
+                </label>
+                <PhotoUpload
+                  currentPhotoUrl={form.photoUrl}
+                  currentThumbnailUrl={form.photoThumbnailUrl}
+                  onPhotoChange={(photoData) => {
+                    setForm({
+                      ...form,
+                      photoUrl: photoData.photoUrl || "",
+                      photoThumbnailUrl: photoData.photoThumbnailUrl || "",
+                      photoUploadedAt: photoData.uploadedAt
+                    });
+                  }}
+                  required={false}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Social Media Section Header */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Social Media & Contact</h3>
+            <p className="text-sm text-gray-600 mb-4">Optional social media profiles and contact information for verification and communication purposes.</p>
+          </div>
+
+          {/* Facebook Profile URL */}
+          <div>
+            <label className="block text-sm mb-1">Facebook Profile URL (Optional)</label>
+            <Input
+              value={form.facebookUrl}
+              onChange={(e) => setVal("facebookUrl", e.target.value)}
+              className="rounded-2xl"
+              placeholder="https://facebook.com/yourname"
+            />
+            {errors.facebookUrl && (
+              <p className="text-xs text-rose-600 mt-1">{errors.facebookUrl}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">Full Facebook profile URL</p>
+          </div>
+
+          {/* Instagram Handle */}
+          <div>
+            <label className="block text-sm mb-1">Instagram Handle (Optional)</label>
+            <Input
+              value={form.instagramHandle}
+              onChange={(e) => setVal("instagramHandle", e.target.value)}
+              className="rounded-2xl"
+              placeholder="@yourusername"
+            />
+            {errors.instagramHandle && (
+              <p className="text-xs text-rose-600 mt-1">{errors.instagramHandle}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">Your Instagram username with @</p>
+          </div>
+
+          {/* WhatsApp Number */}
+          <div>
+            <label className="block text-sm mb-1">WhatsApp Number (Optional)</label>
+            <Input
+              value={form.whatsappNumber}
+              onChange={(e) => setVal("whatsappNumber", e.target.value)}
+              className="rounded-2xl"
+              placeholder="+92XXXXXXXXXX"
+            />
+            {errors.whatsappNumber && (
+              <p className="text-xs text-rose-600 mt-1">{errors.whatsappNumber}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">WhatsApp number with country code</p>
+          </div>
+
+          {/* LinkedIn Profile URL */}
+          <div>
+            <label className="block text-sm mb-1">LinkedIn Profile URL (Optional)</label>
+            <Input
+              value={form.linkedinUrl}
+              onChange={(e) => setVal("linkedinUrl", e.target.value)}
+              className="rounded-2xl"
+              placeholder="https://linkedin.com/in/yourname"
+            />
+            {errors.linkedinUrl && (
+              <p className="text-xs text-rose-600 mt-1">{errors.linkedinUrl}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">Professional LinkedIn profile URL</p>
+          </div>
+
+          {/* Twitter Handle */}
+          <div>
+            <label className="block text-sm mb-1">Twitter/X Handle (Optional)</label>
+            <Input
+              value={form.twitterHandle}
+              onChange={(e) => setVal("twitterHandle", e.target.value)}
+              className="rounded-2xl"
+              placeholder="@yourusername"
+            />
+            {errors.twitterHandle && (
+              <p className="text-xs text-rose-600 mt-1">{errors.twitterHandle}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">Your Twitter/X username with @</p>
+          </div>
+
+          {/* TikTok Handle */}
+          <div>
+            <label className="block text-sm mb-1">TikTok Handle (Optional)</label>
+            <Input
+              value={form.tiktokHandle}
+              onChange={(e) => setVal("tiktokHandle", e.target.value)}
+              className="rounded-2xl"
+              placeholder="@yourusername"
+            />
+            {errors.tiktokHandle && (
+              <p className="text-xs text-rose-600 mt-1">{errors.tiktokHandle}</p>
+            )}
+            <p className="text-xs text-slate-500 mt-1">Your TikTok username with @</p>
+          </div>
+
+          {/* Introduction Video Section */}
+          <div className="md:col-span-2">
+            <h3 className="text-lg font-semibold text-blue-800 mb-3">Introduction Video</h3>
+            <p className="text-sm text-gray-600 mb-4">Record a personal video (60-90 seconds) to introduce yourself to potential sponsors. This helps create a stronger connection and shows your personality.</p>
+            
+            <VideoUploader
+              currentVideoUrl={form.introVideoUrl}
+              currentThumbnailUrl={form.introVideoThumbnailUrl}
+              currentDuration={form.introVideoDuration}
+              onVideoSelect={(videoData, metadata) => {
+                // Video has been uploaded to server, update form with URLs
+                setVal('introVideoUrl', videoData.url);
+                setVal('introVideoThumbnailUrl', videoData.thumbnailUrl);
+                setVal('introVideoDuration', videoData.duration);
+                setVal('introVideoUploadedAt', videoData.uploadedAt);
+              }}
+              onVideoRemove={async () => {
+                try {
+                  // Call API to remove video from server
+                  const token = localStorage.getItem('auth_token');
+                  const response = await fetch(`${API.baseURL}/api/videos/intro`, {
+                    method: 'DELETE',
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    }
+                  });
+                  
+                  if (response.ok) {
+                    setVal('introVideoUrl', '');
+                    setVal('introVideoThumbnailUrl', '');
+                    setVal('introVideoDuration', null);
+                    setVal('introVideoUploadedAt', null);
+                    toast.success('Video removed successfully');
+                  } else {
+                    toast.error('Failed to remove video');
+                  }
+                } catch (error) {
+                  console.error('Error removing video:', error);
+                  toast.error('Failed to remove video');
+                }
+              }}
+            />
+          </div>
+
           {/* Enhanced Details for Donors Section Header */}
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold text-blue-800 mb-3">Additional Details for Sponsors</h3>
@@ -564,28 +1082,6 @@ export default function StudentProfile() {
             </select>
             {errors.monthlyFamilyIncome && (
               <p className="text-xs text-rose-600 mt-1">{errors.monthlyFamilyIncome}</p>
-            )}
-          </div>
-
-          {/* Current Academic Year */}
-          <div>
-            <label className="block text-sm mb-1">Current Academic Year/Level</label>
-            <select
-              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
-              value={form.currentAcademicYear}
-              onChange={(e) => setVal("currentAcademicYear", e.target.value)}
-            >
-              <option value="">Select academic year</option>
-              <option value="1st Year">1st Year</option>
-              <option value="2nd Year">2nd Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="Final Year">Final Year</option>
-              <option value="Masters 1st Year">Masters 1st Year</option>
-              <option value="Masters 2nd Year">Masters 2nd Year</option>
-              <option value="PhD">PhD</option>
-            </select>
-            {errors.currentAcademicYear && (
-              <p className="text-xs text-rose-600 mt-1">{errors.currentAcademicYear}</p>
             )}
           </div>
 

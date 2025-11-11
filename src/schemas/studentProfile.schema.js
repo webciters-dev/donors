@@ -53,4 +53,18 @@ export const studentProfileSchema = z.object({
           f.size <= 3 * 1024 * 1024),
       "JPG/PNG up to 3MB"
     ),
+  
+  // Introduction video validation (60-90 seconds, max 100MB)
+  introVideo: z
+    .any()
+    .optional()
+    .refine(
+      (f) =>
+        !f ||
+        (typeof f === "object" &&
+          f.type &&
+          ["video/mp4", "video/quicktime", "video/x-msvideo", "video/webm"].includes(f.type) &&
+          f.size <= 100 * 1024 * 1024), // 100MB limit
+      "MP4/MOV/AVI/WebM up to 100MB"
+    ),
 });

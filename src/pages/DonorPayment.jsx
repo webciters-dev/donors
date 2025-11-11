@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
 import StablePaymentForm from "@/components/StablePaymentForm";
-import { CURRENCY_META, getCurrencyFromCountry, fmtAmount } from "@/lib/currency";
+import { CURRENCY_META, getCurrencyFromCountry, fmtAmount, fmtAmountDual } from "@/lib/currency";
 import { 
   ArrowLeft, 
   CreditCard, 
@@ -414,7 +414,7 @@ function DonorPayment() {
               <div className="space-y-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                   <span className="text-xs sm:text-sm text-slate-600">Total Educational Need:</span>
-                  <span className="font-semibold text-base sm:text-lg">{fmtAmount(totalNeed, currency)}</span>
+                  <span className="font-semibold text-base sm:text-lg">{fmtAmountDual(totalNeed, currency)}</span>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs">
                   <span className="text-slate-500">
@@ -444,7 +444,7 @@ function DonorPayment() {
                   </label>
                   <div className="bg-slate-50 p-3 sm:p-4 rounded-lg border">
                     <div className="text-xl sm:text-2xl font-bold text-slate-900">
-                      {fmtAmount(totalNeed, currency)}
+                      {fmtAmountDual(totalNeed, currency)}
                     </div>
                     <div className="text-xs sm:text-sm text-slate-600">
                       Complete education sponsorship

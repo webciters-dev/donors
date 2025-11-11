@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { fmtAmount } from "@/data/demoDonor";
+import { fmtAmount, fmtAmountDual } from "@/data/demoDonor";
 import { getCurrencyFlag, getCurrencyFromCountry } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/lib/api";
@@ -101,7 +101,7 @@ export default function DonorBrowse() {
                   <div className="text-sm text-gray-600">{student.program} • {student.university}</div>
                 </div>
                 <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                  {getCurrencyFlag(student.currency)} {fmtAmount(student.displayAmount, student.currency)}
+                  {getCurrencyFlag(student.currency)} {fmtAmountDual(student.displayAmount, student.currency)}
                 </Badge>
               </div>
               
@@ -123,7 +123,7 @@ export default function DonorBrowse() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Funding Goal</span>
                   <span className="text-green-600 font-medium">
-                    {getCurrencyFlag(student.currency)} {fmtAmount(student.displayAmount, student.currency)}
+                    {getCurrencyFlag(student.currency)} {fmtAmountDual(student.displayAmount, student.currency)}
                   </span>
                 </div>
               </div>

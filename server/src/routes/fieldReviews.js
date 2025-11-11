@@ -2,13 +2,13 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
-import { sendFieldOfficerWelcomeEmail } from "../lib/emailService.js";
+import { sendFieldOfficerWelcomeEmail, sendMissingDocumentRequestEmail } from "../lib/emailService.js";
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// List reviews (admin sees all; field officer sees own)
+// List reviews (admin sees all; case worker sees own)
 router.get("/", requireAuth, async (req, res) => {
   try {
     const role = req.user?.role;
@@ -34,37 +34,39 @@ router.get("/", requireAuth, async (req, res) => {
   }
 });
 
-// Create/assign a review (admin)
+// Create/assign a review (admin) - now supports task-specific assignments
 router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   try {
-    const { applicationId, studentId, officerUserId } = req.body || {};
+    const { applicationId, studentId, officerUserId, taskType } = req.body || {};
     if (!applicationId || !studentId || !officerUserId) {
       return res.status(400).json({ error: "applicationId, studentId, officerUserId required" });
     }
 
-    // Check for existing assignment to prevent duplicates
+    // Check for existing assignment to prevent duplicates for the same task type
     const existingReview = await prisma.fieldReview.findFirst({
       where: {
         applicationId: applicationId,
-        officerUserId: officerUserId
+        officerUserId: officerUserId,
+        taskType: taskType || null
       }
     });
 
     if (existingReview) {
+      const taskDescription = taskType ? ` for ${taskType.replace('_', ' ').toLowerCase()}` : '';
       return res.status(400).json({ 
-        error: "Application is already assigned to this field officer",
+        error: `Application is already assigned to this case worker${taskDescription}`,
         existingReviewId: existingReview.id 
       });
     }
 
-    // Get field officer details
-    const fieldOfficer = await prisma.user.findUnique({
+    // Get case worker details
+    const caseWorker = await prisma.user.findUnique({
       where: { id: officerUserId },
       select: { id: true, email: true, name: true }
     });
 
-    if (!fieldOfficer) {
-      return res.status(404).json({ error: "Field officer not found" });
+    if (!caseWorker) {
+      return res.status(404).json({ error: "Case worker not found" });
     }
 
     // Get application and student details for email
@@ -77,14 +79,20 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       return res.status(404).json({ error: "Application not found" });
     }
 
-    // Create the review
+    // Create the review with optional task type
     const review = await prisma.fieldReview.create({
-      data: { applicationId, studentId, officerUserId, status: "PENDING" },
+      data: { 
+        applicationId, 
+        studentId, 
+        officerUserId, 
+        taskType: taskType || null,
+        status: "PENDING" 
+      },
     });
 
-    // Send welcome email to field officer (async, don't block response)
-    if (fieldOfficer.email) {
-      // Generate temporary password if field officer doesn't have one set
+    // Send welcome email to case worker (async, don't block response)
+    if (caseWorker.email) {
+      // Generate temporary password if case worker doesn't have one set
       let tempPassword = null;
       const existingUser = await prisma.user.findUnique({ 
         where: { id: officerUserId },
@@ -93,7 +101,7 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       
       if (!existingUser.passwordHash) {
         // Generate temporary password
-        tempPassword = `FieldOfficer${Math.random().toString(36).slice(-6)}!`;
+        tempPassword = `CaseWorker${Math.random().toString(36).slice(-6)}!`;
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         await prisma.user.update({
           where: { id: officerUserId },
@@ -101,15 +109,16 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
         });
       }
 
-      // Send email notification
+      // Send email notification with task-specific details
+      const taskDescription = taskType ? ` for ${taskType.replace('_', ' ').toLowerCase()}` : '';
       sendFieldOfficerWelcomeEmail({
-        email: fieldOfficer.email,
-        name: fieldOfficer.name || 'Field Officer',
+        email: caseWorker.email,
+        name: caseWorker.name || 'Case Worker',
         password: tempPassword || 'Use your existing password',
         applicationId: applicationId,
-        studentName: application.student.name
+        studentName: `${application.student.name}${taskDescription}`
       }).catch(emailError => {
-        console.error('Failed to send sub admin email:', emailError);
+        console.error('Failed to send case worker email:', emailError);
         // Don't fail the request if email fails
       });
     }
@@ -121,7 +130,7 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   }
 });
 
-// Update review (sub admin sets status/notes/recommendation)
+// Update review (case worker sets status/notes/recommendation)
 router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -178,7 +187,7 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, r
       data: updateData,
     });
 
-    // Auto-notify student when Sub Admin completes verification
+    // Auto-notify student when Case Worker completes verification
     if (status === "COMPLETED") {
       try {
         const reviewWithDetails = await prisma.fieldReview.findUnique({
@@ -212,7 +221,7 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, r
   }
 });
 
-// Request missing info (sub admin) — email placeholder and message log
+// Request missing info (case worker) — email placeholder and message log
 router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -224,10 +233,16 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN")
     const student = await prisma.student.findUnique({ where: { id: review.studentId } });
     if (!student) return res.status(404).json({ error: "Student not found" });
 
-    const body = `Dear ${student.name},\n\nTo proceed with your application, please upload the following documents:\n\n- ${items.join("\n- ")}\n\n${note}\n\nPlease log into your Awake Connect account to upload these documents.\n\nBest regards,\nAwake Team`;
-
-    // Placeholder: send email (for dev we log to console; plug SMTP here later)
-    console.log("[EMAIL to]", student.email, "\n[SUBJECT] Request for Missing Information\n[BODY]\n" + body);
+    // Send missing document request email (async, don't block response)
+    sendMissingDocumentRequestEmail({
+      email: student.email,
+      name: student.name,
+      missingItems: items,
+      note: note,
+      applicationId: review.applicationId
+    }).catch(emailError => {
+      console.error('Failed to send missing document request email:', emailError);
+    });
 
     // Log as a message on the application
     await prisma.message.create({
@@ -246,7 +261,7 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN")
   }
 });
 
-// Reassign field officer (admin only)
+// Reassign case worker (admin only)
 router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -268,14 +283,14 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
       return res.status(404).json({ error: "Review not found" });
     }
 
-    // Get new field officer details
+    // Get new case worker details
     const newFieldOfficer = await prisma.user.findUnique({
       where: { id: newOfficerUserId },
       select: { id: true, email: true, name: true, role: true }
     });
 
     if (!newFieldOfficer || newFieldOfficer.role !== 'SUB_ADMIN') {
-      return res.status(404).json({ error: "Valid sub admin not found" });
+      return res.status(404).json({ error: "Valid case worker not found" });
     }
 
     // Update the review assignment
@@ -293,12 +308,12 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
       data: {
         studentId: currentReview.studentId,
         applicationId: currentReview.applicationId,
-        text: `Sub admin reassigned to ${newFieldOfficer.name || newFieldOfficer.email} for further review.`,
+        text: `Case worker reassigned to ${newFieldOfficer.name || newFieldOfficer.email} for further review.`,
         fromRole: "admin"
       }
     });
 
-    // Send email notification to new field officer (async)
+    // Send email notification to new case worker (async)
     if (newFieldOfficer.email) {
       let tempPassword = null;
       const existingUser = await prisma.user.findUnique({ 
@@ -317,19 +332,19 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
 
       sendFieldOfficerWelcomeEmail({
         email: newFieldOfficer.email,
-        name: newFieldOfficer.name || 'Field Officer',
+        name: newFieldOfficer.name || 'Case Worker',
         password: tempPassword || 'Use your existing password',
         applicationId: currentReview.applicationId,
         studentName: currentReview.application.student.name
       }).catch(emailError => {
-        console.error('Failed to send sub admin reassignment email:', emailError);
+        console.error('Failed to send case worker reassignment email:', emailError);
       });
     }
 
     res.json({ review: updatedReview });
   } catch (e) {
     console.error("PATCH /field-reviews/:id/reassign failed:", e);
-    res.status(500).json({ error: "Failed to reassign field officer" });
+    res.status(500).json({ error: "Failed to reassign case worker" });
   }
 });
 
@@ -372,7 +387,7 @@ router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
     });
   } catch (e) {
     console.error("DELETE /field-reviews/:id failed:", e);
-    res.status(500).json({ error: "Failed to unassign field officer" });
+    res.status(500).json({ error: "Failed to unassign case worker" });
   }
 });
 

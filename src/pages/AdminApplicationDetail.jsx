@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,16 @@ import { CheckCircle2, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
+import StudentPhoto from "@/components/StudentPhoto";
+import StudentVideo from "@/components/StudentVideo";
+
+// Case Worker task types
+const TASK_TYPES = [
+  { value: "", label: "Complete Verification (All Tasks)", icon: "🎯", description: "Full verification including documents, field visit, and CNIC" },
+  { value: "DOCUMENT_REVIEW", label: "Document Review Only", icon: "📄", description: "Review and verify submitted documents" },
+  { value: "FIELD_VISIT", label: "Field Visit Only", icon: "🏠", description: "Conduct home visit and interview" },
+  { value: "CNIC_VERIFICATION", label: "CNIC Verification Only", icon: "🆔", description: "Verify identity documents" },
+];
 
 export default function AdminApplicationDetail() {
   const { id } = useParams(); // application id
@@ -22,6 +32,7 @@ export default function AdminApplicationDetail() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [assignOfficer, setAssignOfficer] = useState("");
+  const [assignTaskType, setAssignTaskType] = useState("");
   const [officers, setOfficers] = useState([]);
   const [missingItems, setMissingItems] = useState({});
   const [missingNote, setMissingNote] = useState({});
@@ -72,7 +83,7 @@ export default function AdminApplicationDetail() {
         
         // Load donor-student conversations for admin oversight
         try {
-          console.log('🔍 AdminApplicationDetail: Loading donor-student conversations for studentId:', data.studentId);
+          console.log('­ƒöì AdminApplicationDetail: Loading donor-student conversations for studentId:', data.studentId);
           const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {}
           });
@@ -86,13 +97,13 @@ export default function AdminApplicationDetail() {
               conv.studentId === data.studentId && conv.type === 'DONOR_STUDENT'
             );
             
-            console.log(`🔍 AdminApplicationDetail: Found ${studentConversations.length} donor-student conversations`);
+            console.log(`­ƒöì AdminApplicationDetail: Found ${studentConversations.length} donor-student conversations`);
             
             // Extract messages from donor-student conversations
             studentConversations.forEach(conv => {
               if (conv.messages) {
                 conv.messages.forEach(msg => {
-                  console.log('🔍 AdminApplicationDetail: Adding conversation message:', msg.senderRole, msg.text?.substring(0, 50));
+                  console.log('­ƒöì AdminApplicationDetail: Adding conversation message:', msg.senderRole, msg.text?.substring(0, 50));
                   allMessages.push({
                     id: msg.id,
                     text: msg.text,
@@ -105,15 +116,15 @@ export default function AdminApplicationDetail() {
               }
             });
           } else {
-            console.error('🔍 AdminApplicationDetail: Conversations API failed:', convRes.status);
+            console.error('­ƒöì AdminApplicationDetail: Conversations API failed:', convRes.status);
           }
         } catch (convError) {
-          console.error('🔍 AdminApplicationDetail: Failed to load conversations:', convError);
+          console.error('­ƒöì AdminApplicationDetail: Failed to load conversations:', convError);
         }
         
         // Sort all messages newest first for better UX
         allMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        console.log('🔍 AdminApplicationDetail: Total messages loaded:', allMessages.length);
+        console.log('­ƒöì AdminApplicationDetail: Total messages loaded:', allMessages.length);
         setMessages(allMessages);
       } catch (e) {
         console.error(e);
@@ -138,11 +149,20 @@ export default function AdminApplicationDetail() {
 
   async function createAssignment() {
     try {
-      if (!assignOfficer) { toast.error("Select a sub admin"); return; }
+      if (!assignOfficer) { toast.error("Select a case worker"); return; }
+      
+      const taskType = assignTaskType || ""; // Empty string for complete verification
+      const taskDescription = TASK_TYPES.find(t => t.value === taskType)?.label || "Complete Verification";
+      
       const res = await fetch(`${API.baseURL}/api/field-reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
-        body: JSON.stringify({ applicationId: app.id, studentId: app.studentId, officerUserId: assignOfficer })
+        body: JSON.stringify({ 
+          applicationId: app.id, 
+          studentId: app.studentId, 
+          officerUserId: assignOfficer,
+          taskType: taskType
+        })
       });
       if (!res.ok) throw new Error(await res.text());
       const j = await res.json();
@@ -153,8 +173,9 @@ export default function AdminApplicationDetail() {
       const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
       setReviews(mine);
       
-      toast.success("Assigned to sub admin");
+      toast.success(`Assigned ${taskDescription} to case worker`);
       setAssignOfficer(""); // Clear the selection
+      setAssignTaskType(""); // Clear the task type selection
     } catch (e) {
       console.error(e);
       toast.error("Failed to assign");
@@ -209,7 +230,7 @@ export default function AdminApplicationDetail() {
     try {
       const newOfficerId = reassignOfficer[reviewId];
       if (!newOfficerId) {
-        toast.error("Please select a sub admin to reassign");
+        toast.error("Please select a case worker to reassign");
         return;
       }
 
@@ -230,10 +251,10 @@ export default function AdminApplicationDetail() {
       // Clear selection
       setReassignOfficer(prev => ({ ...prev, [reviewId]: "" }));
       
-      toast.success("Sub admin reassigned successfully");
+      toast.success("Case worker reassigned successfully");
     } catch (e) {
       console.error(e);
-      toast.error("Failed to reassign sub admin");
+      toast.error("Failed to reassign case worker");
     }
   }
 
@@ -251,134 +272,288 @@ export default function AdminApplicationDetail() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="text-base sm:text-lg font-semibold">{app.student?.name}</div>
-            <div className="text-xs sm:text-sm text-slate-600">{app.student?.program} · {app.student?.university}</div>
+            <div className="text-xs sm:text-sm text-slate-600">{app.student?.program} → {app.student?.university}</div>
           </div>
           <Badge className="self-start sm:self-auto">{app.status}</Badge>
         </div>
         <div className="text-xs sm:text-sm text-slate-700">Profile completeness: {completeness.percent}%</div>
       </Card>
 
-      {/* Student Details */}
+      {/* Student Photo and Video */}
       <Card className="p-4 sm:p-6">
-        <div className="font-medium mb-3 text-sm sm:text-base">Student details</div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+        <div className="font-medium mb-4 text-sm sm:text-base">Student Profile</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Student Photo */}
           <div>
-            <div className="text-slate-500">Email</div>
-            <div>{app.student?.email || "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Gender</div>
-            <div>{app.student?.gender || "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">City / Province</div>
-            <div>{[app.student?.city, app.student?.province].filter(Boolean).join(", ") || "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">GPA</div>
-            <div>{app.student?.gpa ?? "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Expected Graduation</div>
-            <div>{app.student?.gradYear ?? "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Current Institution</div>
-            <div>{app.student?.currentInstitution || "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Current City</div>
-            <div>{app.student?.currentCity || "-"}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Completion Year</div>
-            <div>{app.student?.currentCompletionYear ?? "-"}</div>
-          </div>
-        </div>
-        
-        {/* Personal Introduction */}
-        {app.student?.personalIntroduction && (
-          <div className="mt-4 pt-4 border-t">
-            <div className="text-slate-500 text-sm mb-2">Personal Introduction</div>
-            <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap">
-              {app.student.personalIntroduction}
+            <h4 className="font-medium text-sm mb-3 text-slate-700">Profile Photo</h4>
+            <div className="flex flex-col gap-4">
+              <StudentPhoto 
+                student={app.student}
+                size="large"
+                className="shadow-lg border-2 border-gray-200"
+              />
+              <div className="text-sm text-slate-600">
+                {app.student?.photoUrl ? (
+                  <div>
+                    <div>✅ Photo uploaded</div>
+                    <div className="text-xs opacity-75">Profile picture available</div>
+                  </div>
+                ) : (
+                  <div className="text-slate-400">No photo uploaded</div>
+                )}
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Introduction Video */}
+          <div>
+            <h4 className="font-medium text-sm mb-3 text-slate-700">Introduction Video</h4>
+            <div className="flex flex-col gap-4">
+              <StudentVideo 
+                student={app.student}
+                size="large"
+                className="shadow-lg border-2 border-gray-200"
+              />
+              <div className="text-sm text-slate-600">
+                {app.student?.introVideoUrl ? (
+                  <div>
+                    <div>✅ Video uploaded</div>
+                    <div className="text-xs opacity-75">Click to play video</div>
+                  </div>
+                ) : (
+                  <div className="text-slate-400">No video uploaded</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </Card>
 
-      {/* Enhanced Background Details */}
-      <Card className="p-6">
-        <div className="flex items-center gap-2 font-medium mb-4">
-          <GraduationCap className="h-5 w-5" />
-          <span>Detailed Background</span>
+      {/* Comprehensive Student Details */}
+      <Card className="p-4 sm:p-6">
+        <div className="font-medium mb-4 text-sm sm:text-base">Complete Student Profile</div>
+        
+        {/* Basic Information */}
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Basic Information</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <div className="text-slate-500">Full Name</div>
+              <div className="font-medium">{app.student?.name || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Email</div>
+              <div>{app.student?.email || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Phone</div>
+              <div>{app.student?.phone || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">CNIC</div>
+              <div>{app.student?.cnic || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Date of Birth</div>
+              <div>{app.student?.dateOfBirth || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Gender</div>
+              <div>{app.student?.gender || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Address</div>
+              <div>{app.student?.address || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">City</div>
+              <div>{app.student?.city || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Province</div>
+              <div>{app.student?.province || "-"}</div>
+            </div>
+          </div>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-3 text-sm">
-            {app.student?.familySize && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Family Size</span>
-                <span className="font-medium">{app.student.familySize} members</span>
-              </div>
-            )}
-            {app.student?.parentsOccupation && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Parents' Occupation</span>
-                <span className="font-medium">{app.student.parentsOccupation}</span>
-              </div>
-            )}
-            {app.student?.monthlyFamilyIncome && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Family Income</span>
-                <span className="font-medium">{app.student.monthlyFamilyIncome}</span>
-              </div>
-            )}
-            {app.student?.currentAcademicYear && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Academic Year</span>
-                <span className="font-medium">{app.student.currentAcademicYear}</span>
-              </div>
-            )}
-          </div>
-          <div className="space-y-3 text-sm">
-            {app.student?.specificField && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Specialization</span>
-                <span className="font-medium">{app.student.specificField}</span>
-              </div>
-            )}
+
+        {/* Guardian Information */}
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Guardian Information</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <div className="text-slate-500">Guardian Name</div>
+              <div>{app.student?.guardianName || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Guardian CNIC</div>
+              <div>{app.student?.guardianCnic || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Guardian Phone 1</div>
+              <div>{app.student?.guardianPhone1 || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Second Guardian</div>
+              <div>{app.student?.guardian2Name || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Second Guardian CNIC</div>
+              <div>{app.student?.guardian2Cnic || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Guardian Phone 2</div>
+              <div>{app.student?.guardianPhone2 || "-"}</div>
+            </div>
           </div>
         </div>
 
-        {/* Career Goals */}
-        {app.student?.careerGoals && (
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
-            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
-              {app.student.careerGoals}
+        {/* Academic Information */}
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Academic Information</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <div className="text-slate-500">Current Institution</div>
+              <div>{app.student?.currentInstitution || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Current City</div>
+              <div>{app.student?.currentCity || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Completion Year</div>
+              <div>{app.student?.currentCompletionYear || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Target University</div>
+              <div>{app.student?.university || app.student?.customUniversity || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Program/Field</div>
+              <div>{app.student?.program || app.student?.field || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Degree Level</div>
+              <div>{app.student?.degreeLevel || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">GPA</div>
+              <div>{app.student?.gpa || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Expected Graduation</div>
+              <div>{app.student?.gradYear || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Specific Field</div>
+              <div>{app.student?.specificField || "-"}</div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Academic Achievements */}
-        {app.student?.academicAchievements && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
-            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
-              {app.student.academicAchievements}
+        {/* Family & Background Information */}
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Family & Background</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <div className="text-slate-500">Family Size</div>
+              <div>{app.student?.familySize || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Parents Occupation</div>
+              <div>{app.student?.parentsOccupation || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Monthly Family Income</div>
+              <div>{app.student?.monthlyFamilyIncome || "-"}</div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Community Involvement */}
-        {app.student?.communityInvolvement && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
-            <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
-              {app.student.communityInvolvement}
+        {/* Social Media & Contact */}
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Social Media & Contact</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <div className="text-slate-500">WhatsApp</div>
+              <div>{app.student?.whatsappNumber ? (
+                <a href={`https://wa.me/${app.student.whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  {app.student.whatsappNumber}
+                </a>
+              ) : "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Facebook</div>
+              <div>{app.student?.facebookUrl ? (
+                <a href={app.student.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  View Profile
+                </a>
+              ) : "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">LinkedIn</div>
+              <div>{app.student?.linkedinUrl ? (
+                <a href={app.student.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  View Profile
+                </a>
+              ) : "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Instagram</div>
+              <div>{app.student?.instagramHandle || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">Twitter</div>
+              <div>{app.student?.twitterHandle || "-"}</div>
+            </div>
+            <div>
+              <div className="text-slate-500">TikTok</div>
+              <div>{app.student?.tiktokHandle || "-"}</div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Detailed Descriptions */}
+        <div className="space-y-4">
+          {/* Personal Introduction */}
+          {app.student?.personalIntroduction && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-slate-700">Personal Introduction</h4>
+              <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap border">
+                {app.student.personalIntroduction}
+              </div>
+            </div>
+          )}
+
+          {/* Career Goals */}
+          {app.student?.careerGoals && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-slate-700">Career Goals</h4>
+              <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap border">
+                {app.student.careerGoals}
+              </div>
+            </div>
+          )}
+
+          {/* Academic Achievements */}
+          {app.student?.academicAchievements && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-slate-700">Academic Achievements</h4>
+              <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap border">
+                {app.student.academicAchievements}
+              </div>
+            </div>
+          )}
+
+          {/* Community Involvement */}
+          {app.student?.communityInvolvement && (
+            <div>
+              <h4 className="font-medium text-sm mb-2 text-slate-700">Community Involvement</h4>
+              <div className="text-sm leading-relaxed text-slate-700 bg-slate-50 p-3 rounded whitespace-pre-wrap border">
+                {app.student.communityInvolvement}
+              </div>
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Financial Details */}
@@ -404,25 +579,25 @@ export default function AdminApplicationDetail() {
                 {app?.universityFee && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">University Fee</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `₨${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `Ôé¿${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.livingExpenses && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Books & Living</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `₨${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `Ôé¿${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.totalExpense && (
                   <div className="flex justify-between border-t pt-2">
                     <span className="text-slate-700 font-medium">Total Expense</span>
-                    <span className="font-semibold">{app.currency === "PKR" ? `₨${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
+                    <span className="font-semibold">{app.currency === "PKR" ? `Ôé¿${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.scholarshipAmount && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Scholarship</span>
-                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `₨${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
+                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `Ôé¿${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-2">
@@ -448,7 +623,7 @@ export default function AdminApplicationDetail() {
       <Card className="p-6 bg-blue-50 border-2 border-blue-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-blue-800 flex items-center gap-2">
-            👨‍💼 Admin Decision Panel
+            🔧⚙️ Admin Decision Panel
           </h3>
           <Badge variant="outline" className="text-blue-700 border-blue-300">
             Current Status: {app.status}
@@ -531,7 +706,7 @@ export default function AdminApplicationDetail() {
                     }));
                   }}
                 >
-                  🔄 Mark Under Review
+                  🔍 Mark Under Review
                 </Button>
               </div>
             </div>
@@ -578,7 +753,7 @@ export default function AdminApplicationDetail() {
                           
                           if (!forceRes.ok) throw new Error("Failed to force approve application");
                           
-                          toast.success("⚠️ Application force approved despite missing documents!");
+                          toast.success("✅ Application force approved despite missing documents!");
                         } else {
                           // Reset status to previous value
                           setApp(prev => ({
@@ -607,7 +782,7 @@ export default function AdminApplicationDetail() {
                   }
                 }}
               >
-                💾 Save Changes
+                ­ƒÆ¥ Save Changes
               </Button>
             </div>
           </div>
@@ -617,7 +792,7 @@ export default function AdminApplicationDetail() {
         {reviews.length > 0 && reviews[0].status === "COMPLETED" && (
           <div className="mt-4 pt-4 border-t border-blue-300">
             <div className="text-sm font-medium text-blue-800 mb-2">
-              📋 Sub Admin Recommendation Summary:
+              📊 Case Worker Recommendation Summary:
             </div>
             <div className="bg-white rounded p-3 border border-blue-200">
               <div className="flex items-center gap-2 text-sm">
@@ -660,7 +835,7 @@ export default function AdminApplicationDetail() {
             const missingRequired = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
             
             if (missingRequired.length === 0) {
-              return <Badge className="bg-green-100 text-green-800 text-xs">✅ All Required</Badge>;
+              return <Badge className="bg-green-100 text-green-800 text-xs">Ô£à All Required</Badge>;
             } else {
               return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingRequired.length}</Badge>;
             }
@@ -681,7 +856,7 @@ export default function AdminApplicationDetail() {
                     rel="noreferrer"
                     className="text-green-700 hover:text-green-900 hover:underline font-medium"
                   >
-                    📁 {doc.originalName || doc.type.replaceAll("_", " ")}
+                    ✅ {doc.originalName || doc.type.replaceAll("_", " ")}
                   </a>
                 </div>
               </div>
@@ -690,14 +865,21 @@ export default function AdminApplicationDetail() {
         </div>
       </Card>
 
-      {/* Sub Admin Assignment & Actions */}
+      {/* Case Worker Assignment & Actions */}
       <Card className="p-6 space-y-4">
-        <div className="font-medium">Sub Admin Review</div>
-        <div className="grid md:grid-cols-3 gap-2 items-center">
+        <div className="font-medium">Case Worker Assignment</div>
+        <div className="grid md:grid-cols-4 gap-2 items-center">
           <select className="rounded-2xl border px-3 py-2 text-sm" value={assignOfficer} onChange={(e)=>setAssignOfficer(e.target.value)}>
-            <option value="">Select sub admin…</option>
+            <option value="">Select case worker…</option>
             {officers.map(o => (
               <option key={o.id} value={o.id}>{o.name || o.email}</option>
+            ))}
+          </select>
+          <select className="rounded-2xl border px-3 py-2 text-sm" value={assignTaskType} onChange={(e)=>setAssignTaskType(e.target.value)}>
+            {TASK_TYPES.map(task => (
+              <option key={task.value} value={task.value}>
+                {task.icon} {task.label}
+              </option>
             ))}
           </select>
           <Button className="rounded-2xl" onClick={createAssignment}>Assign</Button>
@@ -709,11 +891,11 @@ export default function AdminApplicationDetail() {
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="font-medium">Sub Admin Review #{r.id.slice(0,6)}</div>
-                  {/* Show assigned sub admin name */}
+                  <div className="font-medium">Case Worker Review #{r.id.slice(0,6)}</div>
+                  {/* Show assigned case worker name */}
                   {r.officerUserId && (
                     <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                      👤 {officers.find(o => o.id === r.officerUserId)?.name || officers.find(o => o.id === r.officerUserId)?.email || 'Unknown Sub Admin'}
+                      👤 {officers.find(o => o.id === r.officerUserId)?.name || officers.find(o => o.id === r.officerUserId)?.email || 'Unknown Case Worker'}
                     </Badge>
                   )}
                   <Badge variant={r.status === "COMPLETED" ? "default" : r.status === "IN_PROGRESS" ? "secondary" : "outline"}>
@@ -744,7 +926,7 @@ export default function AdminApplicationDetail() {
               {r.status === "COMPLETED" && (
                 <div className="bg-white rounded-lg p-4 mb-3 border">
                   <h4 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    🏠 Field Verification Report
+                    ­ƒÅá Field Verification Report
                   </h4>
                   
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -760,10 +942,10 @@ export default function AdminApplicationDetail() {
                       <div className="space-y-1">
                         <span className="font-medium text-slate-600">Verification Status:</span>
                         <div className="flex flex-wrap gap-1">
-                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Identity</Badge>}
-                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Documents</Badge>}
-                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Income</Badge>}
-                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Education</Badge>}
+                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Identity</Badge>}
+                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Documents</Badge>}
+                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Income</Badge>}
+                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Education</Badge>}
                         </div>
                       </div>
                       
@@ -813,28 +995,28 @@ export default function AdminApplicationDetail() {
                   <div className="grid md:grid-cols-2 gap-4 mt-4 text-xs">
                     {r.homeVisitNotes && (
                       <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
-                        <div className="font-medium text-blue-800 mb-1">🏠 Home Visit Notes:</div>
+                        <div className="font-medium text-blue-800 mb-1">­ƒÅá Home Visit Notes:</div>
                         <div className="text-blue-700">{r.homeVisitNotes}</div>
                       </div>
                     )}
                     
                     {r.familyInterviewNotes && (
                       <div className="bg-purple-50 p-3 rounded border-l-4 border-purple-400">
-                        <div className="font-medium text-purple-800 mb-1">👥 Family Interview:</div>
+                        <div className="font-medium text-purple-800 mb-1">­ƒæÑ Family Interview:</div>
                         <div className="text-purple-700">{r.familyInterviewNotes}</div>
                       </div>
                     )}
                     
                     {r.financialVerificationNotes && (
                       <div className="bg-green-50 p-3 rounded border-l-4 border-green-400">
-                        <div className="font-medium text-green-800 mb-1">💰 Financial Verification:</div>
+                        <div className="font-medium text-green-800 mb-1">­ƒÆ░ Financial Verification:</div>
                         <div className="text-green-700">{r.financialVerificationNotes}</div>
                       </div>
                     )}
                     
                     {r.characterAssessment && (
                       <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
-                        <div className="font-medium text-yellow-800 mb-1">⭐ Character Assessment:</div>
+                        <div className="font-medium text-yellow-800 mb-1">Ô¡É Character Assessment:</div>
                         <div className="text-yellow-700">{r.characterAssessment}</div>
                       </div>
                     )}
@@ -845,7 +1027,7 @@ export default function AdminApplicationDetail() {
                     <div className="mt-4 pt-3 border-t border-slate-200">
                       {r.recommendationReason && (
                         <div className="bg-slate-100 p-3 rounded mb-2">
-                          <div className="font-medium text-slate-800 text-sm mb-1">📝 Recommendation Reason:</div>
+                          <div className="font-medium text-slate-800 text-sm mb-1">­ƒôØ Recommendation Reason:</div>
                           <div className="text-slate-700 text-sm">{r.recommendationReason}</div>
                         </div>
                       )}
@@ -887,14 +1069,14 @@ export default function AdminApplicationDetail() {
               
               {/* Reassignment Section */}
               <div className="mt-3 pt-3 border-t border-slate-200">
-                <div className="text-sm font-medium text-slate-700 mb-2">Reassign Sub Admin:</div>
+                <div className="text-sm font-medium text-slate-700 mb-2">Reassign Case Worker:</div>
                 <div className="flex gap-2">
                   <select 
                     className="flex-1 rounded-2xl border px-3 py-2 text-sm" 
                     value={reassignOfficer[r.id] || ""} 
                     onChange={(e)=>setReassignOfficer(prev => ({ ...prev, [r.id]: e.target.value }))}
                   >
-                    <option value="">Select new sub admin...</option>
+                    <option value="">Select new case worker...</option>
                     {officers.map(officer => (
                       <option key={officer.id} value={officer.id}>
                         {officer.name || officer.email}
@@ -914,7 +1096,7 @@ export default function AdminApplicationDetail() {
               </div>
             </div>
           ))}
-          {reviews.length === 0 && <div className="text-sm text-slate-600">No sub admin assigned yet.</div>}
+          {reviews.length === 0 && <div className="text-sm text-slate-600">No case worker assigned yet.</div>}
         </div>
       </Card>
 
@@ -944,10 +1126,10 @@ export default function AdminApplicationDetail() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge variant={isDonorMessage ? "default" : isStudentReply ? "secondary" : "outline"}>
-                          {isDonorMessage ? `💝 Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
-                           isStudentReply ? '👤 Student Reply' : 
-                           m.fromRole === 'admin' ? '👨‍💼 Admin' : 
-                           '🏢 Sub Admin'}
+                          {isDonorMessage ? `­ƒÆØ Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
+                           isStudentReply ? '­ƒæñ Student Reply' : 
+                           m.fromRole === 'admin' ? '🔧 Admin' : 
+                           '👨‍💼 Case Worker'}
                         </Badge>
                         {(isDonorMessage || isStudentReply) && (
                           <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">

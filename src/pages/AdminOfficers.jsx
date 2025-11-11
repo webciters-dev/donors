@@ -13,7 +13,7 @@ export default function AdminOfficers() {
   const isAdmin = user?.role === "ADMIN";
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
-  const [subAdmins, setSubAdmins] = useState([]);
+  const [caseWorkers, setCaseWorkers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -28,10 +28,10 @@ export default function AdminOfficers() {
         return;
       }
       const j = await res.json();
-      setSubAdmins(Array.isArray(j?.users) ? j.users : []);
+      setCaseWorkers(Array.isArray(j?.users) ? j.users : []);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to load sub admins");
+      toast.error("Failed to load case workers");
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,7 @@ export default function AdminOfficers() {
 
   useEffect(() => { if (isAdmin) load(); }, [isAdmin, token]);
 
-  async function createSubAdmin() {
+  async function createCaseWorker() {
     try {
       if (!form.email || !form.password) {
         toast.error("Email and password are required");
@@ -55,7 +55,7 @@ export default function AdminOfficers() {
         const t = await res.text();
         throw new Error(t || `HTTP ${res.status}`);
       }
-      toast.success("Sub admin created");
+      toast.success("Case worker created");
       setForm({ name: "", email: "", password: "" });
       load();
     } catch (e) {
@@ -78,7 +78,8 @@ export default function AdminOfficers() {
       });
       if (!res.ok) throw new Error(await res.text());
       const j = await res.json();
-      setSubAdmins(prev => prev.map(x => x.id === o.id ? { ...j.user } : x));
+      const updated = j.user;
+      setCaseWorkers(prev => prev.map(x => x.id === o.id ? { ...updated } : x));
       toast.success("Saved");
     } catch (e) {
       console.error(e);
@@ -90,7 +91,7 @@ export default function AdminOfficers() {
     return <Card className="p-6">Admins only.</Card>;
   }
 
-  const editable = subAdmins.map(o => ({
+  const editable = caseWorkers.map(o => ({
     ...o,
     _name: o._name ?? o.name ?? "",
     _email: o._email ?? o.email ?? "",
@@ -101,8 +102,8 @@ export default function AdminOfficers() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Sub Admin Management</h1>
-          <p className="text-gray-600 mt-1">Manage sub admins who review student applications</p>
+          <h1 className="text-2xl font-semibold">Case Worker Management</h1>
+          <p className="text-gray-600 mt-1">Manage case workers who review student applications</p>
         </div>
         <Button variant="outline" className="rounded-2xl" onClick={load} disabled={loading}>
           {loading ? "Refreshing…" : "Refresh"}
@@ -114,7 +115,7 @@ export default function AdminOfficers() {
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-green-600" />
-            <div className="font-semibold text-green-800">Add New Sub Admin</div>
+            <div className="font-semibold text-green-800">Add New Case Worker</div>
           </div>
           
           <div className="grid md:grid-cols-4 gap-3 items-end">
@@ -150,11 +151,11 @@ export default function AdminOfficers() {
             <div>
               <Button 
                 className="w-full rounded-2xl bg-green-600 hover:bg-green-700" 
-                onClick={createSubAdmin} 
+                onClick={createCaseWorker} 
                 disabled={creating || !form.email || !form.password}
               >
                 <UserPlus className="h-4 w-4 mr-2" />
-                {creating ? "Creating…" : "Create Sub Admin"}
+                {creating ? "Creating…" : "Create Case Worker"}
               </Button>
             </div>
           </div>
@@ -171,7 +172,7 @@ export default function AdminOfficers() {
         <div className="px-6 py-4 border-b bg-slate-50">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-gray-600" />
-            <h2 className="font-semibold text-gray-800">Existing Sub Admins ({editable.length})</h2>
+            <h2 className="font-semibold text-gray-800">Existing Case Workers ({editable.length})</h2>
           </div>
         </div>
         
@@ -187,7 +188,7 @@ export default function AdminOfficers() {
               <div className="col-span-3">
                 <Input 
                   value={o._name} 
-                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} 
+                  onChange={(e)=>setCaseWorkers(prev=>prev.map(x=>x.id===o.id?{...x,_name:e.target.value}:x))} 
                   className="rounded-2xl" 
                   placeholder="Enter name"
                 />
@@ -195,7 +196,7 @@ export default function AdminOfficers() {
               <div className="col-span-4">
                 <Input 
                   value={o._email} 
-                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} 
+                  onChange={(e)=>setCaseWorkers(prev=>prev.map(x=>x.id===o.id?{...x,_email:e.target.value}:x))} 
                   className="rounded-2xl"
                   type="email"
                 />
@@ -203,7 +204,7 @@ export default function AdminOfficers() {
               <div className="col-span-2">
                 <Badge variant="secondary" className="flex items-center gap-1">
                   <Shield className="h-3 w-3" />
-                  Sub Admin
+                  Case Worker
                 </Badge>
               </div>
               <div className="col-span-3 flex items-center justify-end gap-2">
@@ -211,7 +212,7 @@ export default function AdminOfficers() {
                   type="password" 
                   placeholder="New password (optional)" 
                   value={o._newPassword} 
-                  onChange={(e)=>setSubAdmins(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} 
+                  onChange={(e)=>setCaseWorkers(prev=>prev.map(x=>x.id===o.id?{...x,_newPassword:e.target.value}:x))} 
                   className="rounded-2xl text-sm"
                 />
                 <Button 
@@ -229,8 +230,8 @@ export default function AdminOfficers() {
           {editable.length === 0 && (
             <div className="px-6 py-8 text-center">
               <Shield className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-              <div className="text-slate-600 font-medium">No sub admins yet</div>
-              <div className="text-slate-500 text-sm">Create your first sub admin above</div>
+              <div className="text-slate-600 font-medium">No case workers yet</div>
+              <div className="text-slate-500 text-sm">Create your first case worker above</div>
             </div>
           )}
         </div>

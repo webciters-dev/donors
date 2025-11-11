@@ -43,3 +43,20 @@ export function fmtAmount(n, currency = "USD") {
   const meta = CURRENCY_META[currency] || CURRENCY_META.USD;
   return `${meta.symbol} ${Number(n || 0).toLocaleString(meta.locale, { maximumFractionDigits: 0 })}`;
 }
+
+// Dual currency display for PKR amounts - for demo purposes, use a simple conversion
+export function fmtAmountDual(amount, currency = "USD") {
+  const meta = CURRENCY_META[currency] || CURRENCY_META.USD;
+  const num = Number(amount || 0);
+  
+  // For PKR amounts, show dual currency: PKR 200,000 (≈ $667 USD)
+  if (currency === 'PKR' && num > 0) {
+    const usdAmount = Math.round(num / 300); // Use 300 as demo rate
+    const pkrFormatted = `${meta.symbol} ${num.toLocaleString(meta.locale, { maximumFractionDigits: 0 })}`;
+    const usdFormatted = `$${usdAmount.toLocaleString()}`;
+    return `${pkrFormatted} (≈ ${usdFormatted} USD)`;
+  }
+  
+  // For all other currencies, show original format only
+  return `${meta.symbol} ${num.toLocaleString(meta.locale, { maximumFractionDigits: 0 })}`;
+}

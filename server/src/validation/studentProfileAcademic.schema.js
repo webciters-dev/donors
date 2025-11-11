@@ -57,7 +57,6 @@ export const studentProfileAcademicSchema = z
     careerGoals: z.string().max(500).optional(),
     academicAchievements: z.string().max(300).optional(),
     communityInvolvement: z.string().max(300).optional(),
-    currentAcademicYear: z.string().max(50).optional(),
     specificField: z.string().max(200).optional(),
   })
   .required();

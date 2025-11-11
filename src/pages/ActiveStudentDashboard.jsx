@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../lib/AuthContext';
 import { API } from '../lib/api';
-import { fmtAmount } from '../lib/currency';
+import { fmtAmount, fmtAmountDual } from '../lib/currency';
+import StudentPhoto from '../components/StudentPhoto';
 
 const ActiveStudentDashboard = () => {
   const navigate = useNavigate();
@@ -205,23 +206,30 @@ const ActiveStudentDashboard = () => {
       {/* Welcome Header */}
       <Card className="p-4 sm:p-6 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-l-green-500 hover:shadow-lg transition-shadow duration-300">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-              Welcome Back, {user?.name}! 🎓
-            </h1>
-            <p className="text-sm sm:text-base text-gray-700 mt-1 leading-relaxed">
-              {application.program} at {application.university} • <strong>APPROVED</strong>
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-3">
-              <Badge variant="default" className="bg-green-600 text-white">
-                <Award className="w-4 h-4 mr-1" />
-                Active Student
-              </Badge>
-              <Badge variant="outline" className="border-green-300 text-green-700">
-                <Heart className="w-4 h-4 mr-1" />
-                Amount: {fmtAmount(application.amount, application.currency)}
-              </Badge>
+          <div className="flex items-center gap-4">
+            <StudentPhoto 
+              student={application?.student || user} 
+              size="large" 
+              clickable={true}
+            />
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                Welcome Back, {user?.name}! 🎓
+              </h1>
+              <p className="text-sm sm:text-base text-gray-700 mt-1 leading-relaxed">
+                {application.program} at {application.university} • <strong>APPROVED</strong>
+              </p>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <Badge variant="default" className="bg-green-600 text-white">
+                  <Award className="w-4 h-4 mr-1" />
+                  Active Student
+                </Badge>
+                <Badge variant="outline" className="border-green-300 text-green-700">
+                  <Heart className="w-4 h-4 mr-1" />
+                  Amount: {fmtAmountDual(application.amount, application.currency)}
+                </Badge>
+              </div>
             </div>
           </div>
         </div>

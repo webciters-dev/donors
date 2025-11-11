@@ -76,7 +76,7 @@ const pathFromKey = {
   apply: "/apply",
   admin: "/admin",
   officers: "/admin/officers",
-  subadmin: "/sub-admin",
+  subadmin: "/sub-admin",  // Still uses same route for backward compatibility
   reports: "/reports",
   matrix: "/matrix",
   update: "/update",
@@ -126,7 +126,7 @@ function Shell() {
   const setActive = (key) => {
     // Handle role-specific "home" navigation
     if (key === "home") {
-      if (user?.role === "SUB_ADMIN") {
+      if (user?.role === "SUB_ADMIN") {  // Internal role check remains SUB_ADMIN
         navigate("/sub-admin");
         return;
       }
@@ -287,7 +287,14 @@ function Shell() {
             <Route path="/receipts" element={<DonorReceipts />} />
 
             {/* PROTECTED: ADMIN */}
-            <Route path="/admin" element={<AdminHub go={go} />} />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute roles={["ADMIN"]}>
+                  <AdminHub go={go} />
+                </ProtectedRoute>
+              } 
+            />
             <Route
               path="/admin/officers"
               element={
@@ -307,9 +314,15 @@ function Shell() {
             <Route
               path="/admin/applications/:id"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
-                  <AdminApplicationDetail />
-                </ProtectedRoute>
+                <AdminApplicationDetail />
+              }
+            />
+            <Route
+              path="/test"
+              element={
+                <div style={{padding: '20px', fontSize: '24px', color: 'blue'}}>
+                  🧪 TEST ROUTE WORKING
+                </div>
               }
             />
             <Route

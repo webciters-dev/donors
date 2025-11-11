@@ -8,6 +8,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { getCurrencyFromCountry } from "@/lib/currency";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import { API } from "@/lib/api";
+import UniversitySelector from "@/components/UniversitySelector";
+import PhotoUpload from "@/components/PhotoUpload";
+import { 
+  useUniversityAcademics,
+  generateMonthYearOptions
+} from "@/hooks/useUniversityAcademics";
+import { getPakistanOnlyDatalist, getFilterMessage } from "@/lib/countryFilter";
 
 // Password input component with visibility toggle
 const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
@@ -43,9 +50,9 @@ export const ApplicationForm = () => {
     const searchParams = new URLSearchParams(location.search);
     const urlStep = parseInt(searchParams.get('step'));
     
-    // If user is already logged in and URL has step=2, start at step 2
-    if (user && urlStep === 2) {
-      return 2;
+    // If user is already logged in and URL has step parameter, start at that step
+    if (user && (urlStep === 2 || urlStep === 3)) {
+      return urlStep;
     }
     
     return 1;
@@ -64,8 +71,8 @@ export const ApplicationForm = () => {
     const searchParams = new URLSearchParams(location.search);
     const urlStep = parseInt(searchParams.get('step'));
     
-    if (user && urlStep === 2) {
-      setStep(2);
+    if (user && (urlStep === 2 || urlStep === 3)) {
+      setStep(urlStep);
       setIsRegistered(true);
       setStudentId(user.studentId);
     }
@@ -85,12 +92,20 @@ export const ApplicationForm = () => {
       country: "", // Country where university is located (required)
       university: "",
       customUniversity: "", // For "Other" option
-      program: "",
-      term: "", // User enters their own program start term
+      degreeLevel: "", // Associate, Bachelor's, Master's, etc.
+      field: "", // Agriculture, Computer Science, etc.
+      program: "", // Specific program within the field
+      startMonth: "", // Program start month
+      startYear: "", // Program start year
+      endMonth: "", // Program end month  
+      endYear: "", // Program end year
       gpa: "",
-      gradYear: "",
       // Currency (auto-selected based on country)
       currency: "PKR", // Default to PKR for our primary market
+      // Photo fields
+      photoUrl: "",
+      photoThumbnailUrl: "",
+      photoUploadedAt: null,
       // Step 3 — financial details
       universityFee: "", // Tuition and academic fees
       livingExpenses: "", // Books, accommodation, food, transport, etc.
@@ -141,6 +156,10 @@ export const ApplicationForm = () => {
       toast.error("Passwords do not match.");
       return;
     }
+    if (!form.photoUrl) {
+      toast.error("Please upload a photo to continue.");
+      return;
+    }
 
     try {
       setLoading(true);
@@ -155,6 +174,9 @@ export const ApplicationForm = () => {
           password: form.password,
           gender: form.gender,
           personalIntroduction: form.personalIntroduction.trim(),
+          photoUrl: form.photoUrl,
+          photoThumbnailUrl: form.photoThumbnailUrl,
+          photoUploadedAt: form.photoUploadedAt,
           // These fields will be updated later in Step 2 & 3, but we need defaults
           university: "",
           program: "",
@@ -220,153 +242,22 @@ export const ApplicationForm = () => {
   const next = () => setStep((s) => Math.min(3, s + 1));
   const back = () => setStep((s) => Math.max(1, s - 1));
 
-  // Universities by country
-  const universitiesByCountry = {
-    "Pakistan": [
-      "LUMS - Lahore University of Management Sciences",
-      "IBA Karachi - Institute of Business Administration",
-      "NUST - National University of Sciences and Technology",
-      "Punjab University",
-      "Karachi University",
-      "Quaid-i-Azam University",
-      "COMSATS University",
-      "University of Engineering and Technology (UET) Lahore",
-      "Aga Khan University",
-      "Habib University"
-    ],
-    "USA": [
-      "Harvard University",
-      "Stanford University",
-      "MIT - Massachusetts Institute of Technology",
-      "University of California, Berkeley",
-      "Yale University",
-      "Princeton University",
-      "Columbia University",
-      "University of Pennsylvania",
-      "Cornell University",
-      "University of Chicago"
-    ],
-    "UK": [
-      "University of Oxford",
-      "University of Cambridge",
-      "Imperial College London",
-      "London School of Economics",
-      "University College London",
-      "King's College London",
-      "University of Edinburgh",
-      "University of Manchester",
-      "University of Warwick",
-      "University of Bristol"
-    ],
-    "Canada": [
-      "University of Toronto",
-      "McGill University",
-      "University of British Columbia",
-      "University of Alberta",
-      "McMaster University",
-      "University of Waterloo",
-      "Queen's University",
-      "University of Montreal",
-      "University of Calgary",
-      "Simon Fraser University"
-    ],
-    "Germany": [
-      "Technical University of Munich (TUM)",
-      "Ludwig Maximilian University of Munich",
-      "Heidelberg University",
-      "Humboldt University of Berlin",
-      "University of Freiburg",
-      "RWTH Aachen University",
-      "Free University of Berlin",
-      "University of Göttingen",
-      "University of Hamburg",
-      "Karlsruhe Institute of Technology (KIT)"
-    ],
-    "France": [
-      "Sorbonne University",
-      "École Normale Supérieure (ENS Paris)",
-      "École Polytechnique",
-      "University of Paris-Saclay",
-      "Sciences Po Paris",
-      "HEC Paris",
-      "INSEAD",
-      "École Centrale Paris",
-      "University of Strasbourg",
-      "Grenoble Alpes University"
-    ],
-    "Italy": [
-      "Bocconi University",
-      "University of Bologna",
-      "Sapienza University of Rome",
-      "University of Milan",
-      "Politecnico di Milano",
-      "University of Padua",
-      "University of Florence",
-      "University of Turin",
-      "University of Pisa",
-      "Ca' Foscari University of Venice"
-    ],
-    "Spain": [
-      "IE University",
-      "Universidad Autónoma de Madrid",
-      "University of Barcelona",
-      "Universidad Complutense de Madrid",
-      "Universidad Politécnica de Madrid",
-      "University of Valencia",
-      "Universidad de Sevilla",
-      "Universidad de Granada",
-      "ESADE Business School",
-      "Universidad Carlos III de Madrid"
-    ],
-    "Netherlands": [
-      "University of Amsterdam",
-      "Delft University of Technology",
-      "Utrecht University",
-      "Leiden University",
-      "Erasmus University Rotterdam",
-      "University of Groningen",
-      "Eindhoven University of Technology",
-      "VU Amsterdam",
-      "Wageningen University & Research",
-      "Tilburg University"
-    ],
-    "Belgium": [
-      "KU Leuven",
-      "Ghent University",
-      "Université catholique de Louvain",
-      "Vrije Universiteit Brussel",
-      "University of Antwerp",
-      "Université libre de Bruxelles",
-      "University of Liège",
-      "Hasselt University",
-      "University of Mons",
-      "Solvay Brussels School"
-    ],
-    "Austria": [
-      "University of Vienna",
-      "Vienna University of Technology",
-      "University of Innsbruck",
-      "University of Graz",
-      "Vienna University of Economics and Business",
-      "University of Salzburg",
-      "Johannes Kepler University Linz",
-      "Medical University of Vienna",
-      "University of Klagenfurt",
-      "Montanuniversität Leoben"
-    ],
-    "Australia": [
-      "University of Melbourne",
-      "Australian National University",
-      "University of Sydney",
-      "University of New South Wales",
-      "University of Queensland",
-      "Monash University",
-      "University of Western Australia",
-      "University of Adelaide",
-      "University of Technology Sydney",
-      "Macquarie University"
-    ]
-  };
+  // Generate month/year options for dropdowns
+  const { months, years } = generateMonthYearOptions();
+  
+  // Get university ID from selected university name
+  const [selectedUniversityId, setSelectedUniversityId] = useState(null);
+  
+  // Use the university academics hook
+  const {
+    degreeLevels,
+    fields: availableFields,
+    programs: availablePrograms,
+    loading: academicLoading,
+    error: academicError,
+    fetchFields,
+    fetchPrograms
+  } = useUniversityAcademics(selectedUniversityId);
 
   // Country matching helper
   const matchCountry = (input) => {
@@ -413,12 +304,47 @@ export const ApplicationForm = () => {
   };
 
   // Handle university change
-  const handleUniversityChange = (selectedUniversity) => {
+  const handleUniversityChange = (university, customUniversity, universityId) => {
     setForm({
       ...form,
-      university: selectedUniversity,
-      customUniversity: selectedUniversity === "Other" ? "" : "" // Clear custom field if not "Other"
+      university,
+      customUniversity,
+      degreeLevel: "", // Reset dependent fields
+      field: "",
+      program: ""
     });
+    
+    // Set the university ID for fetching academic data
+    setSelectedUniversityId(universityId);
+  };
+
+  // Handler for degree level change - resets dependent fields
+  const handleDegreeLevelChange = (degreeLevel) => {
+    setForm({
+      ...form,
+      degreeLevel,
+      field: "", // Reset field when degree level changes
+      program: "" // Reset program when degree level changes
+    });
+    
+    // Fetch fields for the selected degree level
+    if (degreeLevel) {
+      fetchFields(degreeLevel);
+    }
+  };
+
+  // Handler for field change - resets program
+  const handleFieldChange = (field) => {
+    setForm({
+      ...form,
+      field,
+      program: "" // Reset program when field changes
+    });
+    
+    // Fetch programs for the selected degree level and field
+    if (field && form.degreeLevel) {
+      fetchPrograms(form.degreeLevel, field);
+    }
   };
 
   // Calculate required amount (Total Expense - Scholarship)
@@ -494,14 +420,22 @@ export const ApplicationForm = () => {
     console.log("🔍 Form submission started with form data:", form);
 
     // Validation
-    if (!form.university || !form.program || !form.country || !form.gpa || !form.gradYear) {
-      toast.error("Please complete all required fields: university, program, country, GPA, and graduation year.");
+    if (!form.university || !form.degreeLevel || !form.field || !form.program || !form.country || !form.gpa) {
+      toast.error("Please complete all required fields: country, university, degree level, field, program, and GPA.");
       return;
     }
-    
-    // Validate term field too
-    if (!form.term) {
-      toast.error("Please specify when your program starts (e.g., Spring 2025, Fall 2025).");
+
+    // Validate date fields
+    if (!form.startMonth || !form.startYear || !form.endMonth || !form.endYear) {
+      toast.error("Please specify program start and end dates.");
+      return;
+    }
+
+    // Validate that end date is after start date
+    const startDate = new Date(parseInt(form.startYear), parseInt(form.startMonth) - 1);
+    const endDate = new Date(parseInt(form.endYear), parseInt(form.endMonth) - 1);
+    if (endDate <= startDate) {
+      toast.error("Program end date must be after start date.");
       return;
     }
 
@@ -557,13 +491,18 @@ export const ApplicationForm = () => {
 
 
       // Step 1: Update student profile with educational details
+      const programStartDate = `${form.startMonth}/${form.startYear}`;
+      const programEndDate = `${form.endMonth}/${form.endYear}`;
+      
       const studentUpdatePayload = {
+        country: form.country.trim(),
         university: finalUniversity.trim(),
+        degreeLevel: form.degreeLevel,
+        field: form.field.trim(),
         program: form.program.trim(),
-        gpa: Number(form.gpa),
-        gradYear: Number(form.gradYear),
-        field: form.program.trim() // Using program as field for now
-        // Note: country field needs to be added to backend PATCH route
+        programStartDate,
+        programEndDate,
+        gpa: Number(form.gpa)
       };
 
 
@@ -638,7 +577,11 @@ export const ApplicationForm = () => {
       }
 
       toast.success("🎉 Application submitted successfully!");
-      navigate("/my-application");
+      
+      // Small delay to ensure application is created before navigation
+      setTimeout(() => {
+        navigate("/my-application", { replace: true });
+      }, 1000);
 
     } catch (err) {
       console.error("Application submission error:", err);
@@ -651,6 +594,42 @@ export const ApplicationForm = () => {
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
       <h1 className="text-xl sm:text-2xl font-semibold">Student Application</h1>
+
+      {/* Pakistan-only filter message - Only show in Step 1 */}
+      {step === 1 && (() => {
+        const filterMessage = getFilterMessage();
+        return filterMessage && (
+          <Card className="p-4 bg-green-50 border-green-200">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{filterMessage.icon}</span>
+              <div>
+                <h3 className="font-medium text-green-900">{filterMessage.message}</h3>
+                <p className="text-sm text-green-700">{filterMessage.description}</p>
+              </div>
+            </div>
+          </Card>
+        );
+      })()}
+
+      {/* Student Login Option - Only show in Step 1 */}
+      {step === 1 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm sm:text-base font-medium text-blue-900">Already have an account?</h3>
+              <p className="text-xs sm:text-sm text-blue-700">Sign in to continue your application</p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleStudentLogin}
+              className="border-blue-300 text-blue-700 hover:bg-blue-100 min-h-[44px] w-full sm:w-auto"
+            >
+              <LogIn className="h-4 w-4 mr-2" />
+              Student Login
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Card className="p-4 sm:p-6 space-y-4 sm:space-y-6 hover:shadow-lg transition-shadow duration-300">
         {/* stepper */}
@@ -670,23 +649,6 @@ export const ApplicationForm = () => {
         {/* STEP 1 — identity + credentials */}
         {step === 1 && (
           <div className="space-y-4 sm:space-y-6">
-            {/* Student Login Option */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-sm sm:text-base font-medium text-blue-900">Already have an account?</h3>
-                  <p className="text-xs sm:text-sm text-blue-700">Sign in to continue your application</p>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={handleStudentLogin}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-100 min-h-[44px] w-full sm:w-auto"
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Student Login
-                </Button>
-              </div>
-            </div>
 
             {/* Registration Form */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -751,10 +713,33 @@ export const ApplicationForm = () => {
               </div>
             </div>
 
+            {/* Photo Upload */}
+            <div className="sm:col-span-2 space-y-2">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700">
+                Your Photo <span className="text-red-500">*</span>
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Upload a clear photo of yourself. This will be visible to potential sponsors and administrators.
+              </p>
+              <PhotoUpload
+                currentPhotoUrl={form.photoUrl}
+                currentThumbnailUrl={form.photoThumbnailUrl}
+                onPhotoChange={(photoData) => {
+                  setForm({
+                    ...form,
+                    photoUrl: photoData.photoUrl || "",
+                    photoThumbnailUrl: photoData.photoThumbnailUrl || "",
+                    photoUploadedAt: photoData.uploadedAt
+                  });
+                }}
+                required={true}
+              />
+            </div>
+
             <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
               <Button
                 onClick={handleStep1Registration}
-                disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender}
+                disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender || !form.photoUrl}
                 className="min-h-[44px] w-full sm:w-auto"
               >
                 {loading ? "Creating Account..." : "Create Account & Continue"}
@@ -777,19 +762,36 @@ export const ApplicationForm = () => {
                 className="min-h-[44px]"
               />
               <datalist id="countries">
-                <option value="Pakistan">🇵🇰 Pakistan</option>
-                <option value="USA">🇺🇸 United States</option>
-                <option value="Canada">🇨🇦 Canada</option>
-                <option value="UK">🇬🇧 United Kingdom</option>
-                <option value="Germany">🇩🇪 Germany</option>
-                <option value="France">🇫🇷 France</option>
-                <option value="Italy">🇮🇹 Italy</option>
-                <option value="Spain">🇪🇸 Spain</option>
-                <option value="Netherlands">🇳🇱 Netherlands</option>
-                <option value="Belgium">🇧🇪 Belgium</option>
-                <option value="Austria">🇦🇹 Austria</option>
-                <option value="Australia">🇦🇺 Australia</option>
-                <option value="Other">🌍 Other Country</option>
+                {(() => {
+                  const pakistanOnlyList = getPakistanOnlyDatalist();
+                  if (pakistanOnlyList) {
+                    // Show only Pakistan in filtered mode
+                    return pakistanOnlyList.map((country) => (
+                      <option key={country.value} value={country.value}>
+                        {country.label}
+                      </option>
+                    ));
+                  } else {
+                    // Show full country list when filter disabled
+                    return (
+                      <>
+                        <option value="Pakistan">🇵🇰 Pakistan</option>
+                        <option value="USA">🇺🇸 United States</option>
+                        <option value="Canada">🇨🇦 Canada</option>
+                        <option value="UK">🇬🇧 United Kingdom</option>
+                        <option value="Germany">🇩🇪 Germany</option>
+                        <option value="France">🇫🇷 France</option>
+                        <option value="Italy">🇮🇹 Italy</option>
+                        <option value="Spain">🇪🇸 Spain</option>
+                        <option value="Netherlands">🇳🇱 Netherlands</option>
+                        <option value="Belgium">🇧🇪 Belgium</option>
+                        <option value="Austria">🇦🇹 Austria</option>
+                        <option value="Australia">🇦🇺 Australia</option>
+                        <option value="Other">🌍 Other Country</option>
+                      </>
+                    );
+                  }
+                })()}
               </datalist>
               {form.country && (
                 <p className="text-xs text-green-600 mt-1">
@@ -801,65 +803,156 @@ export const ApplicationForm = () => {
             {/* University Selection - Shows after country is selected */}
             {form.country && (
               <div className="sm:col-span-2">
-                <Input
-                  placeholder="Select or type university name"
+                <label className="block text-sm font-medium mb-2">University</label>
+                <UniversitySelector
+                  country={form.country}
                   value={form.university}
-                  onChange={(e) => handleUniversityChange(e.target.value)}
-                  list="universities"
-                  required
+                  customValue={form.customUniversity}
+                  onChange={handleUniversityChange}
+                  required={true}
+                  placeholder="Select or type university name"
                   className="min-h-[44px]"
                 />
-                <datalist id="universities">
-                  {universitiesByCountry[form.country]?.map((uni) => (
-                    <option key={uni} value={uni}>{uni}</option>
-                  ))}
-                  <option value="Other">🏫 Other University (not listed)</option>
-                </datalist>
               </div>
             )}
 
-            {/* Custom University Input - Shows when "Other" is selected */}
-            {form.university === "Other" && (
+            {/* Degree Level Selection - Shows after university is selected */}
+            {form.university && (
               <div className="sm:col-span-2">
-                <Input
-                  placeholder="Enter university name"
-                  value={form.customUniversity}
-                  onChange={(e) => setForm({ ...form, customUniversity: e.target.value })}
+                <label className="block text-sm font-medium mb-2">Degree Level</label>
+                <select
+                  value={form.degreeLevel}
+                  onChange={(e) => handleDegreeLevelChange(e.target.value)}
                   required
-                  className="min-h-[44px]"
-                />
+                  className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={academicLoading.degreeLevels}
+                >
+                  <option value="">
+                    {academicLoading.degreeLevels ? 'Loading...' : 'Select degree level'}
+                  </option>
+                  {degreeLevels.map((level) => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
-            {/* Program Starts (Term) Field - New Position */}
-            <Input
-              placeholder="Program starts (e.g., Spring 2025, Fall 2025)"
-              value={form.term}
-              onChange={(e) => setForm({ ...form, term: e.target.value })}
-              required
-              className="min-h-[44px]"
-            />
+            {/* Field Selection - Shows after degree level is selected */}
+            {form.degreeLevel && (
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium mb-2">Field of Study</label>
+                <select
+                  value={form.field}
+                  onChange={(e) => handleFieldChange(e.target.value)}
+                  required
+                  className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={academicLoading.fields}
+                >
+                  <option value="">
+                    {academicLoading.fields ? 'Loading...' : 'Select field of study'}
+                  </option>
+                  {availableFields.map((field) => (
+                    <option key={field} value={field}>
+                      {field}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            {/* Graduation Year Field - New Position */}
-            <Input
-              placeholder="Expected graduation year (e.g., 2027)"
-              type="number"
-              min="2024"
-              max="2035"
-              value={form.gradYear}
-              onChange={(e) => setForm({ ...form, gradYear: e.target.value })}
-              required
-              className="min-h-[44px]"
-            />
+            {/* Program Selection - Shows after field is selected */}
+            {form.field && (
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium mb-2">Specific Program</label>
+                <select
+                  value={form.program}
+                  onChange={(e) => setForm({ ...form, program: e.target.value })}
+                  required
+                  className="w-full min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={academicLoading.programs}
+                >
+                  <option value="">
+                    {academicLoading.programs ? 'Loading...' : 'Select specific program'}
+                  </option>
+                  {availablePrograms.map((program) => (
+                    <option key={program} value={program}>
+                      {program}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            {/* Specific Degree Program Field - New Position */}
-            <Input
-              placeholder="Specific degree program (e.g., Bachelor of Computer Science, MBA)"
-              value={form.program}
-              onChange={(e) => setForm({ ...form, program: e.target.value })}
-              required
-              className="min-h-[44px]"
-            />
+            {/* Program Start Date - Shows after program is selected */}
+            {form.program && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Program Start Date</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={form.startMonth}
+                      onChange={(e) => setForm({ ...form, startMonth: e.target.value })}
+                      required
+                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Month</option>
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={form.startYear}
+                      onChange={(e) => setForm({ ...form, startYear: e.target.value })}
+                      required
+                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Year</option>
+                      {years.map((year) => (
+                        <option key={year.value} value={year.value}>
+                          {year.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Expected Graduation Date</label>
+                  <div className="flex gap-2">
+                    <select
+                      value={form.endMonth}
+                      onChange={(e) => setForm({ ...form, endMonth: e.target.value })}
+                      required
+                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Month</option>
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={form.endYear}
+                      onChange={(e) => setForm({ ...form, endYear: e.target.value })}
+                      required
+                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Year</option>
+                      {years.map((year) => (
+                        <option key={year.value} value={year.value}>
+                          {year.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* GPA Field - Last Position */}
             <Input
@@ -875,19 +968,85 @@ export const ApplicationForm = () => {
                 Back
               </Button>
               <Button 
-                onClick={next} 
+                onClick={async () => {
+                  // Save the basic education data first, then redirect to profile
+                  const isFormValid = form.country && 
+                    form.university && 
+                    (form.university !== "Other" || form.customUniversity) &&
+                    form.degreeLevel &&
+                    form.field &&
+                    form.program && 
+                    form.startMonth &&
+                    form.startYear &&
+                    form.endMonth &&
+                    form.endYear &&
+                    form.gpa;
+                  
+                  if (!isFormValid) {
+                    toast.error("Please complete all required fields before proceeding.");
+                    return;
+                  }
+                  
+                  try {
+                    setLoading(true);
+                    
+                    // Save Step 2 data before redirecting - only fields that exist in current schema
+                    const finalUniversity = form.university === "Other" ? form.customUniversity : form.university;
+                    
+                    const step2Payload = {
+                      country: form.country.trim(),
+                      university: finalUniversity.trim(),
+                      degreeLevel: form.degreeLevel, // Include degreeLevel - it exists in schema
+                      field: form.field.trim(),
+                      program: form.program.trim(),
+                      gpa: Number(form.gpa)
+                    };
+                    
+                    const headers = { "Content-Type": "application/json" };
+                    if (token) {
+                      headers.Authorization = `Bearer ${token}`;
+                    }
+                    
+                    const currentStudentId = user?.studentId || studentId;
+                    const step2Res = await fetch(`${API.baseURL}/api/students/${currentStudentId}`, {
+                      method: "PATCH",
+                      headers,
+                      body: JSON.stringify(step2Payload),
+                    });
+                    
+                    if (!step2Res.ok) {
+                      throw new Error("Failed to save education details");
+                    }
+                    
+                    toast.success("Education details saved successfully!");
+                    
+                    // Navigate to Step 3 (Financial Details)
+                    setStep(3);
+                    
+                  } catch (error) {
+                    console.error("Failed to save Step 2 data:", error);
+                    toast.error("Failed to save education details. Please try again.");
+                  } finally {
+                    setLoading(false);
+                  }
+                }} 
                 disabled={
+                  loading ||
                   !form.country || 
                   !form.university || 
                   (form.university === "Other" && !form.customUniversity) ||
+                  !form.degreeLevel ||
+                  !form.field ||
                   !form.program || 
-                  !form.term || 
-                  !form.gpa || 
-                  !form.gradYear
+                  !form.startMonth ||
+                  !form.startYear ||
+                  !form.endMonth ||
+                  !form.endYear ||
+                  !form.gpa
                 }
                 className="min-h-[44px] w-full sm:w-auto"
               >
-                Next
+                {loading ? "Saving Education Details..." : "Continue to Financials"}
               </Button>
             </div>
           </div>
@@ -1068,7 +1227,6 @@ export const ApplicationForm = () => {
                   <p><strong>Country:</strong> {form.country || "[University Country]"}</p>
                   <p><strong>University:</strong> {form.university === "Other" ? form.customUniversity : form.university || "[Your University]"}</p>
                   <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
-                  <p><strong>Term:</strong> {form.term || "[Term]"}</p>
                 </div>
 
                 {/* Financial Information */}
@@ -1092,7 +1250,7 @@ export const ApplicationForm = () => {
                 disabled={loading}
                 className="min-h-[44px] w-full sm:w-auto"
               >
-                {loading ? "Submitting..." : "Submit Application"}
+                {loading ? "Submitting..." : "Continue to Profile"}
               </Button>
             </div>
           </form>

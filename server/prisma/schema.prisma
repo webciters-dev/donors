@@ -12,9 +12,11 @@ model Student {
   name                  String
   email                 String            @unique
   gender                String
-  university            String
+  university            String            // Keep as string for backward compatibility
+  universityId          String?           // New: reference to University model
   field                 String
   program               String
+  degreeLevel           String?           // Degree level: Associate, Bachelor's, Master's, etc.
   gpa                   Float
   gradYear              Int
   city                  String?
@@ -28,7 +30,11 @@ model Student {
   dateOfBirth           DateTime?
   guardianName          String?
   guardianCnic          String?
+  guardian2Name         String?
+  guardian2Cnic         String?
   phone                 String?
+  guardianPhone1        String?
+  guardianPhone2        String?
   address               String?
   currentInstitution    String?
   currentCity           String?
@@ -42,6 +48,24 @@ model Student {
   monthlyFamilyIncome   String?
   parentsOccupation     String?
   specificField         String?
+  // Student Photo fields
+  photoUrl              String?           // URL to full-size photo
+  photoThumbnailUrl     String?           // URL to thumbnail version
+  photoUploadedAt       DateTime?         // When photo was uploaded
+  photoOriginalName     String?           // Original filename for reference
+  // Social Media fields
+  facebookUrl           String?           // Facebook profile URL
+  instagramHandle       String?           // Instagram handle with @
+  whatsappNumber        String?           // WhatsApp number with country code
+  linkedinUrl           String?           // LinkedIn profile URL
+  twitterHandle         String?           // Twitter/X handle with @
+  tiktokHandle          String?           // TikTok handle with @
+  // Introduction Video fields
+  introVideoUrl         String?           // URL to introduction video (MP4)
+  introVideoThumbnailUrl String?          // URL to video thumbnail image
+  introVideoUploadedAt  DateTime?         // When video was uploaded
+  introVideoDuration    Int?              // Video duration in seconds (60-90 recommended)
+  introVideoOriginalName String?          // Original filename for reference
   messages              Message[]
   applications          Application[]
   conversations         Conversation[]
@@ -51,7 +75,9 @@ model Student {
   sponsorships          Sponsorship[]
   progressUpdates       StudentProgress[]
   progressReports       ProgressReport[]
+  interviews            Interview[]
   User                  User?
+  universityRef         University?       @relation("StudentUniversity", fields: [universityId], references: [id])
 
   @@map("students")
 }
@@ -83,11 +109,15 @@ model Application {
   scholarshipAmount  Int?
   totalExpense       Int?
   universityFee      Int?
+  university         String?           // University name (for backward compatibility)
+  universityId       String?           // New: reference to University model
   messages           Message[]
   student            Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  universityRef      University?       @relation("ApplicationUniversity", fields: [universityId], references: [id])
   conversations      Conversation[]
   documents          Document[]
   fieldReviews       FieldReview[]
+  interviews         Interview[]
 
   @@map("applications")
 }
@@ -256,11 +286,12 @@ model PasswordReset {
 }
 
 model FieldReview {
-  id                           String      @id @default(cuid())
+  id                           String                 @id @default(cuid())
   applicationId                String
   studentId                    String
   officerUserId                String
-  status                       String      @default("PENDING")
+  taskType                     CaseWorkerTaskType?    // New: Specific task assignment
+  status                       String                 @default("PENDING")
   notes                        String?
   recommendation               String?
   homeVisitDate                DateTime?
@@ -269,25 +300,26 @@ model FieldReview {
   financialVerificationNotes   String?
   characterAssessment          String?
   deservingnessFactor          Int?
-  documentsVerified            Boolean     @default(false)
-  identityVerified             Boolean     @default(false)
-  familyIncomeVerified         Boolean     @default(false)
-  educationVerified            Boolean     @default(false)
+  documentsVerified            Boolean                @default(false)
+  identityVerified             Boolean                @default(false)
+  familyIncomeVerified         Boolean                @default(false)
+  educationVerified            Boolean                @default(false)
   recommendationReason         String?
   additionalDocumentsRequested String[]
   riskFactors                  String[]
   verificationScore            Int?
   fielderRecommendation        String?
   adminNotesRequired           String?
-  createdAt                    DateTime    @default(now())
-  updatedAt                    DateTime    @updatedAt
-  application                  Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  officer                      User        @relation("OfficerReviews", fields: [officerUserId], references: [id], onDelete: Cascade)
-  student                      Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt                    DateTime               @default(now())
+  updatedAt                    DateTime               @updatedAt
+  application                  Application            @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  officer                      User                   @relation("OfficerReviews", fields: [officerUserId], references: [id], onDelete: Cascade)
+  student                      Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([applicationId])
   @@index([studentId])
   @@index([officerUserId])
+  @@index([taskType])
   @@map("field_reviews")
 }
 
@@ -317,6 +349,10 @@ model StudentProgress {
 enum ApplicationStatus {
   PENDING
   PROCESSING
+  CASE_WORKER_APPROVED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_COMPLETED
+  BOARD_APPROVED
   APPROVED
   REJECTED
   DRAFT
@@ -338,7 +374,14 @@ enum UserRole {
   STUDENT
   DONOR
   ADMIN
-  SUB_ADMIN
+  SUB_ADMIN         // Backward compatibility - now called Case Workers in UI
+  CASE_WORKER       // New term (maps to same functionality as SUB_ADMIN)
+}
+
+enum CaseWorkerTaskType {
+  DOCUMENT_REVIEW
+  FIELD_VISIT
+  CNIC_VERIFICATION
 }
 
 enum DocumentType {
@@ -409,4 +452,162 @@ model ProgressReportAttachment {
   progressReport   ProgressReport @relation(fields: [progressReportId], references: [id], onDelete: Cascade)
   
   @@map("progress_report_attachments")
+}
+
+model University {
+  id            String                   @id @default(cuid())
+  name          String
+  country       String
+  isOfficial    Boolean                  @default(false) // Whether it appears in dropdown
+  isCustom      Boolean                  @default(false) // Was originally submitted as "Other"
+  submittedBy   String?                  // Student ID who first submitted this custom university
+  approvedBy    String?                  // Admin ID who approved this university
+  approvedAt    DateTime?                // When it was approved
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
+  
+  // Track which applications used this university
+  students      Student[]                @relation("StudentUniversity")
+  applications  Application[]            @relation("ApplicationUniversity")
+  
+  // Academic offerings
+  degreeLevels UniversityDegreeLevel[]
+  fields       UniversityField[]
+  programs     UniversityProgram[]
+  
+  @@unique([name, country]) // Prevent duplicate universities per country
+  @@map("universities")
+}
+
+model UniversityDegreeLevel {
+  id           String                @id @default(cuid())
+  universityId String
+  degreeLevel  String                // "Associate", "Bachelor's", "Master's", etc.
+  createdAt    DateTime              @default(now())
+  
+  university   University            @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  fields       UniversityField[]
+  programs     UniversityProgram[]
+  
+  @@unique([universityId, degreeLevel]) // Prevent duplicate degree levels per university
+  @@map("university_degree_levels")
+}
+
+model UniversityField {
+  id                     String               @id @default(cuid())
+  universityId           String
+  universityDegreeLevelId String
+  degreeLevel            String               // Denormal for easier querying
+  fieldName              String               // "Computer Science", "Engineering", etc.
+  createdAt              DateTime             @default(now())
+  
+  university             University           @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  degreeLevelRef         UniversityDegreeLevel @relation(fields: [universityDegreeLevelId], references: [id], onDelete: Cascade)
+  programs               UniversityProgram[]
+  
+  @@unique([universityId, degreeLevel, fieldName]) // Prevent duplicate fields per university/degree
+  @@map("university_fields")
+}
+
+model UniversityProgram {
+  id                     String               @id @default(cuid())
+  universityId           String
+  universityDegreeLevelId String
+  universityFieldId      String
+  degreeLevel            String               // Denormalized for easier querying
+  fieldName              String               // Denormalized for easier querying
+  programName            String               // "Computer Science", "Software Engineering", etc.
+  createdAt              DateTime             @default(now())
+  
+  university             University           @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  degreeLevelRef         UniversityDegreeLevel @relation(fields: [universityDegreeLevelId], references: [id], onDelete: Cascade)
+  fieldRef               UniversityField      @relation(fields: [universityFieldId], references: [id], onDelete: Cascade)
+  
+  @@unique([universityId, degreeLevel, fieldName, programName]) // Prevent duplicate programs
+  @@map("university_programs")
+}
+
+// Board Member Interview System Models
+model BoardMember {
+  id               String                @id @default(cuid())
+  name             String
+  email            String                @unique
+  title            String?               // "Chairman", "Member", "Secretary"
+  isActive         Boolean               @default(true)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  
+  // Relationships
+  interviews       InterviewPanelMember[]
+  decisions        InterviewDecision[]
+  
+  @@map("board_members")
+}
+
+model Interview {
+  id               String                @id @default(cuid())
+  studentId        String
+  applicationId    String
+  
+  // Schedule Details
+  scheduledAt      DateTime
+  meetingLink      String?               // Google Meet/Zoom/Teams link
+  notes            String?
+  status           InterviewStatus       @default(SCHEDULED)
+  
+  // Administrative
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  
+  // Relationships
+  student          Student               @relation(fields: [studentId], references: [id])
+  application      Application           @relation(fields: [applicationId], references: [id])
+  panelMembers     InterviewPanelMember[]
+  decisions        InterviewDecision[]
+  
+  @@map("interviews")
+}
+
+model InterviewPanelMember {
+  id               String                @id @default(cuid())
+  interviewId      String
+  boardMemberId    String
+  isChairperson    Boolean               @default(false)
+  createdAt        DateTime              @default(now())
+  
+  interview        Interview             @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  boardMember      BoardMember           @relation(fields: [boardMemberId], references: [id])
+  
+  @@unique([interviewId, boardMemberId])
+  @@map("interview_panel_members")
+}
+
+model InterviewDecision {
+  id               String                @id @default(cuid())
+  interviewId      String
+  boardMemberId    String
+  decision         DecisionType          @default(PENDING)
+  comments         String?
+  submittedAt      DateTime              @default(now())
+  
+  interview        Interview             @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  boardMember      BoardMember           @relation(fields: [boardMemberId], references: [id])
+  
+  @@unique([interviewId, boardMemberId])
+  @@map("interview_decisions")
+}
+
+// Board Interview System Enums
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS  
+  COMPLETED
+  CANCELLED
+}
+
+enum DecisionType {
+  APPROVE
+  REJECT
+  ABSTAIN
+  PENDING
 }

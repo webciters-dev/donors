@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { DollarSign, GraduationCap, Building2, UserRound } from "lucide-react";
 import { API } from "@/lib/api";
+import StudentPhoto from "@/components/StudentPhoto";
 
 export const DonorDashboard = () => {
   const { token, user, logout } = useAuth();
@@ -241,10 +242,17 @@ export const DonorDashboard = () => {
               return (
                 <Card key={sp.id} className="p-4 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="text-sm sm:text-base font-semibold">{s.name}</div>
-                      <div className="text-xs sm:text-sm text-slate-600">
-                        {s.program} · {s.university}
+                    <div className="flex items-center gap-3 flex-1">
+                      <StudentPhoto 
+                        student={s} 
+                        size="medium" 
+                        clickable={true}
+                      />
+                      <div>
+                        <div className="text-sm sm:text-base font-semibold">{s.name}</div>
+                        <div className="text-xs sm:text-sm text-slate-600">
+                          {s.program} · {s.university}
+                        </div>
                       </div>
                     </div>
                     <Badge variant="secondary" className="self-start">

@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
+import StudentPhoto from "@/components/StudentPhoto";
 
 export const AdminApplications = () => {
   const navigate = useNavigate();
@@ -454,9 +455,18 @@ export const AdminApplications = () => {
               <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 lg:gap-3 items-start">
                 {/* Student */}
                 <div className="col-span-1 lg:col-span-3">
-                  <div className="font-medium">{row.student?.name}</div>
-                  <div className="text-sm text-slate-600">
-                    {row.student?.program} · {row.student?.university}
+                  <div className="flex items-center gap-3 mb-2">
+                    <StudentPhoto 
+                      student={row.student} 
+                      size="small" 
+                      clickable={true}
+                    />
+                    <div>
+                      <div className="font-medium">{row.student?.name}</div>
+                      <div className="text-sm text-slate-600">
+                        {row.student?.program} · {row.student?.university}
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <Badge variant="secondary">

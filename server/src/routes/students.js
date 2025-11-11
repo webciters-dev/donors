@@ -105,18 +105,15 @@ router.get("/approved/:id", async (req, res) => {
 
 /**
  * GET /api/students/approved
- * - Students who have at least one APPROVED application
- * - For each student, return the most recent APPROVED application (submittedAt desc)
+ * - Students who are in ACTIVE phase (approved and ready for sponsorship)
+ * - Returns students available for sponsorship matching
  * - Simple sponsored status: either student.sponsored=true OR sponsorships exist
- * - Complete sponsorship model: no partial funding calculations needed
  */
 router.get("/approved", async (_req, res) => {
   try {
     const students = await prisma.student.findMany({
       where: {
-        applications: {
-          some: { status: "APPROVED" },
-        },
+        studentPhase: "ACTIVE", // Only students who completed approval process
       },
       include: {
         applications: {
@@ -306,8 +303,13 @@ router.put(
         dateOfBirth, // optional ISO date string
         guardianName,
         guardianCnic,
+        guardian2Name,
+        guardian2Cnic,
         phone,
+        guardianPhone1,
+        guardianPhone2,
         address,
+        country,
         university,
         program,
         gpa, // already coerced to number by validator
@@ -327,6 +329,29 @@ router.put(
         communityInvolvement,
         currentAcademicYear,
         specificField,
+        // Photo fields
+        photoUrl,
+        photoThumbnailUrl,
+        photoUploadedAt,
+        photoOriginalName,
+        // Education fields
+        degreeLevel,
+        field,
+        programStartDate,
+        programEndDate,
+        // Social media fields
+        facebookUrl,
+        instagramHandle,
+        whatsappNumber,
+        linkedinUrl,
+        twitterHandle,
+        tiktokHandle,
+        // Video fields
+        introVideoUrl,
+        introVideoThumbnailUrl,
+        introVideoUploadedAt,
+        introVideoDuration,
+        introVideoOriginalName,
       } = req.body;
 
       // Ensure the student exists before update
@@ -355,8 +380,13 @@ router.put(
             : { dateOfBirth: null }), // if empty/undefined, store null
           ...(guardianName !== undefined ? { guardianName } : {}),
           ...(guardianCnic !== undefined ? { guardianCnic } : {}),
+          ...(guardian2Name !== undefined ? { guardian2Name } : {}),
+          ...(guardian2Cnic !== undefined ? { guardian2Cnic } : {}),
           ...(phone !== undefined ? { phone } : {}),
+          ...(guardianPhone1 !== undefined ? { guardianPhone1 } : {}),
+          ...(guardianPhone2 !== undefined ? { guardianPhone2 } : {}),
           ...(address !== undefined ? { address } : {}),
+          ...(country !== undefined ? { country } : {}),
           ...(university !== undefined ? { university } : {}),
           ...(program !== undefined ? { program } : {}),
           ...(gpa !== undefined ? { gpa } : {}),
@@ -378,6 +408,33 @@ router.put(
           ...(communityInvolvement !== undefined ? { communityInvolvement } : {}),
           ...(currentAcademicYear !== undefined ? { currentAcademicYear } : {}),
           ...(specificField !== undefined ? { specificField } : {}),
+          // Photo fields
+          ...(photoUrl !== undefined ? { photoUrl } : {}),
+          ...(photoThumbnailUrl !== undefined ? { photoThumbnailUrl } : {}),
+          ...(photoUploadedAt !== undefined
+            ? { photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : null }
+            : {}),
+          ...(photoOriginalName !== undefined ? { photoOriginalName } : {}),
+          // Education fields
+          ...(degreeLevel !== undefined ? { degreeLevel } : {}),
+          ...(field !== undefined ? { field } : {}),
+          ...(programStartDate !== undefined ? { programStartDate } : {}),
+          ...(programEndDate !== undefined ? { programEndDate } : {}),
+          // Social media fields
+          ...(facebookUrl !== undefined ? { facebookUrl } : {}),
+          ...(instagramHandle !== undefined ? { instagramHandle } : {}),
+          ...(whatsappNumber !== undefined ? { whatsappNumber } : {}),
+          ...(linkedinUrl !== undefined ? { linkedinUrl } : {}),
+          ...(twitterHandle !== undefined ? { twitterHandle } : {}),
+          ...(tiktokHandle !== undefined ? { tiktokHandle } : {}),
+          // Video fields
+          ...(introVideoUrl !== undefined ? { introVideoUrl } : {}),
+          ...(introVideoThumbnailUrl !== undefined ? { introVideoThumbnailUrl } : {}),
+          ...(introVideoUploadedAt !== undefined
+            ? { introVideoUploadedAt: introVideoUploadedAt ? new Date(introVideoUploadedAt) : null }
+            : {}),
+          ...(introVideoDuration !== undefined ? { introVideoDuration: introVideoDuration ? Number(introVideoDuration) : null } : {}),
+          ...(introVideoOriginalName !== undefined ? { introVideoOriginalName } : {}),
         },
       });
 
@@ -411,7 +468,11 @@ router.patch("/:id", requireAuth, async (req, res) => {
       cnic,
       guardianName,
       guardianCnic,
+      guardian2Name,
+      guardian2Cnic,
       phone,
+      guardianPhone1,
+      guardianPhone2,
       address,
       university,
       program,
@@ -420,6 +481,10 @@ router.patch("/:id", requireAuth, async (req, res) => {
       city,
       province,
       field,
+      country,
+      degreeLevel,
+      programStartDate,
+      programEndDate,
     } = req.body;
 
     const updated = await prisma.student.update({
@@ -431,7 +496,11 @@ router.patch("/:id", requireAuth, async (req, res) => {
         ...(cnic !== undefined ? { cnic } : {}),
         ...(guardianName !== undefined ? { guardianName } : {}),
         ...(guardianCnic !== undefined ? { guardianCnic } : {}),
+        ...(guardian2Name !== undefined ? { guardian2Name } : {}),
+        ...(guardian2Cnic !== undefined ? { guardian2Cnic } : {}),
         ...(phone !== undefined ? { phone } : {}),
+        ...(guardianPhone1 !== undefined ? { guardianPhone1 } : {}),
+        ...(guardianPhone2 !== undefined ? { guardianPhone2 } : {}),
         ...(address !== undefined ? { address } : {}),
         ...(university !== undefined ? { university } : {}),
         ...(program !== undefined ? { program } : {}),
@@ -447,6 +516,9 @@ router.patch("/:id", requireAuth, async (req, res) => {
         ...(city !== undefined ? { city } : {}),
         ...(province !== undefined ? { province } : {}),
         ...(field !== undefined ? { field } : {}),
+        ...(country !== undefined ? { country } : {}),
+        // Note: degreeLevel, programStartDate, programEndDate may not exist in current schema
+        // These would require database migration to add to Student model
       },
     });
 

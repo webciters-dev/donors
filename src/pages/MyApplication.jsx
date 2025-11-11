@@ -12,7 +12,7 @@ import DocumentUploader from "@/components/DocumentUploader";
 import { useAuth } from "@/lib/AuthContext";
 import { calculateProfileCompleteness } from "@/lib/profileValidation";
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 
 const DEMO_STUDENT_ID = import.meta.env.VITE_DEMO_STUDENT_ID || "";
 
@@ -24,7 +24,7 @@ const fmtPKR = (n) =>
 
 // Which profile fields matter for “completeness”
 // Required documents that affect profile completion percentage
-const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
+const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
 
 export const MyApplication = () => {
   const navigate = useNavigate();
@@ -733,7 +733,34 @@ export const MyApplication = () => {
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
-                onClick={() => navigate("/apply?step=2")}  
+                onClick={async () => {
+                  // Create a basic application for the student
+                  try {
+                    const res = await fetch(`${API.baseURL}/api/applications`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', ...authHeader },
+                      body: JSON.stringify({
+                        studentId: user?.studentId || '',
+                        term: 'Current Term',
+                        currency: 'PKR',
+                        amount: 1, // Minimal amount - student will update later
+                        status: 'DRAFT'
+                      })
+                    });
+                    
+                    if (res.ok) {
+                      // Reload the application data
+                      window.location.reload();
+                    } else {
+                      const errorData = await res.json();
+                      console.error('Failed to create application:', errorData);
+                      toast.error(errorData.error || 'Failed to create application');
+                    }
+                  } catch (err) {
+                    console.error('Error creating application:', err);
+                    toast.error('Failed to create application');
+                  }
+                }}
                 className="bg-green-600 hover:bg-green-700 min-h-[44px] w-full sm:w-auto"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
@@ -755,9 +782,9 @@ export const MyApplication = () => {
 
 // ...existing code...
 
-  // Format the amount with proper currency symbol
+  // Format the amount with dual currency display for PKR amounts
   const needText = application.amount && application.currency 
-    ? fmtAmount(application.amount, application.currency)
+    ? fmtAmountDual(application.amount, application.currency)
     : 'Amount not set';
 
 

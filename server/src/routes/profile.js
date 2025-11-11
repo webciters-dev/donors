@@ -50,7 +50,7 @@ router.get("/", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
  * Updates the student's profile fields.
  * Body can include any of:
  *  name, email, gender, university, field, program, gpa, gradYear, city, province,
- *  cnic, dateOfBirth, guardianName, guardianCnic, phone, address
+ *  cnic, dateOfBirth, guardianName, guardianCnic, guardian2Cnic, phone, guardianPhone1, guardianPhone2, address
  */
 router.put("/", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
   try {
@@ -66,21 +66,55 @@ router.put("/", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
       gender,
       university,
       field,
+      degreeLevel,
       program,
       gpa,
       gradYear,
       city,
       province,
+      country,
       cnic,
       dateOfBirth, // ISO string
       guardianName,
       guardianCnic,
+      guardian2Name,
+      guardian2Cnic,
       phone,
+      guardianPhone1,
+      guardianPhone2,
       address,
-      // new current education fields
+      // current education fields
       currentInstitution,
       currentCity,
       currentCompletionYear,
+      // enhanced profile fields
+      personalIntroduction,
+      familySize,
+      parentsOccupation,
+      monthlyFamilyIncome,
+      careerGoals,
+      academicAchievements,
+      communityInvolvement,
+      currentAcademicYear,
+      specificField,
+      // photo fields
+      photoUrl,
+      photoThumbnailUrl,
+      photoUploadedAt,
+      photoOriginalName,
+      // social media fields
+      facebookUrl,
+      instagramHandle,
+      whatsappNumber,
+      linkedinUrl,
+      twitterHandle,
+      tiktokHandle,
+      // video fields
+      introVideoUrl,
+      introVideoThumbnailUrl,
+      introVideoUploadedAt,
+      introVideoDuration,
+      introVideoOriginalName,
     } = req.body || {};
 
     // Minimal validation: require current education fields present (non-empty/current year number)
@@ -100,24 +134,62 @@ router.put("/", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
         ...(gender != null ? { gender } : {}),
         ...(university != null ? { university } : {}),
         ...(field != null ? { field } : {}),
+        ...(degreeLevel != null ? { degreeLevel } : {}),
         ...(program != null ? { program } : {}),
         ...(gpa != null ? { gpa: Number(gpa) } : {}),
         ...(gradYear != null ? { gradYear: Number(gradYear) } : {}),
         ...(city != null ? { city } : {}),
         ...(province != null ? { province } : {}),
+        ...(country != null ? { country } : {}),
         ...(cnic != null ? { cnic } : {}),
         ...(dateOfBirth != null
           ? { dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null }
           : {}),
         ...(guardianName != null ? { guardianName } : {}),
         ...(guardianCnic != null ? { guardianCnic } : {}),
+        ...(guardian2Name != null ? { guardian2Name } : {}),
+        ...(guardian2Cnic != null ? { guardian2Cnic } : {}),
         ...(phone != null ? { phone } : {}),
+        ...(guardianPhone1 != null ? { guardianPhone1 } : {}),
+        ...(guardianPhone2 != null ? { guardianPhone2 } : {}),
         ...(address != null ? { address } : {}),
         ...(currentInstitution != null ? { currentInstitution } : {}),
         ...(currentCity != null ? { currentCity } : {}),
         ...(currentCompletionYear != null
           ? { currentCompletionYear: currentCompletionYear ? Number(currentCompletionYear) : null }
           : {}),
+        // Enhanced profile fields
+        ...(personalIntroduction != null ? { personalIntroduction } : {}),
+        ...(familySize != null ? { familySize: familySize ? Number(familySize) : null } : {}),
+        ...(parentsOccupation != null ? { parentsOccupation } : {}),
+        ...(monthlyFamilyIncome != null ? { monthlyFamilyIncome } : {}),
+        ...(careerGoals != null ? { careerGoals } : {}),
+        ...(academicAchievements != null ? { academicAchievements } : {}),
+        ...(communityInvolvement != null ? { communityInvolvement } : {}),
+        ...(currentAcademicYear != null ? { currentAcademicYear } : {}),
+        ...(specificField != null ? { specificField } : {}),
+        // Photo fields
+        ...(photoUrl != null ? { photoUrl } : {}),
+        ...(photoThumbnailUrl != null ? { photoThumbnailUrl } : {}),
+        ...(photoUploadedAt != null
+          ? { photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : null }
+          : {}),
+        ...(photoOriginalName != null ? { photoOriginalName } : {}),
+        // Social media fields
+        ...(facebookUrl != null ? { facebookUrl } : {}),
+        ...(instagramHandle != null ? { instagramHandle } : {}),
+        ...(whatsappNumber != null ? { whatsappNumber } : {}),
+        ...(linkedinUrl != null ? { linkedinUrl } : {}),
+        ...(twitterHandle != null ? { twitterHandle } : {}),
+        ...(tiktokHandle != null ? { tiktokHandle } : {}),
+        // Video fields
+        ...(introVideoUrl != null ? { introVideoUrl } : {}),
+        ...(introVideoThumbnailUrl != null ? { introVideoThumbnailUrl } : {}),
+        ...(introVideoUploadedAt != null
+          ? { introVideoUploadedAt: introVideoUploadedAt ? new Date(introVideoUploadedAt) : null }
+          : {}),
+        ...(introVideoDuration != null ? { introVideoDuration: introVideoDuration ? Number(introVideoDuration) : null } : {}),
+        ...(introVideoOriginalName != null ? { introVideoOriginalName } : {}),
       },
     });
 

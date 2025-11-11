@@ -1,4 +1,4 @@
-// src/pages/SubAdminApplicationDetail.jsx
+// src/pages/SubAdminApplicationDetail.jsx - Now displays as Case Worker interface
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -9,11 +9,20 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { 
   ArrowLeft, FileText, User, GraduationCap, MessageSquare, Home, 
-  Shield, CheckCircle, XCircle, AlertTriangle, Calendar, Camera,
+  Shield, CheckCircle, XCircle, AlertTriangle, Calendar, Camera, Video,
   MapPin, DollarSign, BookOpen, Users, ClipboardCheck 
 } from "lucide-react";
 import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
+import StudentPhoto from "@/components/StudentPhoto";
+import StudentVideo from "@/components/StudentVideo";
+
+// Case Worker task types for display
+const TASK_TYPES = [
+  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "📄", color: "bg-blue-500", description: "Review and verify student documents" },
+  { value: "FIELD_VISIT", label: "Field Visit", icon: "🏠", color: "bg-green-500", description: "Conduct home visit and family interview" },
+  { value: "CNIC_VERIFICATION", label: "CNIC Verification", icon: "🆔", color: "bg-purple-500", description: "Verify CNIC and identity documents" },
+];
 
 export default function SubAdminApplicationDetail() {
   const { reviewId } = useParams(); // field review id
@@ -165,7 +174,7 @@ export default function SubAdminApplicationDetail() {
           allMessages = msgData.messages || [];
         }
         
-        // Load donor-student conversations for sub-admin oversight
+        // Load donor-student conversations for case worker oversight
         try {
 
           const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
@@ -200,7 +209,7 @@ export default function SubAdminApplicationDetail() {
             });
           }
         } catch (convError) {
-          console.error('🔍 SubAdminApplicationDetail: Failed to load conversations:', convError);
+          console.error('🔍 CaseWorkerApplicationDetail: Failed to load conversations:', convError);
         }
         
         // Sort all messages newest first for better UX
@@ -394,7 +403,7 @@ export default function SubAdminApplicationDetail() {
           studentId: student.id,
           applicationId: application.id,
           text: newMessage,
-          fromRole: "sub_admin"
+          fromRole: "sub_admin"  // Internal role remains sub_admin
         })
       });
 
@@ -473,6 +482,48 @@ export default function SubAdminApplicationDetail() {
           )}
         </div>
       </div>
+
+      {/* PROMINENT TASK ASSIGNMENT BANNER */}
+      {review.taskType && (
+        <Card className={`p-4 sm:p-6 border-l-4 ${TASK_TYPES.find(t => t.value === review.taskType)?.color || 'bg-blue-500'} bg-gradient-to-r from-blue-50 to-indigo-50`}>
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">
+              {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"}
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                Your Assignment: {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
+              </h2>
+              <p className="text-gray-700 text-sm">
+                {TASK_TYPES.find(t => t.value === review.taskType)?.description || "Complete the assigned verification task"}
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              {review.status}
+            </Badge>
+          </div>
+        </Card>
+      )}
+
+      {/* General Assignment Banner for legacy assignments */}
+      {!review.taskType && (
+        <Card className="p-4 sm:p-6 border-l-4 bg-gray-500 bg-gradient-to-r from-gray-50 to-slate-50">
+          <div className="flex items-center gap-4">
+            <div className="text-4xl">📋</div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                Your Assignment: General Field Verification
+              </h2>
+              <p className="text-gray-700 text-sm">
+                Complete comprehensive verification including documents, home visit, and identity verification
+              </p>
+            </div>
+            <Badge variant="secondary" className="text-sm px-3 py-1">
+              {review.status}
+            </Badge>
+          </div>
+        </Card>
+      )}
 
       {/* Student Information Summary */}
       <Card className="p-4 sm:p-6 bg-slate-50">
@@ -572,6 +623,55 @@ export default function SubAdminApplicationDetail() {
             </div>
           </div>
         )}
+      </Card>
+
+      {/* Student Photos and Videos for Verification */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Camera className="h-5 w-5 text-blue-600" />
+          <h3 className="text-lg font-semibold text-slate-800">Student Media for Verification</h3>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Student Photo Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-slate-700 flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Student Photo
+            </h4>
+            {student?.photo ? (
+              <StudentPhoto
+                student={student}
+                size="large"
+                className="mx-auto"
+              />
+            ) : (
+              <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg">
+                <User className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                <p className="text-slate-500 text-sm">No photo uploaded</p>
+              </div>
+            )}
+          </div>
+
+          {/* Introduction Video Section */}
+          <div className="space-y-3">
+            <h4 className="font-medium text-slate-700 flex items-center gap-2">
+              <Video className="h-4 w-4" />
+              Introduction Video
+            </h4>
+            {student?.introductionVideo ? (
+              <StudentVideo
+                student={student}
+                size="large"
+              />
+            ) : (
+              <div className="text-center p-6 border-2 border-dashed border-slate-200 rounded-lg">
+                <Video className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                <p className="text-slate-500 text-sm">No introduction video</p>
+              </div>
+            )}
+          </div>
+        </div>
       </Card>
 
       {/* Enhanced Background Details */}
@@ -949,7 +1049,7 @@ export default function SubAdminApplicationDetail() {
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <ClipboardCheck className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-semibold">Sub Admin Recommendation</h3>
+          <h3 className="text-lg font-semibold">Case Worker Recommendation</h3>
         </div>
         
         <div className="space-y-4">
@@ -1034,7 +1134,7 @@ export default function SubAdminApplicationDetail() {
                           {msg.fromRole === 'donor' ? `💝 Donor${msg.senderName ? `: ${msg.senderName}` : ''}` :
                            msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT' ? '👤 Student Reply' :
                            msg.fromRole === 'student' ? '👤 Student' : 
-                           msg.fromRole === 'sub_admin' ? '🏢 Sub Admin' : '👨‍💼 Admin'}
+                           msg.fromRole === 'sub_admin' ? '🏢 Case Worker' : '👨‍💼 Admin'}
                         </Badge>
                         {(msg.fromRole === 'donor' || (msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT')) && (
                           <Badge variant="outline" size="sm" className="text-xs bg-yellow-50 text-yellow-700">

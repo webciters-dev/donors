@@ -1,11 +1,14 @@
 // src/lib/profileValidation.js
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
 
+// Required documents for application completion
+const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
+
 const REQUIRED_KEYS = [
   "cnic",
   "guardianName", 
   "guardianCnic",
-  "phone",
+  // Note: phone validation is now handled by schema refinement (at least one phone required)
   "address",
   "city",
   "province",
@@ -57,6 +60,38 @@ export function calculateProfileCompleteness(profile = {}) {
 }
 
 /**
+ * Calculate overall completion percentage including both profile and documents
+ * @param {object} profile - Student profile data
+ * @param {array} uploadedDocs - Array of uploaded documents with type field
+ * @returns {object} - { percent: number, profilePercent: number, docPercent: number, missing: string[], missingDocs: string[], isComplete: boolean }
+ */
+export function calculateOverallCompleteness(profile = {}, uploadedDocs = []) {
+  // Calculate profile completion
+  const profileCompletion = calculateProfileCompleteness(profile);
+  
+  // Calculate document completion
+  const uploadedTypes = new Set(uploadedDocs.map(doc => doc.type));
+  const missingDocs = REQUIRED_DOCS.filter(docType => !uploadedTypes.has(docType));
+  const completedDocs = REQUIRED_DOCS.length - missingDocs.length;
+  const docPercent = Math.round((completedDocs / REQUIRED_DOCS.length) * 100);
+  
+  // Calculate overall completion (equal weight to profile and docs)
+  const overallPercent = Math.round((profileCompletion.percent + docPercent) / 2);
+  const isComplete = profileCompletion.isComplete && docPercent === 100;
+  
+  return {
+    percent: overallPercent,
+    profilePercent: profileCompletion.percent,
+    docPercent,
+    missing: profileCompletion.missing,
+    missingDocs,
+    isComplete,
+    hasValidationErrors: profileCompletion.hasValidationErrors,
+    validationErrors: profileCompletion.validationErrors
+  };
+}
+
+/**
  * Get human-readable field names for missing fields
  * @param {string[]} missingFields - Array of missing field keys
  * @returns {string[]} - Array of human-readable field names
@@ -74,9 +109,9 @@ export function getReadableFieldNames(missingFields = []) {
     program: "Program",
     gpa: "GPA",
     gradYear: "Graduation Year",
-    // Current Education fields
-    currentInstitution: "Current Institution",
-    currentCity: "Current City",
+    // Completed Education fields
+    currentInstitution: "Completed Institution",
+    currentCity: "Completed Institution City",
     currentCompletionYear: "Completion Year"
   };
 

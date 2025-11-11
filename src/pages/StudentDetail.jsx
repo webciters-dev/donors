@@ -8,7 +8,7 @@ import DonorStudentMessaging from "@/components/DonorStudentMessaging";
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
-import { getCurrencyFromCountry } from "@/lib/currency";
+import { getCurrencyFromCountry, fmtAmount, fmtAmountDual } from "@/lib/currency";
 import { API } from "@/lib/api";
 
 const SectionTitle = ({ icon: Icon, title, subtitle }) => (
@@ -405,7 +405,7 @@ export const StudentDetail = ({ id, goBack }) => {
               ) : (
                 <div className="flex justify-between">
                   <span className="text-slate-500">Amount Needed</span>
-                  <span className="font-medium">{fmtAmount(displayAmount, currency)}</span>
+                  <span className="font-medium">{fmtAmountDual(displayAmount, currency)}</span>
                 </div>
               )}
               
@@ -452,7 +452,7 @@ export const StudentDetail = ({ id, goBack }) => {
                 }}
               >
                 <DollarSign className="h-4 w-4 mr-2" />
-                Sponsor {fmtAmount(displayAmount, currency)}
+                Sponsor {fmtAmountDual(displayAmount, currency)}
               </Button>
             </div>
           )}

@@ -8,12 +8,20 @@ import { sendFieldOfficerWelcomeEmail } from "../lib/emailService.js";
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// GET /api/users?role=SUB_ADMIN
+// GET /api/users?role=SUB_ADMIN (or CASE_WORKER)
 // Admin-only listing of users, optionally filtered by role
 router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   try {
     const role = req.query.role ? String(req.query.role) : undefined;
-    const where = role ? { role } : {};
+    let where = {};
+    
+    // Support both SUB_ADMIN and CASE_WORKER terminology for backward compatibility
+    if (role === "SUB_ADMIN" || role === "CASE_WORKER") {
+      where = { role: "SUB_ADMIN" }; // Internal storage remains SUB_ADMIN for compatibility
+    } else if (role) {
+      where = { role };
+    }
+    
     const users = await prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -26,7 +34,7 @@ router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   }
 });
 
-// POST /api/users/sub-admins
+// POST /api/users/sub-admins (Legacy: now creates Case Workers)
 // Admin creates a SUB_ADMIN with name, email, password
 router.post("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   try {
@@ -37,32 +45,62 @@ router.post("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => 
 
     const passwordHash = await bcrypt.hash(String(password), 10);
     const user = await prisma.user.create({
-      data: { name: name || null, email, passwordHash, role: "SUB_ADMIN" },
+      data: { name: name || null, email, passwordHash, role: "SUB_ADMIN" }, // Internal role remains SUB_ADMIN
       select: { id: true, name: true, email: true, role: true }
     });
 
-    // Send welcome email to new sub admin (async, don't block response)
+    // Send welcome email to new case worker (async, don't block response)
     sendFieldOfficerWelcomeEmail({
       email: email,
-      name: name || 'Field Officer',
-      password: password, // Send the original password since it's their first login
-      applicationId: 'N/A - General Access',
-      studentName: 'You will be assigned applications by administrators'
+      name: name || 'Case Worker',
+      password: password // Send the original password since it's their first login
     }).catch(emailError => {
-      console.error('Failed to send sub admin welcome email:', emailError);
+      console.error('Failed to send case worker welcome email:', emailError);
       // Don't fail the request if email fails
     });
 
     return res.status(201).json({ user });
   } catch (e) {
     console.error("POST /api/users/sub-admins failed:", e);
-    return res.status(500).json({ error: e?.message || "Failed to create sub admin" });
+    return res.status(500).json({ error: e?.message || "Failed to create case worker" });
   }
 });
 
-// Backward compatibility route - redirect field-officers to sub-admins
+// POST /api/users/case-workers (New preferred endpoint)
+// Admin creates a Case Worker with name, email, password
+router.post("/case-workers", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+    if (!email || !password) return res.status(400).json({ error: "email and password are required" });
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) return res.status(409).json({ error: "Email already registered" });
+
+    const passwordHash = await bcrypt.hash(String(password), 10);
+    const user = await prisma.user.create({
+      data: { name: name || null, email, passwordHash, role: "SUB_ADMIN" }, // Internal role remains SUB_ADMIN for compatibility
+      select: { id: true, name: true, email: true, role: true }
+    });
+
+    // Send welcome email to new case worker (async, don't block response)
+    sendFieldOfficerWelcomeEmail({
+      email: email,
+      name: name || 'Case Worker',
+      password: password // Send the original password since it's their first login
+    }).catch(emailError => {
+      console.error('Failed to send case worker welcome email:', emailError);
+      // Don't fail the request if email fails
+    });
+
+    return res.status(201).json({ user });
+  } catch (e) {
+    console.error("POST /api/users/case-workers failed:", e);
+    return res.status(500).json({ error: e?.message || "Failed to create case worker" });
+  }
+});
+
+// Backward compatibility route - redirect field-officers to case-workers
 router.post("/field-officers", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
-  // Just redirect to the sub-admins endpoint with the same logic
+  // Just redirect to the case-workers endpoint with the same logic
   try {
     const { name, email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
@@ -75,21 +113,21 @@ router.post("/field-officers", requireAuth, onlyRoles("ADMIN"), async (req, res)
       select: { id: true, name: true, email: true, role: true }
     });
 
-    // Send welcome email to new sub admin (async, don't block response)
+    // Send welcome email to new case worker (async, don't block response)
     sendFieldOfficerWelcomeEmail({
       email: email,
-      name: name || 'Sub Admin',
+      name: name || 'Case Worker',
       password: password,
       applicationId: 'N/A - General Access',
       studentName: 'You will be assigned applications by administrators'
     }).catch(emailError => {
-      console.error('Failed to send sub admin welcome email:', emailError);
+      console.error('Failed to send case worker welcome email:', emailError);
     });
 
     return res.status(201).json({ user });
   } catch (e) {
     console.error("POST /api/users/field-officers (compatibility) failed:", e);
-    return res.status(500).json({ error: e?.message || "Failed to create sub admin" });
+    return res.status(500).json({ error: e?.message || "Failed to create case worker" });
   }
 });
 
