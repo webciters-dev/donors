@@ -61,8 +61,8 @@ export default function AdminApplicationDetail() {
         const mine = Array.isArray(rj?.reviews) ? rj.reviews.filter(r => r.applicationId === id) : [];
         setReviews(mine);
 
-        // officers list (admin-only)
-        if (user?.role === "ADMIN") {
+        // officers list (admin and super admin)
+        if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
           const ofres = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofres.ok) {
             const ofj = await ofres.json();
@@ -579,25 +579,25 @@ export default function AdminApplicationDetail() {
                 {app?.universityFee && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">University Fee</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `Ôé¿${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `Rs ${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.livingExpenses && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Books & Living</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `Ôé¿${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
+                    <span className="font-medium">+{app.currency === "PKR" ? `Rs ${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.totalExpense && (
                   <div className="flex justify-between border-t pt-2">
                     <span className="text-slate-700 font-medium">Total Expense</span>
-                    <span className="font-semibold">{app.currency === "PKR" ? `Ôé¿${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
+                    <span className="font-semibold">{app.currency === "PKR" ? `Rs ${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
                   </div>
                 )}
                 {app?.scholarshipAmount && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Scholarship</span>
-                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `Ôé¿${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
+                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `Rs ${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-2">
@@ -761,6 +761,7 @@ export default function AdminApplicationDetail() {
                             _status: prev.status,
                             _notes: prev.notes
                           }));
+                          toast.info("⚠️ Save cancelled - waiting for required documents to be uploaded");
                           return;
                         }
                       } else {
@@ -782,7 +783,7 @@ export default function AdminApplicationDetail() {
                   }
                 }}
               >
-                ­ƒÆ¥ Save Changes
+                Save Changes
               </Button>
             </div>
           </div>
@@ -835,7 +836,7 @@ export default function AdminApplicationDetail() {
             const missingRequired = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
             
             if (missingRequired.length === 0) {
-              return <Badge className="bg-green-100 text-green-800 text-xs">Ô£à All Required</Badge>;
+              return <Badge className="bg-green-100 text-green-800 text-xs">✅ All Required</Badge>;
             } else {
               return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingRequired.length}</Badge>;
             }
@@ -926,7 +927,7 @@ export default function AdminApplicationDetail() {
               {r.status === "COMPLETED" && (
                 <div className="bg-white rounded-lg p-4 mb-3 border">
                   <h4 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    ­ƒÅá Field Verification Report
+                    🏠 Field Verification Report
                   </h4>
                   
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -942,10 +943,10 @@ export default function AdminApplicationDetail() {
                       <div className="space-y-1">
                         <span className="font-medium text-slate-600">Verification Status:</span>
                         <div className="flex flex-wrap gap-1">
-                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Identity</Badge>}
-                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Documents</Badge>}
-                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Income</Badge>}
-                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">Ô£à Education</Badge>}
+                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Identity</Badge>}
+                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Documents</Badge>}
+                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Income</Badge>}
+                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Education</Badge>}
                         </div>
                       </div>
                       
@@ -995,28 +996,28 @@ export default function AdminApplicationDetail() {
                   <div className="grid md:grid-cols-2 gap-4 mt-4 text-xs">
                     {r.homeVisitNotes && (
                       <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
-                        <div className="font-medium text-blue-800 mb-1">­ƒÅá Home Visit Notes:</div>
+                        <div className="font-medium text-blue-800 mb-1">🏠 Home Visit Notes:</div>
                         <div className="text-blue-700">{r.homeVisitNotes}</div>
                       </div>
                     )}
                     
                     {r.familyInterviewNotes && (
                       <div className="bg-purple-50 p-3 rounded border-l-4 border-purple-400">
-                        <div className="font-medium text-purple-800 mb-1">­ƒæÑ Family Interview:</div>
+                        <div className="font-medium text-purple-800 mb-1">👥 Family Interview:</div>
                         <div className="text-purple-700">{r.familyInterviewNotes}</div>
                       </div>
                     )}
                     
                     {r.financialVerificationNotes && (
                       <div className="bg-green-50 p-3 rounded border-l-4 border-green-400">
-                        <div className="font-medium text-green-800 mb-1">­ƒÆ░ Financial Verification:</div>
+                        <div className="font-medium text-green-800 mb-1">💰 Financial Verification:</div>
                         <div className="text-green-700">{r.financialVerificationNotes}</div>
                       </div>
                     )}
                     
                     {r.characterAssessment && (
                       <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
-                        <div className="font-medium text-yellow-800 mb-1">Ô¡É Character Assessment:</div>
+                        <div className="font-medium text-yellow-800 mb-1">🎭 Character Assessment:</div>
                         <div className="text-yellow-700">{r.characterAssessment}</div>
                       </div>
                     )}
@@ -1027,7 +1028,7 @@ export default function AdminApplicationDetail() {
                     <div className="mt-4 pt-3 border-t border-slate-200">
                       {r.recommendationReason && (
                         <div className="bg-slate-100 p-3 rounded mb-2">
-                          <div className="font-medium text-slate-800 text-sm mb-1">­ƒôØ Recommendation Reason:</div>
+                          <div className="font-medium text-slate-800 text-sm mb-1">📝 Recommendation Reason:</div>
                           <div className="text-slate-700 text-sm">{r.recommendationReason}</div>
                         </div>
                       )}
@@ -1126,8 +1127,8 @@ export default function AdminApplicationDetail() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge variant={isDonorMessage ? "default" : isStudentReply ? "secondary" : "outline"}>
-                          {isDonorMessage ? `­ƒÆØ Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
-                           isStudentReply ? '­ƒæñ Student Reply' : 
+                          {isDonorMessage ? `💰 Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
+                           isStudentReply ? '🎓 Student Reply' : 
                            m.fromRole === 'admin' ? '🔧 Admin' : 
                            '👨‍💼 Case Worker'}
                         </Badge>

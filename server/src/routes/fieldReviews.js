@@ -2,7 +2,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
-import { sendFieldOfficerWelcomeEmail, sendMissingDocumentRequestEmail } from "../lib/emailService.js";
+import { sendFieldOfficerWelcomeEmail, sendMissingDocumentRequestEmail, sendAdminFieldReviewCompletedEmail } from "../lib/emailService.js";
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -35,7 +35,7 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 // Create/assign a review (admin) - now supports task-specific assignments
-router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+router.post("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { applicationId, studentId, officerUserId, taskType } = req.body || {};
     if (!applicationId || !studentId || !officerUserId) {
@@ -131,7 +131,7 @@ router.post("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
 });
 
 // Update review (case worker sets status/notes/recommendation)
-router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
+router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -193,13 +193,19 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, r
         const reviewWithDetails = await prisma.fieldReview.findUnique({
           where: { id },
           include: {
-            officer: { select: { name: true } }
+            officer: { select: { name: true, email: true } },
+            application: {
+              include: {
+                student: { select: { name: true, email: true } }
+              }
+            }
           }
         });
 
         const recommendationText = fielderRecommendation ? 
           `Recommendation: ${fielderRecommendation.replace('_', ' ').toLowerCase()}` : '';
 
+        // Notify student
         await prisma.message.create({
           data: {
             studentId: reviewWithDetails.studentId,
@@ -208,6 +214,36 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, r
             fromRole: 'admin'
           }
         });
+
+        // Send admin notification email for completed field review (async, don't block response)
+        try {
+          // Get admin users
+          const adminUsers = await prisma.user.findMany({
+            where: {
+              role: { in: ['ADMIN', 'SUPER_ADMIN'] }
+            },
+            select: { email: true, name: true }
+          });
+
+          // Send notification to all admins
+          for (const admin of adminUsers) {
+            sendAdminFieldReviewCompletedEmail({
+              email: admin.email,
+              adminName: admin.name || 'Admin',
+              caseWorkerName: reviewWithDetails.officer?.name || 'Case Worker',
+              studentName: reviewWithDetails.application?.student?.name || 'Student',
+              applicationId: reviewWithDetails.applicationId,
+              fielderRecommendation: fielderRecommendation,
+              verificationScore: verificationScore,
+              adminNotesRequired: adminNotesRequired
+            }).catch(emailError => {
+              console.error(`Failed to send admin notification email to ${admin.email}:`, emailError);
+            });
+          }
+        } catch (adminEmailError) {
+          console.error('Failed to send admin field review completion emails:', adminEmailError);
+        }
+        
       } catch (msgError) {
         console.error('Failed to create field verification notification:', msgError);
       }
@@ -222,7 +258,7 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, r
 });
 
 // Request missing info (case worker) — email placeholder and message log
-router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN"), async (req, res) => {
+router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { items = [], note = "" } = req.body || {};
@@ -262,7 +298,7 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN")
 });
 
 // Reassign case worker (admin only)
-router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { newOfficerUserId } = req.body;
@@ -349,7 +385,7 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN"), async (req, res) 
 });
 
 // Unassign/Delete field review (admin only)
-router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+router.delete("/:id", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
 

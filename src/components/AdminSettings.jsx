@@ -12,11 +12,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { getPKRToUSDRate } from "@/lib/currency";
 import { getAllCMSContent, updateCMSContent, resetCMSContent, exportCMSContent, importCMSContent } from "@/lib/cms";
 import { API } from "@/lib/api";
+import SuperAdminSettings from "./SuperAdminSettings";
 
 export default function AdminSettings() {
   const { token, user } = useAuth();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
   const isAdmin = user?.role === "ADMIN";
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
 
   const [pkrRate, setPkrRate] = useState(300); // Default rate
   const [saving, setSaving] = useState(false);
@@ -58,20 +60,20 @@ export default function AdminSettings() {
       }
     }
 
-    if (isAdmin) {
+    if (isAdmin || isSuperAdmin) {
       loadSettings();
     } else {
       setLoading(false);
     }
-  }, [isAdmin]); // Removed authHeader from dependencies
+  }, [isAdmin, isSuperAdmin]); // Updated dependencies
 
   // Load CMS content
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isSuperAdmin) {
       const content = getAllCMSContent();
       setCmsContent(content);
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   // CMS Functions
   const updateCMSField = (path, value) => {
@@ -313,10 +315,10 @@ export default function AdminSettings() {
 
   // Load board members when component mounts
   useEffect(() => {
-    if (isAdmin) {
+    if (isAdmin || isSuperAdmin) {
       loadBoardMembers();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   // Round USD amounts to nearest 0 or 5 for cleaner display
   const roundToNearest5or0 = (amount) => {
@@ -354,8 +356,8 @@ export default function AdminSettings() {
     };
   });
 
-  if (!isAdmin) {
-    return null; // Only show to admins
+  if (!isAdmin && !isSuperAdmin) {
+    return null; // Only show to admins and super admins
   }
 
   if (loading) {
@@ -368,29 +370,35 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Settings className="h-5 w-5 text-blue-600" />
-        <h3 className="text-lg font-semibold text-gray-900">Admin Settings</h3>
-        <Badge variant="outline" className="bg-blue-50 text-blue-700">
-          Admin Only
-        </Badge>
-      </div>
+      {/* Super Admin Settings */}
+      {isSuperAdmin && <SuperAdminSettings />}
+      
+      {/* Regular Admin Settings */}
+      {(isAdmin || isSuperAdmin) && (
+        <>
+          <div className="flex items-center gap-3">
+            <Settings className="h-5 w-5 text-blue-600" />
+            <h3 className="text-lg font-semibold text-gray-900">Admin Settings</h3>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              {isSuperAdmin ? "Super Admin + Admin" : "Admin Only"}
+            </Badge>
+          </div>
 
-      <Tabs defaultValue="currency" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="currency" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" />
-            Currency Settings
-          </TabsTrigger>
-          <TabsTrigger value="cms" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Content Management
-          </TabsTrigger>
-          <TabsTrigger value="board" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Board Members
-          </TabsTrigger>
-        </TabsList>
+          <Tabs defaultValue="currency" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="currency" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Currency Settings
+              </TabsTrigger>
+              <TabsTrigger value="cms" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Content Management
+              </TabsTrigger>
+              <TabsTrigger value="board" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Board Members
+              </TabsTrigger>
+            </TabsList>
 
         <TabsContent value="currency" className="space-y-6">
           <Card className="p-6 space-y-6">
@@ -931,6 +939,8 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
       </Tabs>
+        </>
+      )}
     </div>
   );
 }

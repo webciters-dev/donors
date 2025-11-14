@@ -1106,3 +1106,716 @@ export async function sendInterviewScheduledBoardMemberEmail({
     return { success: false, error: error.message };
   }
 }
+
+// =============================
+// MISSING NOTIFICATION EMAIL FUNCTIONS
+// =============================
+
+export async function sendAdminFieldReviewCompletedEmail({
+  email,
+  adminName,
+  caseWorkerName,
+  studentName,
+  applicationId,
+  fielderRecommendation,
+  verificationScore,
+  adminNotesRequired
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const reviewUrl = `${loginUrl}/admin/applications/${applicationId}`;
+    
+    const recommendationColor = 
+      fielderRecommendation === 'STRONGLY_APPROVE' ? '#10b981' :
+      fielderRecommendation === 'APPROVE' ? '#3b82f6' :
+      fielderRecommendation === 'CONDITIONAL' ? '#f59e0b' :
+      '#ef4444';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `🔔 Field Review Completed - ${studentName} (${fielderRecommendation || 'Pending'})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #111827; margin: 0; font-size: 28px;">🏠 Field Review Complete</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Alert Section -->
+            <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">📋 Review Ready for Admin Decision</h3>
+              <p style="color: #1e3a8a; margin: 5px 0;">
+                Case worker <strong>${caseWorkerName}</strong> has completed field verification for student <strong>${studentName}</strong>.
+              </p>
+            </div>
+            
+            <!-- Student Information -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">Student Information</h3>
+              <div style="display: grid; gap: 10px;">
+                <p style="margin: 5px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 5px 0;"><strong>Application ID:</strong> ${applicationId}</p>
+                <p style="margin: 5px 0;"><strong>Case Worker:</strong> ${caseWorkerName}</p>
+              </div>
+            </div>
+            
+            <!-- Verification Results -->
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #0369a1; margin-top: 0;">📊 Verification Results</h3>
+              
+              ${fielderRecommendation ? `
+              <div style="margin: 15px 0;">
+                <strong>Case Worker Recommendation:</strong>
+                <div style="background-color: ${recommendationColor}; color: white; padding: 8px 15px; border-radius: 15px; display: inline-block; margin-left: 10px; font-weight: bold;">
+                  ${fielderRecommendation.replace('_', ' ')}
+                </div>
+              </div>
+              ` : ''}
+              
+              ${verificationScore ? `
+              <div style="margin: 15px 0;">
+                <strong>Verification Score:</strong>
+                <div style="background-color: #e5e7eb; padding: 8px 15px; border-radius: 6px; display: inline-block; margin-left: 10px;">
+                  <strong style="color: #374151;">${verificationScore}%</strong>
+                </div>
+              </div>
+              ` : ''}
+              
+              ${adminNotesRequired ? `
+              <div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                <div style="color: #92400e; font-weight: bold; margin-bottom: 5px;">⚠️ Admin Attention Required:</div>
+                <div style="color: #78350f;">${adminNotesRequired}</div>
+              </div>
+              ` : ''}
+            </div>
+            
+            <!-- Action Required -->
+            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0;">
+              <h3 style="color: #dc2626; margin-top: 0;">🎯 Action Required</h3>
+              <p style="color: #991b1b; margin: 0;">
+                Please review the case worker's assessment and make a final decision on this application.
+              </p>
+            </div>
+            
+            <!-- Action Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${reviewUrl}" 
+                 style="background-color: #059669; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
+                📋 Review Application Now
+              </a>
+            </div>
+            
+            <!-- Instructions -->
+            <div style="background-color: #f9fafb; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #111827; margin-top: 0;">Next Steps:</h3>
+              <ol style="color: #374151; margin: 10px 0; padding-left: 20px;">
+                <li>Review the detailed field verification report</li>
+                <li>Examine case worker's recommendation and notes</li>
+                <li>Check all uploaded documents and verification status</li>
+                <li>Make final decision: Approve, Reject, or Request Additional Information</li>
+                <li>Add admin notes for transparency and record-keeping</li>
+              </ol>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                This is an automated notification from the AWAKE Connect admin system.<br>
+                Please review and take action promptly to maintain application processing efficiency.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Student Sponsorship Platform
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Admin Field Review Completed Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send admin field review completed email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendDonorPaymentConfirmationEmail({
+  email,
+  donorName,
+  studentName,
+  amount,
+  currency,
+  paymentMethod,
+  transactionId,
+  sponsorshipId
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const formattedAmount = currency === 'PKR' ? 
+      `Rs ${amount.toLocaleString()}` : 
+      `$${amount.toLocaleString()}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `✅ Payment Confirmed - Supporting ${studentName} (${formattedAmount})`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #111827; margin: 0; font-size: 28px;">💝 Payment Confirmed</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Success Message -->
+            <div style="background-color: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
+              <h3 style="color: #065f46; margin-top: 0;">🎉 Thank You for Your Generosity!</h3>
+              <p style="color: #047857; margin: 5px 0;">
+                Your payment has been successfully processed. You are now officially supporting <strong>${studentName}</strong>'s educational journey!
+              </p>
+            </div>
+            
+            <!-- Payment Details -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">💳 Payment Details</h3>
+              <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden;">
+                <div style="background-color: #f3f4f6; padding: 10px 15px; border-bottom: 1px solid #e5e7eb;">
+                  <strong>Transaction Information</strong>
+                </div>
+                <div style="padding: 15px;">
+                  <p style="margin: 8px 0;"><strong>Amount:</strong> ${formattedAmount}</p>
+                  <p style="margin: 8px 0;"><strong>Student:</strong> ${studentName}</p>
+                  <p style="margin: 8px 0;"><strong>Payment Method:</strong> ${paymentMethod || 'Credit Card'}</p>
+                  <p style="margin: 8px 0;"><strong>Transaction ID:</strong> ${transactionId}</p>
+                  <p style="margin: 8px 0;"><strong>Sponsorship ID:</strong> ${sponsorshipId}</p>
+                  <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Impact Message -->
+            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #5b21b6; margin-top: 0;">📚 Your Impact</h3>
+              <p style="color: #6b21a8;">
+                Your generous contribution of <strong>${formattedAmount}</strong> will directly support ${studentName}'s education. 
+                This sponsorship helps cover tuition fees, books, and living expenses, making higher education accessible.
+              </p>
+              <p style="color: #6b21a8; margin-top: 15px;">
+                You will receive regular updates on ${studentName}'s academic progress and can communicate directly through our platform.
+              </p>
+            </div>
+            
+            <!-- Next Steps -->
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #92400e; margin-top: 0;">📋 What Happens Next</h3>
+              <ol style="color: #78350f; margin: 10px 0; padding-left: 20px;">
+                <li>Your payment is being processed and verified</li>
+                <li>${studentName} will be notified about your sponsorship</li>
+                <li>You'll receive access to student progress updates</li>
+                <li>Direct messaging with the student will be activated</li>
+                <li>Regular progress reports will be sent to your email</li>
+              </ol>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}/donor" 
+                 style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
+                📊 View Dashboard
+              </a>
+              <a href="${loginUrl}/donor/students" 
+                 style="background-color: #3b82f6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
+                👩‍🎓 View Student Profile
+              </a>
+            </div>
+            
+            <!-- Tax Information -->
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <p style="color: #4b5563; margin: 0; font-size: 14px;">
+                <strong>Tax Information:</strong> Please retain this email as a record of your charitable contribution. 
+                A formal donation receipt will be sent separately for tax purposes.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                Thank you for making a difference in a student's life through education.<br>
+                If you have any questions, please contact us at <a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Donor Payment Confirmation Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send donor payment confirmation email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendStudentSponsorshipNotificationEmail({
+  email,
+  studentName,
+  donorName,
+  amount,
+  currency,
+  sponsorshipId,
+  message
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const formattedAmount = currency === 'PKR' ? 
+      `Rs ${amount.toLocaleString()}` : 
+      `$${amount.toLocaleString()}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `🎉 Great News! You Have a New Sponsor - ${formattedAmount} Sponsorship`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #111827; margin: 0; font-size: 32px;">🎉 Congratulations!</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Celebration Banner -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
+              <h2 style="margin: 0; font-size: 24px;">🌟 You Have Been Sponsored! 🌟</h2>
+              <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Your educational journey just got the support it deserves</p>
+            </div>
+            
+            <!-- Sponsor Information -->
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <h3 style="color: #1e40af; margin-top: 0;">💝 Sponsor Information</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px;">
+                <p style="margin: 8px 0;"><strong>Sponsor Name:</strong> ${donorName}</p>
+                <p style="margin: 8px 0;"><strong>Sponsorship Amount:</strong> <span style="color: #059669; font-size: 18px; font-weight: bold;">${formattedAmount}</span></p>
+                <p style="margin: 8px 0;"><strong>Sponsorship ID:</strong> ${sponsorshipId}</p>
+                <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+              </div>
+            </div>
+            
+            ${message ? `
+            <!-- Personal Message -->
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #92400e; margin-top: 0;">💌 Message from Your Sponsor</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px; font-style: italic; color: #374151;">
+                "${message}"
+              </div>
+            </div>
+            ` : ''}
+            
+            <!-- What This Means -->
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #065f46; margin-top: 0;">📚 What This Means for You</h3>
+              <ul style="color: #047857; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Financial Support:</strong> ${formattedAmount} towards your educational expenses</li>
+                <li><strong>Mentorship Opportunity:</strong> Connect directly with your sponsor for guidance</li>
+                <li><strong>Progress Sharing:</strong> Share your academic achievements and milestones</li>
+                <li><strong>Networking:</strong> Build valuable professional relationships</li>
+                <li><strong>Recognition:</strong> Your hard work and potential have been recognized</li>
+              </ul>
+            </div>
+            
+            <!-- Next Steps -->
+            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #5b21b6; margin-top: 0;">🚀 Your Next Steps</h3>
+              <ol style="color: #6b21a8; margin: 10px 0; padding-left: 20px;">
+                <li>Log in to your dashboard to see sponsor details</li>
+                <li>Send a thank you message to your sponsor</li>
+                <li>Update your academic progress regularly</li>
+                <li>Stay engaged with your studies and goals</li>
+                <li>Share your journey and achievements</li>
+              </ol>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}/student" 
+                 style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                📊 View Dashboard
+              </a>
+              <a href="${loginUrl}/student/messages" 
+                 style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                💬 Thank Your Sponsor
+              </a>
+            </div>
+            
+            <!-- Responsibilities -->
+            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0;">
+              <h3 style="color: #dc2626; margin-top: 0;">📋 Your Responsibilities</h3>
+              <ul style="color: #991b1b; margin: 10px 0; padding-left: 20px;">
+                <li>Maintain good academic standing</li>
+                <li>Provide regular progress updates</li>
+                <li>Use funds responsibly for educational purposes</li>
+                <li>Communicate respectfully with your sponsor</li>
+                <li>Show gratitude and appreciation</li>
+              </ul>
+            </div>
+            
+            <!-- Support Information -->
+            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <h4 style="color: #374151; margin-top: 0;">📞 Need Help?</h4>
+              <p style="color: #4b5563; margin: 0; font-size: 14px;">
+                If you have any questions about your sponsorship or need assistance, please contact our support team:
+                <br><a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                Congratulations on this amazing milestone! Your dedication to education has been recognized.<br>
+                Make the most of this opportunity and continue striving for excellence.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Student Sponsorship Notification Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send student sponsorship notification email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendApplicationApprovedStudentEmail({
+  email,
+  studentName,
+  applicationId,
+  amount,
+  currency,
+  university,
+  program
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    const formattedAmount = currency === 'PKR' ? 
+      `Rs ${amount.toLocaleString()}` : 
+      `$${amount.toLocaleString()}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `🎉 Application APPROVED! Ready for Sponsorship - ${formattedAmount}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #111827; margin: 0; font-size: 32px;">🎉 APPROVED!</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Success Banner -->
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
+              <h2 style="margin: 0; font-size: 24px;">✅ Your Application Has Been Approved!</h2>
+              <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">You're now eligible for sponsorship matching</p>
+            </div>
+            
+            <!-- Application Details -->
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <h3 style="color: #1e40af; margin-top: 0;">📋 Application Details</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px;">
+                <p style="margin: 8px 0;"><strong>Student:</strong> ${studentName}</p>
+                <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
+                <p style="margin: 8px 0;"><strong>Program:</strong> ${program}</p>
+                <p style="margin: 8px 0;"><strong>Amount Needed:</strong> <span style="color: #059669; font-size: 18px; font-weight: bold;">${formattedAmount}</span></p>
+                <p style="margin: 8px 0;"><strong>Application ID:</strong> ${applicationId}</p>
+                <p style="margin: 8px 0;"><strong>Approval Date:</strong> ${new Date().toLocaleDateString()}</p>
+              </div>
+            </div>
+            
+            <!-- What Happens Next -->
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #065f46; margin-top: 0;">🚀 What Happens Next</h3>
+              <ol style="color: #047857; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Marketplace Activation:</strong> Your profile is now live for potential sponsors to view</li>
+                <li><strong>Sponsor Matching:</strong> Our system will match you with suitable sponsors</li>
+                <li><strong>Direct Applications:</strong> Donors can now sponsor you directly</li>
+                <li><strong>Progress Updates:</strong> Keep your profile active with regular updates</li>
+                <li><strong>Communication:</strong> Engage with potential sponsors through our platform</li>
+              </ol>
+            </div>
+            
+            <!-- Important Reminders -->
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #92400e; margin-top: 0;">⭐ Important Reminders</h3>
+              <ul style="color: #78350f; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Stay Active:</strong> Log in regularly and update your progress</li>
+                <li><strong>Complete Profile:</strong> Ensure all information is accurate and current</li>
+                <li><strong>Professional Communication:</strong> Maintain respectful interactions with sponsors</li>
+                <li><strong>Academic Excellence:</strong> Continue performing well in your studies</li>
+                <li><strong>Documentation:</strong> Keep all academic records updated</li>
+              </ul>
+            </div>
+            
+            <!-- Eligibility Status -->
+            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #5b21b6; margin-top: 0;">🎯 Your Status</h3>
+              <div style="display: grid; gap: 10px;">
+                <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #10b981;">
+                  <strong style="color: #065f46;">✅ Application Status:</strong> <span style="color: #10b981;">APPROVED</span>
+                </div>
+                <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #3b82f6;">
+                  <strong style="color: #1e40af;">🎯 Sponsorship Status:</strong> <span style="color: #3b82f6;">READY FOR MATCHING</span>
+                </div>
+                <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #f59e0b;">
+                  <strong style="color: #92400e;">📊 Profile Status:</strong> <span style="color: #f59e0b;">LIVE IN MARKETPLACE</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}/student" 
+                 style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                📊 View Dashboard
+              </a>
+              <a href="${loginUrl}/student/profile" 
+                 style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                ✏️ Update Profile
+              </a>
+            </div>
+            
+            <!-- Tips for Success -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #e5e7eb;">
+              <h3 style="color: #374151; margin-top: 0;">💡 Tips for Success</h3>
+              <ul style="color: #4b5563; margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                <li>Upload a professional profile photo if you haven't already</li>
+                <li>Write compelling personal and academic stories</li>
+                <li>Regularly update your academic progress and achievements</li>
+                <li>Respond promptly to sponsor messages and inquiries</li>
+                <li>Be genuine and authentic in all communications</li>
+                <li>Show gratitude and appreciation to potential sponsors</li>
+              </ul>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                Congratulations on reaching this milestone! Your educational journey is now one step closer to reality.<br>
+                Keep working hard and stay connected with our community.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Application Approved Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send application approved email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function sendApplicationRejectedStudentEmail({
+  email,
+  studentName,
+  applicationId,
+  rejectionReason,
+  adminNotes
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `📋 Application Update - Further Review Required`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #111827; margin: 0; font-size: 28px;">📋 Application Update</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Status Banner -->
+            <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
+              <h3 style="color: #92400e; margin-top: 0;">📝 Application Requires Further Review</h3>
+              <p style="color: #78350f; margin: 5px 0;">
+                Thank you for your application. After careful review, we need some additional information or improvements before we can proceed.
+              </p>
+            </div>
+            
+            <!-- Application Information -->
+            <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">📄 Application Details</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <p style="margin: 8px 0;"><strong>Student:</strong> ${studentName}</p>
+                <p style="margin: 8px 0;"><strong>Application ID:</strong> ${applicationId}</p>
+                <p style="margin: 8px 0;"><strong>Review Date:</strong> ${new Date().toLocaleDateString()}</p>
+                <p style="margin: 8px 0;"><strong>Status:</strong> <span style="color: #f59e0b; font-weight: bold;">Requires Additional Information</span></p>
+              </div>
+            </div>
+            
+            ${rejectionReason ? `
+            <!-- Review Comments -->
+            <div style="background-color: #fef2f2; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ef4444;">
+              <h3 style="color: #dc2626; margin-top: 0;">📝 Review Comments</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px;">
+                <p style="color: #374151; margin: 0; line-height: 1.6;">${rejectionReason}</p>
+              </div>
+            </div>
+            ` : ''}
+            
+            ${adminNotes ? `
+            <!-- Additional Notes -->
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #1e40af; margin-top: 0;">💬 Additional Notes</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                <p style="color: #374151; margin: 0; line-height: 1.6;">${adminNotes}</p>
+              </div>
+            </div>
+            ` : ''}
+            
+            <!-- What You Can Do -->
+            <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #065f46; margin-top: 0;">🚀 Next Steps</h3>
+              <ol style="color: #047857; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Review Feedback:</strong> Carefully read all comments and suggestions above</li>
+                <li><strong>Address Issues:</strong> Make the necessary improvements to your application</li>
+                <li><strong>Update Documents:</strong> Upload any missing or updated documents</li>
+                <li><strong>Revise Information:</strong> Update your profile with accurate details</li>
+                <li><strong>Resubmit:</strong> Submit your improved application for review</li>
+              </ol>
+            </div>
+            
+            <!-- Encouragement -->
+            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #5b21b6; margin-top: 0;">💪 Don't Give Up!</h3>
+              <p style="color: #6b21a8; line-height: 1.6;">
+                This is not a rejection, but an opportunity to strengthen your application. Many successful students 
+                have gone through this review process. Take this feedback as valuable guidance to improve your 
+                chances of approval and eventual sponsorship.
+              </p>
+              <p style="color: #6b21a8; margin-top: 15px;">
+                <strong>Remember:</strong> The review process ensures that only the most prepared students enter 
+                our sponsorship marketplace, which increases your chances of finding a suitable sponsor.
+              </p>
+            </div>
+            
+            <!-- Common Issues -->
+            <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #374151; margin-top: 0;">📋 Common Areas for Improvement</h3>
+              <ul style="color: #4b5563; margin: 10px 0; padding-left: 20px; font-size: 14px;">
+                <li><strong>Documentation:</strong> Ensure all required documents are uploaded and clearly legible</li>
+                <li><strong>Academic Records:</strong> Provide complete and verified academic transcripts</li>
+                <li><strong>Financial Information:</strong> Submit accurate and complete financial documentation</li>
+                <li><strong>Personal Statement:</strong> Write a compelling and detailed personal introduction</li>
+                <li><strong>Contact Information:</strong> Verify all contact details are current and accurate</li>
+                <li><strong>Profile Completeness:</strong> Fill out all required sections of your profile</li>
+              </ul>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}/student/application" 
+                 style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                📝 Improve Application
+              </a>
+              <a href="${loginUrl}/student/documents" 
+                 style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
+                📎 Upload Documents
+              </a>
+            </div>
+            
+            <!-- Support Information -->
+            <div style="background-color: #dbeafe; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <h4 style="color: #1e40af; margin-top: 0;">📞 Need Help?</h4>
+              <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
+                If you need assistance understanding the feedback or improving your application, please don't hesitate to contact our support team:
+                <br><a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                We believe in your potential and want to help you succeed.<br>
+                Use this feedback to strengthen your application and try again.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Application Rejected Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send application rejected email:', error);
+    return { success: false, error: error.message };
+  }
+}

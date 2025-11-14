@@ -639,7 +639,7 @@ export default function SubAdminApplicationDetail() {
               <User className="h-4 w-4" />
               Student Photo
             </h4>
-            {student?.photo ? (
+            {student?.photoUrl ? (
               <StudentPhoto
                 student={student}
                 size="large"
@@ -659,7 +659,7 @@ export default function SubAdminApplicationDetail() {
               <Video className="h-4 w-4" />
               Introduction Video
             </h4>
-            {student?.introductionVideo ? (
+            {student?.introVideoUrl ? (
               <StudentVideo
                 student={student}
                 size="large"

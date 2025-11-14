@@ -58,6 +58,34 @@ export function requireRole(role) {
     return next();
   };
 }
+
+/**
+ * Ensures the authenticated user has admin privileges (ADMIN or SUPER_ADMIN).
+ * Usage: app.get("/admin-area", requireAuth, requireAdminOrSuperAdmin(), handler)
+ */
+export function requireAdminOrSuperAdmin() {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (req.user.role !== "ADMIN" && req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "Forbidden: requires admin privileges" });
+    }
+    return next();
+  };
+}
+
+/**
+ * Ensures the authenticated user is specifically SUPER_ADMIN.
+ * Usage: app.get("/super-admin", requireAuth, requireSuperAdmin(), handler)
+ */
+export function requireSuperAdmin() {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+    if (req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({ error: "Forbidden: requires super admin privileges" });
+    }
+    return next();
+  };
+}
 // --- Role gatekeeper (append this to server/src/middleware/auth.js) ---
 
 /**

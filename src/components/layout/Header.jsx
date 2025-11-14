@@ -50,7 +50,7 @@ export const Nav = ({ active, setActive }) => {
     ...baseTabs,
     ...(role === "STUDENT" ? studentTabs : []),
     ...(role === "DONOR" ? donorTabs : []),
-    ...(role === "ADMIN" ? adminTabs : []),
+    ...(role === "ADMIN" || role === "SUPER_ADMIN" ? adminTabs : []),
     ...(!role ? unauthedTabs : []),
   ];
 
@@ -97,7 +97,7 @@ export const Nav = ({ active, setActive }) => {
                   <span className="text-gray-600 truncate max-w-[120px]" title={user.email}>
                     {user.email}
                   </span>
-                  {role && <Badge variant="secondary">{role === 'SUB_ADMIN' ? 'Case Worker' : role}</Badge>}
+                  {role && <Badge variant="secondary">{role === 'SUB_ADMIN' ? 'Case Worker' : role === 'SUPER_ADMIN' ? 'Super Admin' : role}</Badge>}
                 </div>
 
                 {/* Desktop Logout */}
@@ -180,7 +180,7 @@ export const Nav = ({ active, setActive }) => {
                     <div className="flex items-center gap-2 mb-3 px-3">
                       <User className="h-4 w-4 text-gray-500" />
                       <span className="text-sm text-gray-600">{user.email}</span>
-                      {role && <Badge variant="secondary" className="text-xs">{role === 'SUB_ADMIN' ? 'Case Worker' : role}</Badge>}
+                      {role && <Badge variant="secondary" className="text-xs">{role === 'SUB_ADMIN' ? 'Case Worker' : role === 'SUPER_ADMIN' ? 'Super Admin' : role}</Badge>}
                     </div>
                     <Button
                       variant="outline"

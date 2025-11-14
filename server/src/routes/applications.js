@@ -3,7 +3,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { optionalAuth } from "../middleware/auth.js";
 import { buildSnapshot } from "../lib/fx.js";
-import { sendApplicationConfirmationEmail } from "../lib/emailService.js";
+import { sendApplicationConfirmationEmail, sendApplicationApprovedStudentEmail, sendApplicationRejectedStudentEmail } from "../lib/emailService.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -305,6 +305,37 @@ router.patch("/:id", async (req, res) => {
       }
     }
 
+    // Send application status change emails (async, don't block response)
+    if (status && updated.student) {
+      try {
+        if (status === "APPROVED") {
+          sendApplicationApprovedStudentEmail({
+            email: updated.student.email,
+            studentName: updated.student.name,
+            applicationId: updated.id,
+            amount: updated.amount,
+            currency: updated.currency,
+            university: updated.student.university,
+            program: updated.student.program
+          }).catch(emailError => {
+            console.error('Failed to send application approved email:', emailError);
+          });
+        } else if (status === "REJECTED") {
+          sendApplicationRejectedStudentEmail({
+            email: updated.student.email,
+            studentName: updated.student.name,
+            applicationId: updated.id,
+            rejectionReason: notes || "Your application requires additional review or documentation.",
+            adminNotes: notes
+          }).catch(emailError => {
+            console.error('Failed to send application rejected email:', emailError);
+          });
+        }
+      } catch (emailError) {
+        console.error('Failed to send application status change emails:', emailError);
+      }
+    }
+
     res.json(updated);
   } catch (error) {
     console.error("Error updating application:", error);
@@ -411,6 +442,25 @@ router.patch("/:id/status", async (req, res) => {
       }
     } else {
       console.log(`No status message defined for status: ${status}`);
+    }
+
+    // Send email notifications for status changes (async to prevent blocking)
+    if (status === 'APPROVED') {
+      try {
+        await sendApplicationApprovedStudentEmail(application.student.email, application.student.firstName);
+        console.log('Application approved email sent to student');
+      } catch (emailError) {
+        console.error('Failed to send application approved email:', emailError);
+        // Don't fail the status update if email fails
+      }
+    } else if (status === 'REJECTED') {
+      try {
+        await sendApplicationRejectedStudentEmail(application.student.email, application.student.firstName);
+        console.log('Application rejected email sent to student');
+      } catch (emailError) {
+        console.error('Failed to send application rejected email:', emailError);
+        // Don't fail the status update if email fails
+      }
     }
 
     res.json(application);

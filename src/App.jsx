@@ -290,7 +290,7 @@ function Shell() {
             <Route 
               path="/admin" 
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminHub go={go} />
                 </ProtectedRoute>
               } 
@@ -298,7 +298,7 @@ function Shell() {
             <Route
               path="/admin/officers"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminOfficers />
                 </ProtectedRoute>
               }
@@ -306,7 +306,7 @@ function Shell() {
             <Route
               path="/admin/applications"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminApplications />
                 </ProtectedRoute>
               }
@@ -314,7 +314,9 @@ function Shell() {
             <Route
               path="/admin/applications/:id"
               element={
-                <AdminApplicationDetail />
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
+                  <AdminApplicationDetail />
+                </ProtectedRoute>
               }
             />
             <Route
@@ -328,7 +330,7 @@ function Shell() {
             <Route
               path="/admin/donors/:donorId"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminDonorDetail />
                 </ProtectedRoute>
               }
@@ -336,7 +338,7 @@ function Shell() {
             <Route
               path="/admin/messages/:messageId"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminMessageThread />
                 </ProtectedRoute>
               }
@@ -344,7 +346,7 @@ function Shell() {
             <Route
               path="/admin/payments"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminPayments />
                 </ProtectedRoute>
               }
@@ -352,7 +354,7 @@ function Shell() {
             <Route
               path="/admin/disbursements"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminDisbursements />
                 </ProtectedRoute>
               }
@@ -360,7 +362,7 @@ function Shell() {
             <Route
               path="/admin/donors"
               element={
-                <ProtectedRoute roles={["ADMIN"]}>
+                <ProtectedRoute roles={["ADMIN", "SUPER_ADMIN"]}>
                   <AdminDonors />
                 </ProtectedRoute>
               }

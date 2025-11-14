@@ -1,6 +1,7 @@
 import express from 'express';
 import Stripe from 'stripe';
 import { PrismaClient } from '@prisma/client';
+import { sendDonorPaymentConfirmationEmail, sendStudentSponsorshipNotificationEmail } from '../lib/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -367,6 +368,38 @@ router.post('/confirm-payment', async (req, res) => {
 
       return sponsorship;
     });
+
+    // Send payment confirmation emails (async, don't block response)
+    try {
+      // Send confirmation email to donor
+      sendDonorPaymentConfirmationEmail({
+        email: user.email,
+        donorName: user.name,
+        studentName: result.student.name,
+        amount: result.amountOriginal,
+        currency: result.currencyOriginal,
+        paymentMethod: paymentIntent.payment_method_types?.[0] || 'Credit Card',
+        transactionId: paymentIntentId,
+        sponsorshipId: result.id
+      }).catch(emailError => {
+        console.error('Failed to send donor payment confirmation email:', emailError);
+      });
+
+      // Send sponsorship notification email to student
+      sendStudentSponsorshipNotificationEmail({
+        email: student.email,
+        studentName: result.student.name,
+        donorName: result.donor.name,
+        amount: result.amountOriginal,
+        currency: result.currencyOriginal,
+        sponsorshipId: result.id,
+        message: paymentIntent.metadata?.message || null
+      }).catch(emailError => {
+        console.error('Failed to send student sponsorship notification email:', emailError);
+      });
+    } catch (emailError) {
+      console.error('Failed to send payment confirmation emails:', emailError);
+    }
 
     res.json({ 
       success: true, 

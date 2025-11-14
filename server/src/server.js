@@ -28,6 +28,7 @@ import photosRouter from "./routes/photos.js";
 import videosRouter from "./routes/videos-simple.js";
 import boardMembersRouter from "./routes/boardMembers.js";
 import interviewsRouter from "./routes/interviews.js";
+import superAdminRouter from "./routes/superAdmin.js";
 
 
 dotenv.config();
@@ -118,6 +119,7 @@ app.use("/api/photos", photosRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/board-members", boardMembersRouter);
 app.use("/api/interviews", interviewsRouter);
+app.use("/api/super-admin", superAdminRouter);
 
 
 // ⬇️ NEW for uploads

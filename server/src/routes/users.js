@@ -9,8 +9,8 @@ const prisma = new PrismaClient();
 const router = express.Router();
 
 // GET /api/users?role=SUB_ADMIN (or CASE_WORKER)
-// Admin-only listing of users, optionally filtered by role
-router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+// Admin and Super Admin listing of users, optionally filtered by role
+router.get("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const role = req.query.role ? String(req.query.role) : undefined;
     let where = {};
@@ -35,8 +35,8 @@ router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
 });
 
 // POST /api/users/sub-admins (Legacy: now creates Case Workers)
-// Admin creates a SUB_ADMIN with name, email, password
-router.post("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+// Admin and Super Admin creates a SUB_ADMIN with name, email, password
+router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
@@ -67,8 +67,8 @@ router.post("/sub-admins", requireAuth, onlyRoles("ADMIN"), async (req, res) => 
 });
 
 // POST /api/users/case-workers (New preferred endpoint)
-// Admin creates a Case Worker with name, email, password
-router.post("/case-workers", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+// Admin and Super Admin creates a Case Worker with name, email, password
+router.post("/case-workers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
@@ -99,7 +99,7 @@ router.post("/case-workers", requireAuth, onlyRoles("ADMIN"), async (req, res) =
 });
 
 // Backward compatibility route - redirect field-officers to case-workers
-router.post("/field-officers", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+router.post("/field-officers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   // Just redirect to the case-workers endpoint with the same logic
   try {
     const { name, email, password } = req.body || {};
@@ -132,8 +132,8 @@ router.post("/field-officers", requireAuth, onlyRoles("ADMIN"), async (req, res)
 });
 
 // PATCH /api/users/:id
-// Admin can update a user's name/email/password/role (limited to SUB_ADMIN/DONOR/STUDENT, not elevating to ADMIN here unless already admin)
-router.patch( "/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+// Admin and Super Admin can update a user's name/email/password/role (limited to SUB_ADMIN/DONOR/STUDENT, not elevating to ADMIN here unless already admin)
+router.patch( "/:id", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, password, role } = req.body || {};
@@ -154,8 +154,8 @@ router.patch( "/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
 });
 
 // DELETE /api/users/:id
-// Admin can delete a case worker (SUB_ADMIN role only, never ADMIN)
-router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+// Admin and Super Admin can delete a case worker (SUB_ADMIN role only, never ADMIN or SUPER_ADMIN)
+router.delete("/:id", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ error: "User ID is required" });
@@ -170,9 +170,9 @@ router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Prevent deletion of ADMIN users
-    if (existingUser.role === "ADMIN") {
-      return res.status(403).json({ error: "Cannot delete admin users" });
+    // Prevent deletion of ADMIN and SUPER_ADMIN users
+    if (existingUser.role === "ADMIN" || existingUser.role === "SUPER_ADMIN") {
+      return res.status(403).json({ error: "Cannot delete admin or super admin users" });
     }
 
     // Prevent self-deletion

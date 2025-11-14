@@ -376,6 +376,7 @@ enum UserRole {
   ADMIN
   SUB_ADMIN         // Backward compatibility - now called Case Workers in UI
   CASE_WORKER       // New term (maps to same functionality as SUB_ADMIN)
+  SUPER_ADMIN       // Super Admin - can only manage admin credentials
 }
 
 enum CaseWorkerTaskType {
