@@ -71,7 +71,9 @@ export const checkStudentProgress = async (user, token) => {
       }
     });
 
+    let hasReachedStep3 = false;
     let hasCompleteApplication = false;
+    
     if (appsRes.ok) {
       const appData = await appsRes.json();
       const applications = Array.isArray(appData?.applications) ? appData.applications : [];
@@ -79,21 +81,28 @@ export const checkStudentProgress = async (user, token) => {
       
       console.log('📄 Application found:', userApp ? `Status=${userApp.status}, Amount=${userApp.amount}, UniversityFee=${userApp.universityFee}, TotalExpense=${userApp.totalExpense}` : 'None');
       
-      // Consider application complete if it has complete financial details
-      // Check if they have filled out university fee, total expense, and meaningful amount
-      hasCompleteApplication = userApp && 
-                              userApp.universityFee > 0 && 
-                              userApp.totalExpense > 0 && 
-                              userApp.amount > 1000; // More than just a placeholder - should be meaningful amount
+      if (userApp) {
+        // User has reached Step 3 if ANY application exists (even empty)
+        hasReachedStep3 = true;
+        
+        // Consider application complete if it has meaningful financial details
+        hasCompleteApplication = userApp.universityFee > 0 && 
+                                userApp.totalExpense > 0 && 
+                                userApp.amount > 1000; // More than just a placeholder
+      }
     }
     
+    console.log('📋 Has reached Step 3 (application exists):', hasReachedStep3);
     console.log('📋 Application complete (has financial details):', hasCompleteApplication);
 
     // Determine the appropriate step/page
     let redirectPath;
     if (hasCompleteApplication) {
-      // Step 3 completed - go to application status page (profile completion)
+      // Step 3 completed with meaningful data - go to application status page
       redirectPath = '/my-application';
+    } else if (hasReachedStep3) {
+      // Step 3 reached but not completed - return to Step 3 to continue
+      redirectPath = '/apply?step=3';
     } else if (hasEducationDetails) {
       // Step 2 completed, need Step 3 - financial details
       redirectPath = '/apply?step=3';

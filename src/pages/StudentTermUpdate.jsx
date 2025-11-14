@@ -15,7 +15,7 @@ export const StudentTermUpdate = () => {
         <div className="space-y-4">
           <Input placeholder="Student Name" className="rounded-2xl" />
           <Input placeholder="Current Term (e.g., Fall 2024)" className="rounded-2xl" />
-          <Input placeholder="Current GPA" type="number" step="0.1" className="rounded-2xl" />
+          <Input placeholder="CGPA" type="number" step="0.1" className="rounded-2xl" />
           
           <div>
             <label className="block text-sm font-medium mb-2">Upload Transcript</label>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
-import { UserPlus, Mail, Shield, Edit2 } from "lucide-react";
+import { UserPlus, Mail, Shield, Edit2, Trash2 } from "lucide-react";
 import { API } from "@/lib/api";
 
 export default function AdminOfficers() {
@@ -84,6 +84,39 @@ export default function AdminOfficers() {
     } catch (e) {
       console.error(e);
       toast.error("Failed to save");
+    }
+  }
+
+  async function deleteCaseWorker(caseWorker) {
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      `Are you sure you want to delete case worker "${caseWorker.name || caseWorker.email}"?\n\n` +
+      "This action cannot be undone and will:\n" +
+      "• Remove their access to the system\n" +
+      "• Delete any associated field reviews\n" +
+      "• Remove all their account data\n\n" +
+      "Click OK to confirm deletion."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API.baseURL}/api/users/${caseWorker.id}`, {
+        method: "DELETE",
+        headers: { ...authHeader },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete case worker");
+      }
+
+      // Remove from local state
+      setCaseWorkers(prev => prev.filter(x => x.id !== caseWorker.id));
+      toast.success(`Case worker "${caseWorker.name || caseWorker.email}" deleted successfully`);
+    } catch (e) {
+      console.error("Delete case worker failed:", e);
+      toast.error(e.message || "Failed to delete case worker");
     }
   }
 
@@ -222,6 +255,15 @@ export default function AdminOfficers() {
                 >
                   <Edit2 className="h-3 w-3 mr-1" />
                   Save
+                </Button>
+                <Button 
+                  size="sm"
+                  variant="destructive"
+                  className="rounded-2xl" 
+                  onClick={()=>deleteCaseWorker(o)}
+                  title={`Delete case worker "${o.name || o.email}"`}
+                >
+                  <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
             </div>

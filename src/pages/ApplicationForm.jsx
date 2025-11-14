@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { getCurrencyFromCountry } from "@/lib/currency";
-import { Eye, EyeOff, LogIn } from "lucide-react";
+import { Eye, EyeOff, LogIn, Shield } from "lucide-react";
 import { API } from "@/lib/api";
 import UniversitySelector from "@/components/UniversitySelector";
 import PhotoUpload from "@/components/PhotoUpload";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 import { 
   useUniversityAcademics,
   generateMonthYearOptions
@@ -60,10 +61,14 @@ export const ApplicationForm = () => {
   
   const [step, setStep] = useState(getInitialStep());
   const [loading, setLoading] = useState(false);
+  const [loadingStudentData, setLoadingStudentData] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRegistered, setIsRegistered] = useState(!!user); // If user exists, they're registered
   const [studentId, setStudentId] = useState(user?.studentId || null); // Use existing student ID
+
+  // reCAPTCHA protection
+  const recaptchaRef = useRef();
 
 
     
@@ -71,12 +76,231 @@ export const ApplicationForm = () => {
     const searchParams = new URLSearchParams(location.search);
     const urlStep = parseInt(searchParams.get('step'));
     
-    if (user && (urlStep === 2 || urlStep === 3)) {
+    console.log('🎯 URL useEffect triggered:', {
+      locationSearch: location.search,
+      urlStep,
+      hasUser: !!user,
+      userEmail: user?.email,
+      currentStep: step
+    });
+    
+    if (user && (urlStep === 1 || urlStep === 2 || urlStep === 3)) {
+      console.log('✅ Setting step and loading data for step:', urlStep);
       setStep(urlStep);
       setIsRegistered(true);
       setStudentId(user.studentId);
+      
+      // Load existing student data when returning to any step
+      loadExistingStudentData();
+    } else if (user && !urlStep) {
+      console.log('✅ User present but no URL step - loading data');
+      // User accessing /apply without step parameter - also load data
+      setIsRegistered(true);
+      setStudentId(user.studentId);
+      loadExistingStudentData();
+    } else {
+      console.log('⏭️ Skipping data load - conditions not met');
     }
   }, [location.search, user]);
+
+  // Load existing student data to populate form
+  const loadExistingStudentData = useCallback(async () => {
+    console.log('🔍 loadExistingStudentData called with:', {
+      hasUser: !!user,
+      studentId: user?.studentId,
+      hasToken: !!token,
+      userEmail: user?.email,
+      isAlreadyLoading: loadingStudentData
+    });
+    
+    if (!user?.studentId || !token) {
+      console.log('❌ Skipping data load - missing user.studentId or token');
+      return;
+    }
+    
+    if (loadingStudentData) {
+      console.log('⏳ Skipping data load - already in progress');
+      return;
+    }
+    
+    try {
+      setLoadingStudentData(true);
+      console.log('📡 Starting API call to load existing student data...');
+      const response = await fetch(`${API.baseURL}/api/students/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      console.log('📡 API Response status:', response.status);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('📚 Loaded response data:', responseData);
+        
+        // Handle both direct student data and nested {student: ...} response
+        const studentData = responseData.student || responseData;
+        console.log('📚 Extracted student data:', studentData);
+        console.log('🎯 Degree Level specific debug:', {
+          degreeLevel: studentData.degreeLevel,
+          degreeLevelType: typeof studentData.degreeLevel,
+          isEmptyString: studentData.degreeLevel === '',
+          isNull: studentData.degreeLevel === null,
+          isUndefined: studentData.degreeLevel === undefined,
+          length: studentData.degreeLevel?.length,
+          allEducationFields: {
+            country: studentData.country,
+            university: studentData.university,
+            degreeLevel: studentData.degreeLevel,
+            field: studentData.field,
+            program: studentData.program,
+            gpa: studentData.gpa
+          }
+        });
+        
+        console.log('🔄 Current form state BEFORE update:', {
+          country: form.country,
+          university: form.university,
+          degreeLevel: form.degreeLevel,
+          field: form.field,
+          program: form.program,
+          gpa: form.gpa
+        });
+        
+        // Update form with existing data
+        setForm(prevForm => {
+          // Parse program dates from database if they exist
+          let startMonth = '', startYear = '', endMonth = '', endYear = '';
+          
+          if (studentData.programStartDate) {
+            const [sMonth, sYear] = studentData.programStartDate.split('/');
+            startMonth = sMonth || '';
+            startYear = sYear || '';
+          }
+          
+          if (studentData.programEndDate) {
+            const [eMonth, eYear] = studentData.programEndDate.split('/');
+            endMonth = eMonth || '';
+            endYear = eYear || '';
+          }
+          
+          const newFormData = {
+            ...prevForm,
+            name: studentData.name || prevForm.name,
+            email: studentData.email || prevForm.email,
+            country: studentData.country || prevForm.country,
+            university: studentData.university || prevForm.university,
+            // Fix: Properly handle null/undefined values from database
+            degreeLevel: studentData.degreeLevel || "",
+            field: studentData.field || prevForm.field,
+            program: studentData.program || prevForm.program,
+            gpa: studentData.gpa ? studentData.gpa.toString() : prevForm.gpa,
+            currency: studentData.country ? getCurrencyFromCountry(studentData.country) : prevForm.currency,
+            // Add parsed program dates
+            startMonth,
+            startYear,
+            endMonth,
+            endYear
+          };
+          
+          console.log('🔄 NEW form state AFTER update:', {
+            country: newFormData.country,
+            university: newFormData.university,
+            degreeLevel: newFormData.degreeLevel,
+            field: newFormData.field,
+            program: newFormData.program,
+            gpa: newFormData.gpa
+          });
+          
+          return newFormData;
+        });
+        
+        console.log('✅ Form state updated successfully');
+        
+        // 🎯 Auto-detect appropriate step based on data completeness (only if no URL step specified)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasUrlStep = urlParams.has('step');
+        
+        if (!hasUrlStep) {
+          // Determine appropriate step based on student data completeness
+          const hasBasicInfo = studentData.name && studentData.email;
+          const hasEducationInfo = studentData.university && studentData.degreeLevel && studentData.field && studentData.program && studentData.gpa;
+          
+          let appropriateStep = 1;
+          if (hasBasicInfo && hasEducationInfo) {
+            // Check if they have an application (indicates step 3 reached)
+            try {
+              const appResponse = await fetch(`${API.baseURL}/api/applications/student/${studentData.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (appResponse.ok) {
+                const applications = await appResponse.json();
+                if (applications && applications.length > 0) {
+                  appropriateStep = 3; // Has application, go to step 3
+                } else {
+                  appropriateStep = 3; // Has education, ready for step 3
+                }
+              } else {
+                appropriateStep = 3; // Has education, ready for step 3
+              }
+            } catch (e) {
+              appropriateStep = 3; // Default to step 3 if has education
+            }
+          } else if (hasBasicInfo) {
+            appropriateStep = 2; // Has basic info, needs education
+          } else {
+            appropriateStep = 1; // Missing basic info, start at step 1
+          }
+          
+          console.log('🎯 Auto-detected step based on data:', {
+            hasBasicInfo,
+            hasEducationInfo,
+            appropriateStep,
+            currentStep: step
+          });
+          
+          if (appropriateStep !== step) {
+            setStep(appropriateStep);
+          }
+        }
+      } else {
+        console.error('❌ API call failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load student data:', error);
+    } finally {
+      setLoadingStudentData(false);
+    }
+  }, [user?.studentId, token]);
+
+  // Additional effect to ensure data loading when step changes
+  useEffect(() => {
+    console.log('🔄 Step useEffect triggered:', {
+      step,
+      hasUser: !!user,
+      hasStudentId: !!user?.studentId,
+      hasToken: !!token,
+      userEmail: user?.email
+    });
+    
+    if (user && user.studentId && token && (step === 1 || step === 2 || step === 3)) {
+      console.log(`✅ All conditions met - loading data for step ${step}`);
+      loadExistingStudentData();
+    } else {
+      console.log('⏭️ Conditions not met for step data loading');
+    }
+  }, [step, user, token, loadExistingStudentData]);
+
+  // Update URL when step changes for proper browser navigation
+  useEffect(() => {
+    if (user && step > 1) {
+      // Update URL to reflect current step for registered users
+      const newUrl = `${location.pathname}?step=${step}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+  }, [step, user, location.pathname]);
 
   const [form, setForm] = useState(() => {
 
@@ -107,11 +331,11 @@ export const ApplicationForm = () => {
       photoThumbnailUrl: "",
       photoUploadedAt: null,
       // Step 3 — financial details
-      universityFee: "", // Tuition and academic fees
-      livingExpenses: "", // Books, accommodation, food, transport, etc.
-      totalExpense: "", // Auto-calculated (universityFee + livingExpenses)
+      universityFee: "0", // Tuition and academic fees (default to 0 for calculations)
+      livingExpenses: "0", // Books, accommodation, food, transport, etc. (default to 0 for calculations)
+      totalExpense: "0", // Auto-calculated (universityFee + livingExpenses)
       scholarshipAmount: "0", // Default to 0
-      amount: "", // This will be auto-calculated (totalExpense - scholarshipAmount)
+      amount: "0", // This will be auto-calculated (totalExpense - scholarshipAmount)
     };
   });
 
@@ -164,6 +388,20 @@ export const ApplicationForm = () => {
     try {
       setLoading(true);
 
+      // 🛡️ reCAPTCHA Protection - Get verification token (v3)
+      let recaptchaToken = null;
+      if (recaptchaRef.current) {
+        try {
+          recaptchaToken = await recaptchaRef.current.executeRecaptcha('register');
+          console.log('reCAPTCHA token obtained for student registration');
+        } catch (recaptchaError) {
+          console.error('reCAPTCHA failed:', recaptchaError);
+          toast.error("Security verification failed. Please try again.");
+          setLoading(false);
+          return;
+        }
+      }
+
       // Register student using the student-specific endpoint
       const regRes = await fetch(API.url('/api/auth/register-student'), {
         method: "POST",
@@ -187,7 +425,9 @@ export const ApplicationForm = () => {
           gradYear: new Date().getFullYear() + 1,
           currency: "PKR",
           amount: 0,
-          field: ""
+          field: "",
+          // 🛡️ reCAPTCHA Protection
+          recaptchaToken: recaptchaToken
         }),
       });
 
@@ -241,6 +481,23 @@ export const ApplicationForm = () => {
 
   const next = () => setStep((s) => Math.min(3, s + 1));
   const back = () => setStep((s) => Math.max(1, s - 1));
+
+  // Validate step completion for data integrity
+  const validateStepCompletion = (targetStep) => {
+    if (targetStep === 1) return true; // Always allow step 1
+    
+    if (targetStep === 2) {
+      // Step 2 requires step 1 completion (user account)
+      return user && user.studentId;
+    }
+    
+    if (targetStep === 3) {
+      // Step 3 requires step 1 + 2 completion (education data)
+      return user && user.studentId && form.university && form.degreeLevel && form.field && form.program && form.gpa;
+    }
+    
+    return false;
+  };
 
   // Generate month/year options for dropdowns
   const { months, years } = generateMonthYearOptions();
@@ -305,6 +562,13 @@ export const ApplicationForm = () => {
 
   // Handle university change
   const handleUniversityChange = (university, customUniversity, universityId) => {
+    console.log('🏛️ University change debug:', {
+      university,
+      customUniversity,
+      universityId,
+      universityIdType: typeof universityId
+    });
+    
     setForm({
       ...form,
       university,
@@ -320,6 +584,12 @@ export const ApplicationForm = () => {
 
   // Handler for degree level change - resets dependent fields
   const handleDegreeLevelChange = (degreeLevel) => {
+    console.log('🎓 Degree level change debug:', {
+      degreeLevel,
+      selectedUniversityId,
+      degreeLevelsAvailable: degreeLevels
+    });
+    
     setForm({
       ...form,
       degreeLevel,
@@ -421,11 +691,14 @@ export const ApplicationForm = () => {
 
     // Validation
     if (!form.university || !form.degreeLevel || !form.field || !form.program || !form.country || !form.gpa) {
-      toast.error("Please complete all required fields: country, university, degree level, field, program, and GPA.");
+      toast.error("Please complete all required fields: country, university, degree level, field, program, and CGPA.");
       return;
     }
 
-    // Validate date fields
+    // TODO: Add program dates validation when database schema supports these fields
+    // Currently commented out as database doesn't have programStartDate/programEndDate fields
+    /*
+    // Validate date fields (DISABLED - no database support)
     if (!form.startMonth || !form.startYear || !form.endMonth || !form.endYear) {
       toast.error("Please specify program start and end dates.");
       return;
@@ -438,6 +711,7 @@ export const ApplicationForm = () => {
       toast.error("Program end date must be after start date.");
       return;
     }
+    */
 
     // Validate financial fields
     const universityFeeNum = Number(form.universityFee || 0);
@@ -491,8 +765,18 @@ export const ApplicationForm = () => {
 
 
       // Step 1: Update student profile with educational details
-      const programStartDate = `${form.startMonth}/${form.startYear}`;
-      const programEndDate = `${form.endMonth}/${form.endYear}`;
+      const programStartDate = (form.startMonth && form.startYear) ? `${form.startMonth}/${form.startYear}` : null;
+      const programEndDate = (form.endMonth && form.endYear) ? `${form.endMonth}/${form.endYear}` : null;
+      
+      console.log('🔍 Step 3 submission debug:', {
+        startMonth: form.startMonth,
+        startYear: form.startYear,
+        endMonth: form.endMonth,
+        endYear: form.endYear,
+        programStartDate,
+        programEndDate,
+        degreeLevel: form.degreeLevel
+      });
       
       const studentUpdatePayload = {
         country: form.country.trim(),
@@ -500,9 +784,9 @@ export const ApplicationForm = () => {
         degreeLevel: form.degreeLevel,
         field: form.field.trim(),
         program: form.program.trim(),
-        programStartDate,
-        programEndDate,
         gpa: Number(form.gpa)
+        // Note: programStartDate and programEndDate removed - not in database schema yet
+        // TODO: Add program date fields to Prisma schema if needed for future functionality
       };
 
 
@@ -531,7 +815,9 @@ export const ApplicationForm = () => {
           hasToken: !!token
         });
         
-        throw new Error(studentError.error || studentError.message || "Failed to update student profile");
+        const errorMessage = studentError.error || studentError.message || "Failed to update student profile";
+        toast.error(`Student update failed: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
 
 
@@ -736,6 +1022,24 @@ export const ApplicationForm = () => {
               />
             </div>
 
+            {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
+            <div className="sm:col-span-2">
+              <RecaptchaProtection 
+                ref={recaptchaRef}
+                version="v3"
+                onError={(error) => {
+                  console.error('reCAPTCHA error:', error);
+                  toast.error('Security verification failed. Please refresh and try again.');
+                }}
+              />
+              {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
+                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
+                  <Shield className="h-3 w-3" />
+                  <span>Protected by reCAPTCHA</span>
+                </div>
+              )}
+            </div>
+
             <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
               <Button
                 onClick={handleStep1Registration}
@@ -889,12 +1193,11 @@ export const ApplicationForm = () => {
             {form.program && (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Program Start Date</label>
+                  <label className="block text-sm font-medium mb-2">Program Start Date <span className="text-gray-500 font-normal">(Optional)</span></label>
                   <div className="flex gap-2">
                     <select
                       value={form.startMonth}
                       onChange={(e) => setForm({ ...form, startMonth: e.target.value })}
-                      required
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Month</option>
@@ -907,7 +1210,6 @@ export const ApplicationForm = () => {
                     <select
                       value={form.startYear}
                       onChange={(e) => setForm({ ...form, startYear: e.target.value })}
-                      required
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Year</option>
@@ -921,12 +1223,11 @@ export const ApplicationForm = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Expected Graduation Date</label>
+                  <label className="block text-sm font-medium mb-2">Expected Graduation Date <span className="text-gray-500 font-normal">(Optional)</span></label>
                   <div className="flex gap-2">
                     <select
                       value={form.endMonth}
                       onChange={(e) => setForm({ ...form, endMonth: e.target.value })}
-                      required
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Month</option>
@@ -939,7 +1240,6 @@ export const ApplicationForm = () => {
                     <select
                       value={form.endYear}
                       onChange={(e) => setForm({ ...form, endYear: e.target.value })}
-                      required
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Year</option>
@@ -951,12 +1251,22 @@ export const ApplicationForm = () => {
                     </select>
                   </div>
                 </div>
+                
+                {/* Informational note about program dates */}
+                <div className="sm:col-span-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-800">
+                      <strong>Note:</strong> Program dates are currently optional and for informational purposes. 
+                      You can proceed without specifying them and add this information later if needed.
+                    </p>
+                  </div>
+                </div>
               </>
             )}
 
             {/* GPA Field - Last Position */}
             <Input
-              placeholder="Current GPA (e.g., 3.5/4.0 or 85%)"
+              placeholder="CGPA (e.g., 3.5/4.0 or 85%)"
               value={form.gpa}
               onChange={(e) => setForm({ ...form, gpa: e.target.value })}
               required
@@ -976,10 +1286,11 @@ export const ApplicationForm = () => {
                     form.degreeLevel &&
                     form.field &&
                     form.program && 
-                    form.startMonth &&
-                    form.startYear &&
-                    form.endMonth &&
-                    form.endYear &&
+                    // Program dates made optional until database schema supports them
+                    // form.startMonth &&
+                    // form.startYear &&
+                    // form.endMonth &&
+                    // form.endYear &&
                     form.gpa;
                   
                   if (!isFormValid) {
@@ -999,8 +1310,20 @@ export const ApplicationForm = () => {
                       degreeLevel: form.degreeLevel, // Include degreeLevel - it exists in schema
                       field: form.field.trim(),
                       program: form.program.trim(),
-                      gpa: Number(form.gpa)
+                      gpa: Number(form.gpa),
+                      // Add program start and end dates
+                      programStartDate: form.startMonth && form.startYear ? `${form.startMonth}/${form.startYear}` : null,
+                      programEndDate: form.endMonth && form.endYear ? `${form.endMonth}/${form.endYear}` : null
                     };
+                    
+                    console.log('💾 Step 2 save debug - current form state:', {
+                      degreeLevel: form.degreeLevel,
+                      degreeLevelType: typeof form.degreeLevel,
+                      isEmpty: form.degreeLevel === '',
+                      isNull: form.degreeLevel === null,
+                      isUndefined: form.degreeLevel === undefined,
+                      fullPayload: step2Payload
+                    });
                     
                     const headers = { "Content-Type": "application/json" };
                     if (token) {
@@ -1016,6 +1339,46 @@ export const ApplicationForm = () => {
                     
                     if (!step2Res.ok) {
                       throw new Error("Failed to save education details");
+                    }
+                    
+                    // ✅ Update local form state with saved data to ensure Step 3 displays correctly
+                    setForm(prevForm => ({
+                      ...prevForm,
+                      country: step2Payload.country,
+                      university: step2Payload.university,
+                      degreeLevel: step2Payload.degreeLevel,
+                      field: step2Payload.field,
+                      program: step2Payload.program,
+                      gpa: step2Payload.gpa.toString(),
+                      // Also update the dates if they were provided
+                      startMonth: form.startMonth,
+                      startYear: form.startYear,
+                      endMonth: form.endMonth,
+                      endYear: form.endYear
+                    }));
+                    
+                    console.log('✅ Step 2 data saved and form state updated:', step2Payload);
+                    
+                    // Create a basic application record to mark Step 3 as "reached"
+                    try {
+                      const basicAppRes = await fetch(API.url('/api/applications'), {
+                        method: "POST",
+                        headers,
+                        body: JSON.stringify({
+                          studentId: currentStudentId,
+                          term: "Current Term",
+                          currency: form.currency || "PKR",
+                          amount: 1, // Minimal placeholder amount
+                          status: "DRAFT"
+                        }),
+                      });
+                      
+                      if (basicAppRes.ok) {
+                        console.log("✅ Basic application created to mark Step 3 reached");
+                      }
+                    } catch (appError) {
+                      console.warn("⚠️ Could not create basic application:", appError);
+                      // Don't block progression if this fails
                     }
                     
                     toast.success("Education details saved successfully!");
@@ -1038,10 +1401,11 @@ export const ApplicationForm = () => {
                   !form.degreeLevel ||
                   !form.field ||
                   !form.program || 
-                  !form.startMonth ||
-                  !form.startYear ||
-                  !form.endMonth ||
-                  !form.endYear ||
+                  // Program dates made optional until database schema supports them
+                  // !form.startMonth ||
+                  // !form.startYear ||
+                  // !form.endMonth ||
+                  // !form.endYear ||
                   !form.gpa
                 }
                 className="min-h-[44px] w-full sm:w-auto"
@@ -1057,21 +1421,28 @@ export const ApplicationForm = () => {
           <div>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Currency Selection */}
+            {/* Currency Display (Read-Only) */}
             <div className="space-y-2">
               <label className="text-xs sm:text-sm font-medium text-gray-700">Currency</label>
-              <select
-                className="w-full sm:w-1/2 rounded-2xl border px-3 py-2 text-sm min-h-[44px]"
-                value={form.currency}
-                onChange={(e) => setForm({ ...form, currency: e.target.value })}
-              >
-                <option value="AUD">AUD - Australian Dollar</option>
-                <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                <option value="EUR">🇪🇺 EUR - Euro</option>
-                <option value="GBP">GBP - British Pound</option>
-                <option value="PKR">🇵🇰 PKR - Pakistani Rupee</option>
-                <option value="USD">🇺🇸 USD - US Dollar</option>
-              </select>
+              <div className="w-full sm:w-1/2 rounded-2xl border px-3 py-2 text-sm min-h-[44px] bg-gray-50 flex items-center">
+                <span className="font-medium text-gray-800">
+                  {form.currency === 'PKR' && '🇵🇰 '}
+                  {form.currency === 'USD' && '🇺🇸 '}
+                  {form.currency === 'EUR' && '🇪🇺 '}
+                  {form.currency === 'GBP' && '🇬🇧 '}
+                  {form.currency === 'CAD' && '🇨🇦 '}
+                  {form.currency === 'AUD' && '🇦🇺 '}
+                  {form.currency} - {
+                    form.currency === 'PKR' ? 'Pakistani Rupee' :
+                    form.currency === 'USD' ? 'US Dollar' :
+                    form.currency === 'EUR' ? 'Euro' :
+                    form.currency === 'GBP' ? 'British Pound' :
+                    form.currency === 'CAD' ? 'Canadian Dollar' :
+                    form.currency === 'AUD' ? 'Australian Dollar' : 
+                    form.currency
+                  }
+                </span>
+              </div>
               {form.country && (
                 <p className="text-xs text-green-600">
                   ✓ Auto-selected based on {form.country}
@@ -1226,7 +1597,10 @@ export const ApplicationForm = () => {
                   <h4 className="font-medium text-slate-700 text-sm sm:text-base">Academic Information</h4>
                   <p><strong>Country:</strong> {form.country || "[University Country]"}</p>
                   <p><strong>University:</strong> {form.university === "Other" ? form.customUniversity : form.university || "[Your University]"}</p>
+                  <p><strong>Degree Level:</strong> {form.degreeLevel || "[Your Degree Level]"}</p>
+                  <p><strong>Field:</strong> {form.field || "[Your Field]"}</p>
                   <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
+                  <p><strong>CGPA:</strong> {form.gpa || "[Your CGPA]"}</p>
                 </div>
 
                 {/* Financial Information */}

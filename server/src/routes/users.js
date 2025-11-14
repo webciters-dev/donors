@@ -153,4 +153,52 @@ router.patch( "/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
   }
 });
 
+// DELETE /api/users/:id
+// Admin can delete a case worker (SUB_ADMIN role only, never ADMIN)
+router.delete("/:id", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ error: "User ID is required" });
+
+    // First, get the user to check their role
+    const existingUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, name: true, email: true, role: true }
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Prevent deletion of ADMIN users
+    if (existingUser.role === "ADMIN") {
+      return res.status(403).json({ error: "Cannot delete admin users" });
+    }
+
+    // Prevent self-deletion
+    if (existingUser.id === req.user.id) {
+      return res.status(403).json({ error: "Cannot delete yourself" });
+    }
+
+    // Delete the user (Prisma will cascade delete related records)
+    await prisma.user.delete({
+      where: { id }
+    });
+
+    return res.status(200).json({ 
+      message: "Case worker deleted successfully",
+      deletedUser: {
+        id: existingUser.id,
+        name: existingUser.name,
+        email: existingUser.email
+      }
+    });
+
+  } catch (e) {
+    console.error("DELETE /api/users/:id failed:", e);
+    if (e.code === "P2025") return res.status(404).json({ error: "User not found" });
+    return res.status(500).json({ error: e?.message || "Failed to delete user" });
+  }
+});
+
 export default router;

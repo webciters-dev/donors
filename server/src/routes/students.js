@@ -337,8 +337,7 @@ router.put(
         // Education fields
         degreeLevel,
         field,
-        programStartDate,
-        programEndDate,
+        // Note: programStartDate and programEndDate removed - not in database schema yet
         // Social media fields
         facebookUrl,
         instagramHandle,
@@ -418,8 +417,7 @@ router.put(
           // Education fields
           ...(degreeLevel !== undefined ? { degreeLevel } : {}),
           ...(field !== undefined ? { field } : {}),
-          ...(programStartDate !== undefined ? { programStartDate } : {}),
-          ...(programEndDate !== undefined ? { programEndDate } : {}),
+          // Note: programStartDate and programEndDate removed - not in database schema yet
           // Social media fields
           ...(facebookUrl !== undefined ? { facebookUrl } : {}),
           ...(instagramHandle !== undefined ? { instagramHandle } : {}),
@@ -483,9 +481,18 @@ router.patch("/:id", requireAuth, async (req, res) => {
       field,
       country,
       degreeLevel,
-      programStartDate,
-      programEndDate,
+      // Note: programStartDate and programEndDate removed - not in database schema yet
     } = req.body;
+
+    console.log('🔍 PATCH /students/:id - Debug request data:', {
+      id,
+      degreeLevel,
+      degreeLevelType: typeof degreeLevel,
+      field,
+      program,
+      university,
+      receivedBody: req.body
+    });
 
     const updated = await prisma.student.update({
       where: { id },
@@ -517,9 +524,17 @@ router.patch("/:id", requireAuth, async (req, res) => {
         ...(province !== undefined ? { province } : {}),
         ...(field !== undefined ? { field } : {}),
         ...(country !== undefined ? { country } : {}),
-        // Note: degreeLevel, programStartDate, programEndDate may not exist in current schema
-        // These would require database migration to add to Student model
+        ...(degreeLevel !== undefined ? { degreeLevel } : {}),
+        // Note: programStartDate and programEndDate removed - not in database schema yet
       },
+    });
+
+    console.log('🔍 PATCH result - Updated student:', {
+      id: updated.id,
+      degreeLevel: updated.degreeLevel,
+      field: updated.field,
+      program: updated.program,
+      university: updated.university
     });
 
     res.json({ student: updated });

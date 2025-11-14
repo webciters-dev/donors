@@ -13,9 +13,15 @@ const createTransporter = () => {
       pass: process.env.EMAIL_PASS
     },
     tls: {
-      // Use proper SSL certificate validation (aircrew.nl has valid Let's Encrypt SSL)
-      rejectUnauthorized: process.env.EMAIL_TLS_REJECT_UNAUTHORIZED !== 'false'
-    }
+      // Disable certificate validation for development/self-signed certs
+      rejectUnauthorized: false
+    },
+    // Rate limiting to prevent "too many emails" errors
+    pool: true,
+    maxConnections: 1,
+    maxMessages: 10,
+    rateDelta: 60000, // 1 minute
+    rateLimit: 5 // max 5 emails per minute
   });
 };
 

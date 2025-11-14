@@ -93,7 +93,7 @@ export default function StudentProgress() {
     e.preventDefault();
     
     if (!formData.term || !formData.gpa) {
-      toast.error('Please fill in required fields (Term and GPA)');
+      toast.error('Please fill in required fields (Term and CGPA)');
       return;
     }
     
@@ -216,7 +216,7 @@ export default function StudentProgress() {
               
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Current GPA *
+                  CGPA *
                 </label>
                 <Input
                   type="number"

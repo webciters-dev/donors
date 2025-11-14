@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "../prismaClient.js";
 import { sendStudentWelcomeEmail, sendDonorWelcomeEmail, sendPasswordResetEmail } from "../lib/emailService.js";
+import { requireStrictRecaptcha } from "../middleware/recaptcha.js";
 
 const router = express.Router();
 
@@ -110,7 +111,7 @@ router.post("/login", async (req, res) => {
    STUDENT SELF-REGISTER (used by ApplicationForm)
    body: { name, email, password, university, program, gender, country, city, province, gpa, gradYear, amount, currency, field }
 ========================= */
-router.post("/register-student", async (req, res) => {
+router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
   try {
     const {
       name,
@@ -138,27 +139,24 @@ router.post("/register-student", async (req, res) => {
       return res.status(400).json({ error: "name, email, and password are required" });
     }
 
-    // 1) Upsert Student by email (so repeated submits don’t create dup students)
-    const student = await prisma.student.upsert({
-      where: { email },
-      update: {
-        name,
-        university: university ?? undefined,
-        program: program ?? undefined,
-        gender: gender ?? undefined,
-        country: country ?? undefined,
-        city: city ?? undefined,
-        province: province ?? undefined,
-        gpa: typeof gpa === "number" ? gpa : undefined,
-        gradYear: typeof gradYear === "number" ? gradYear : undefined,
-        field: field ?? undefined,
-        degreeLevel: degreeLevel ?? undefined,
-        personalIntroduction: personalIntroduction ?? undefined,
-        photoUrl: photoUrl ?? undefined,
-        photoThumbnailUrl: photoThumbnailUrl ?? undefined,
-        photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : undefined,
-      },
-      create: {
+    // 1) Check if email is already registered (prevent duplicates)
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(409).json({ 
+        error: "Email address is already registered. Please use a different email or sign in to your existing account." 
+      });
+    }
+
+    const existingStudent = await prisma.student.findUnique({ where: { email } });
+    if (existingStudent) {
+      return res.status(409).json({ 
+        error: "A student account with this email already exists. Please use a different email or sign in." 
+      });
+    }
+
+    // 2) Create new student (no upsert - prevent duplicates)
+    const student = await prisma.student.create({
+      data: {
         name,
         email,
         university: university ?? "",
@@ -178,45 +176,29 @@ router.post("/register-student", async (req, res) => {
       },
     });
 
-    // 2) Ensure User exists for this student (role: STUDENT)
+    // 3) Create new user account
     const passwordHash = await bcrypt.hash(String(password), 10);
+    await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        role: "STUDENT",
+        studentId: student.id,
+      },
+    });
     
-    // Check if user already exists - don't update password for existing users
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    
-    if (existingUser) {
-      // Update user to link to this student record, but keep existing password
-      await prisma.user.update({
-        where: { email },
-        data: {
-          role: "STUDENT",
-          studentId: student.id,
-        },
-      });
-    } else {
-      // Create new user with provided password
-      await prisma.user.create({
-        data: {
-          email,
-          passwordHash,
-          role: "STUDENT",
-          studentId: student.id,
-        },
-      });
-      
-      // Send welcome email to new student (async, don't block response)
-      sendStudentWelcomeEmail({
-        email: email,
-        name: name
-      }).catch(emailError => {
-        console.error('Failed to send student welcome email:', emailError);
-      });
-    }
+    // Send welcome email to new student (async, don't block response)
+    sendStudentWelcomeEmail({
+      email: email,
+      name: name
+    }).catch(emailError => {
+      console.error('Failed to send student welcome email:', emailError);
+    });
 
     return res.status(201).json({
       ok: true,
       studentId: student.id,
-      message: "Student account created/updated",
+      message: "Student account created successfully",
     });
   } catch (err) {
     console.error("register-student failed:", err);
