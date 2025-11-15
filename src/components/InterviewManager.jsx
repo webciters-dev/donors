@@ -246,7 +246,8 @@ export default function InterviewManager() {
           
           <RecaptchaProtection>
             {({ executeRecaptcha }) => (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Student *
@@ -386,6 +387,7 @@ export default function InterviewManager() {
               {loading ? "Scheduling..." : "Schedule Interview"}
             </Button>
           </div>
+              </div>
             )}
           </RecaptchaProtection>
         </Card>
