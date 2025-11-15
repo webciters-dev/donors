@@ -86,13 +86,9 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
     return null;
   }
 
-  // Show development status for localhost
+  // Show development status for localhost (but don't block children)
   if (isDevelopment && isLocalhost) {
-    return (
-      <div className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded p-2">
-        🚀 Development Mode: reCAPTCHA bypassed for localhost
-      </div>
-    );
+    console.log('🚀 Development Mode: reCAPTCHA bypassed for localhost');
   }
 
   // v3 is invisible, no UI component needed
@@ -177,8 +173,36 @@ const RecaptchaProtection = forwardRef(({
   onVerify, 
   onError, 
   onExpired,
-  className = ''
+  className = '',
+  children
 }, ref) => {
+  const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+  const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const recaptchaRef = useRef();
+
+  // Handle development mode with render prop pattern
+  if (isDevelopment && isLocalhost) {
+    // For render prop pattern, provide mock executeRecaptcha function
+    if (typeof children === 'function') {
+      const mockExecuteRecaptcha = async (action = 'submit') => {
+        console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
+        return 'development-bypass-token';
+      };
+      return (
+        <div className={className}>
+          {children({ executeRecaptcha: mockExecuteRecaptcha })}
+        </div>
+      );
+    }
+    // For regular children, just render them
+    return (
+      <div className={className}>
+        {children}
+      </div>
+    );
+  }
+
   if (version === 'v2') {
     return (
       <div className={className}>
@@ -188,19 +212,21 @@ const RecaptchaProtection = forwardRef(({
           onError={onError}
           onExpired={onExpired}
         />
+        {typeof children === 'function' ? children({ executeRecaptcha: ref?.current?.executeRecaptcha }) : children}
       </div>
     );
   }
 
-  // Default to v3 (invisible)
+  // Default to v3 (invisible) with render prop support
   return (
     <div className={className}>
       <RecaptchaV3 
-        ref={ref}
+        ref={recaptchaRef}
         onVerify={onVerify}
         onError={onError}
         onExpired={onExpired}
       />
+      {typeof children === 'function' ? children({ executeRecaptcha: recaptchaRef?.current?.executeRecaptcha }) : children}
     </div>
   );
 });
