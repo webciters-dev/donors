@@ -2,6 +2,7 @@
 import express from "express";
 import prisma from "../prismaClient.js";
 import { requireAuth } from "../middleware/auth.js";
+import { requireBasicRecaptcha } from "../middleware/recaptcha.js";
 
 const router = express.Router();
 
@@ -170,7 +171,7 @@ router.get("/:id", requireAuth, async (req, res) => {
  * POST /api/conversations
  * Create a new conversation between donor and student
  */
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireBasicRecaptcha, async (req, res) => {
   try {
     const { studentId, applicationId, type = 'DONOR_STUDENT', initialMessage } = req.body;
     const userId = req.user.id;
@@ -272,7 +273,7 @@ router.post("/", requireAuth, async (req, res) => {
  * POST /api/conversations/:id/messages
  * Send a message in an existing conversation
  */
-router.post("/:id/messages", requireAuth, async (req, res) => {
+router.post("/:id/messages", requireAuth, requireBasicRecaptcha, async (req, res) => {
   try {
     const { id } = req.params;
     const { text } = req.body;

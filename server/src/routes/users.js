@@ -2,6 +2,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
+import { requireBasicRecaptcha } from "../middleware/recaptcha.js";
 import bcrypt from "bcryptjs";
 import { sendFieldOfficerWelcomeEmail } from "../lib/emailService.js";
 
@@ -36,7 +37,7 @@ router.get("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res)
 
 // POST /api/users/sub-admins (Legacy: now creates Case Workers)
 // Admin and Super Admin creates a SUB_ADMIN with name, email, password
-router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
+router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requireBasicRecaptcha, async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
@@ -68,7 +69,7 @@ router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async
 
 // POST /api/users/case-workers (New preferred endpoint)
 // Admin and Super Admin creates a Case Worker with name, email, password
-router.post("/case-workers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res) => {
+router.post("/case-workers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requireBasicRecaptcha, async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });

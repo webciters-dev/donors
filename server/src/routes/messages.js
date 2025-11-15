@@ -1,6 +1,7 @@
 // server/src/routes/messages.js
 import express from "express";
 import prisma from "../prismaClient.js";
+import { requireBasicRecaptcha } from "../middleware/recaptcha.js";
 
 const router = express.Router();
 
@@ -74,7 +75,7 @@ const messages = await prisma.message.findMany({
  *   - text (required)
  *   - fromRole (required: "student" | "admin" | "sub_admin" | "donor")
  */
-router.post("/", async (req, res) => {
+router.post("/", requireBasicRecaptcha, async (req, res) => {
   try {
     const { studentId, applicationId, text, fromRole } = req.body;
 

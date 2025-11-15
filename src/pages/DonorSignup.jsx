@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Shield } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { API } from "@/lib/api";
 import { filterCountryOptions, getDonorFilterMessage } from "@/lib/countryFilter";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 // Country options with priority grouping
 const COUNTRY_OPTIONS = {
@@ -221,6 +222,9 @@ export default function DonorSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // reCAPTCHA protection
+  const recaptchaRef = useRef();
+
   async function submit(e) {
     e.preventDefault();
     if (!form.name || !form.email || !form.password || !form.country) {
@@ -238,6 +242,20 @@ export default function DonorSignup() {
 
     try {
       setBusy(true);
+
+      // 🛡️ reCAPTCHA Protection - Get verification token
+      let recaptchaToken = null;
+      if (recaptchaRef.current) {
+        try {
+          recaptchaToken = await recaptchaRef.current.executeRecaptcha('register');
+          console.log('reCAPTCHA token obtained for donor registration');
+        } catch (recaptchaError) {
+          console.error('reCAPTCHA failed:', recaptchaError);
+          toast.error("Security verification failed. Please try again.");
+          setBusy(false);
+          return;
+        }
+      }
       
       const requestData = {
         name: form.name.trim(),
@@ -246,6 +264,8 @@ export default function DonorSignup() {
         country: form.country,
         organization: form.organization.trim() || null,
         phone: form.phone.trim() || null,
+        // 🛡️ reCAPTCHA Protection
+        recaptchaToken: recaptchaToken
       };
       
 
@@ -395,6 +415,24 @@ export default function DonorSignup() {
             show={showConfirmPassword}
             setShow={setShowConfirmPassword}
           />
+
+          {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
+          <div>
+            <RecaptchaProtection 
+              ref={recaptchaRef}
+              version="v3"
+              onError={(error) => {
+                console.error('reCAPTCHA error:', error);
+                toast.error('Security verification failed. Please refresh and try again.');
+              }}
+            />
+            {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
+              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
+                <Shield className="h-3 w-3" />
+                <span>Protected by reCAPTCHA</span>
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <Button type="submit" disabled={busy} className="rounded-2xl">

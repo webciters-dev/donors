@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { MessageCircle, Send, User, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -171,7 +172,7 @@ const DonorStudentMessaging = ({ student, user, token }) => {
     }
   };
 
-  const startConversation = async () => {
+  const startConversation = async (executeRecaptcha) => {
     if (!newMessage.trim()) {
       toast.error("Please enter a message to start the conversation");
       return;
@@ -179,6 +180,10 @@ const DonorStudentMessaging = ({ student, user, token }) => {
 
     try {
       setSending(true);
+      
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('startConversation') : null;
+      
       const response = await fetch(`${API}/api/conversations`, {
         method: 'POST',
         headers: {
@@ -188,7 +193,8 @@ const DonorStudentMessaging = ({ student, user, token }) => {
         body: JSON.stringify({
           studentId: student.id,
           type: 'DONOR_STUDENT',
-          initialMessage: newMessage.trim()
+          initialMessage: newMessage.trim(),
+          recaptchaToken
         }),
       });
 
@@ -220,11 +226,15 @@ const DonorStudentMessaging = ({ student, user, token }) => {
     }
   };
 
-  const sendMessage = async () => {
+  const sendMessage = async (executeRecaptcha) => {
     if (!newMessage.trim() || !conversation) return;
 
     try {
       setSending(true);
+      
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('sendMessage') : null;
+      
       const response = await fetch(`${API}/api/conversations/${conversation.id}/messages`, {
         method: 'POST',
         headers: {
@@ -232,7 +242,8 @@ const DonorStudentMessaging = ({ student, user, token }) => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          text: newMessage.trim()
+          text: newMessage.trim(),
+          recaptchaToken
         }),
       });
 
@@ -251,13 +262,13 @@ const DonorStudentMessaging = ({ student, user, token }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (executeRecaptcha) => (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (conversation) {
-        sendMessage();
+        sendMessage(executeRecaptcha);
       } else {
-        startConversation();
+        startConversation(executeRecaptcha);
       }
     }
   };
@@ -315,102 +326,108 @@ const DonorStudentMessaging = ({ student, user, token }) => {
       />
 
       <div className="mt-4">
-        {!showConversation ? (
-          <div className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-lg">
-              <h3 className="font-medium text-green-900 mb-2">Stay Connected with {student.name}</h3>
-              <p className="text-sm text-green-700 mb-3">
-                As {student.name}'s sponsor, you can communicate directly to track their progress, offer encouragement, and build a meaningful mentorship relationship.
-              </p>
-              <div className="flex items-center gap-2 text-xs text-green-600">
-                <MessageCircle className="h-4 w-4" />
-                <span>Your messages are private between you and {student.name}</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
-                Your message to {student.name}
-              </label>
-              <textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={`Hi ${student.name}, I hope your studies are going well! I wanted to check in and see how...`}
-                className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
-                rows={4}
-                disabled={sending}
-              />
-              <Button 
-                onClick={startConversation}
-                disabled={!newMessage.trim() || sending}
-                className="w-full"
-              >
-                {sending ? "Starting conversation..." : "Send Message to Student"}
-                <Send className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-emerald-600">
-                  <MessageCircle className="h-3 w-3 mr-1" />
-                  Active Conversation
-                </Badge>
-                <span className="text-sm text-slate-500">with {student.name}</span>
-              </div>
-            </div>
-
-            {/* Messages Container */}
-            <div className="border rounded-lg bg-white">
-              <div className="max-h-96 overflow-y-auto p-4">
-                {loading ? (
-                  <div className="text-center py-8 text-slate-500">
-                    Loading conversation...
+        <RecaptchaProtection>
+          {({ executeRecaptcha }) => (
+            <>
+              {!showConversation ? (
+                <div className="space-y-4">
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-green-900 mb-2">Stay Connected with {student.name}</h3>
+                    <p className="text-sm text-green-700 mb-3">
+                      As {student.name}'s sponsor, you can communicate directly to track their progress, offer encouragement, and build a meaningful mentorship relationship.
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-green-600">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Your messages are private between you and {student.name}</span>
+                    </div>
                   </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    No messages yet
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((message) => (
-                      <MessageBubble
-                        key={message.id}
-                        message={message}
-                        isCurrentUser={message.sender.id === user.id}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                  </>
-                )}
-              </div>
 
-              {/* Message Input */}
-              <div className="border-t p-4">
-                <div className="flex gap-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Type your message..."
-                    disabled={sending}
-                    className="flex-1"
-                  />
-                  <Button 
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || sending}
-                    size="sm"
-                  >
-                    {sending ? "..." : <Send className="h-4 w-4" />}
-                  </Button>
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Your message to {student.name}
+                    </label>
+                    <textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress(executeRecaptcha)}
+                      placeholder={`Hi ${student.name}, I hope your studies are going well! I wanted to check in and see how...`}
+                      className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 resize-none"
+                      rows={4}
+                      disabled={sending}
+                    />
+                    <Button 
+                      onClick={() => startConversation(executeRecaptcha)}
+                      disabled={!newMessage.trim() || sending}
+                      className="w-full"
+                    >
+                      {sending ? "Starting conversation..." : "Send Message to Student"}
+                      <Send className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-emerald-600">
+                        <MessageCircle className="h-3 w-3 mr-1" />
+                        Active Conversation
+                      </Badge>
+                      <span className="text-sm text-slate-500">with {student.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Messages Container */}
+                  <div className="border rounded-lg bg-white">
+                    <div className="max-h-96 overflow-y-auto p-4">
+                      {loading ? (
+                        <div className="text-center py-8 text-slate-500">
+                          Loading conversation...
+                        </div>
+                      ) : messages.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500">
+                          No messages yet
+                        </div>
+                      ) : (
+                        <>
+                          {messages.map((message) => (
+                            <MessageBubble
+                              key={message.id}
+                              message={message}
+                              isCurrentUser={message.sender.id === user.id}
+                            />
+                          ))}
+                          <div ref={messagesEndRef} />
+                        </>
+                      )}
+                    </div>
+
+                    {/* Message Input */}
+                    <div className="border-t p-4">
+                      <div className="flex gap-2">
+                        <Input
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={handleKeyPress(executeRecaptcha)}
+                          placeholder="Type your message..."
+                          disabled={sending}
+                          className="flex-1"
+                        />
+                        <Button 
+                          onClick={() => sendMessage(executeRecaptcha)}
+                          disabled={!newMessage.trim() || sending}
+                          size="sm"
+                        >
+                          {sending ? "..." : <Send className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </RecaptchaProtection>
       </div>
     </Card>
   );

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { UserPlus, Mail, Shield, Edit2, Trash2 } from "lucide-react";
 import { API } from "@/lib/api";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 export default function AdminOfficers() {
   const { token, user, logout } = useAuth();
@@ -39,17 +40,21 @@ export default function AdminOfficers() {
 
   useEffect(() => { if (isAdmin) load(); }, [isAdmin, token]);
 
-  async function createCaseWorker() {
+  async function createCaseWorker(executeRecaptcha) {
     try {
       if (!form.email || !form.password) {
         toast.error("Email and password are required");
         return;
       }
+      
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('createCaseWorker') : null;
+      
       setCreating(true);
       const res = await fetch(`${API.baseURL}/api/users/sub-admins`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, recaptchaToken }),
       });
       if (!res.ok) {
         const t = await res.text();
@@ -151,47 +156,51 @@ export default function AdminOfficers() {
             <div className="font-semibold text-green-800">Add New Case Worker</div>
           </div>
           
-          <div className="grid md:grid-cols-4 gap-3 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <Input 
-                placeholder="Enter full name" 
-                value={form.name} 
-                onChange={(e)=>setForm(f=>({ ...f, name: e.target.value }))} 
-                className="rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-              <Input 
-                type="email"
-                placeholder="Enter email" 
-                value={form.email} 
-                onChange={(e)=>setForm(f=>({ ...f, email: e.target.value }))} 
-                className="rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <Input 
-                type="password" 
-                placeholder="Enter password" 
-                value={form.password} 
-                onChange={(e)=>setForm(f=>({ ...f, password: e.target.value }))} 
-                className="rounded-2xl"
-              />
-            </div>
-            <div>
-              <Button 
-                className="w-full rounded-2xl bg-green-600 hover:bg-green-700" 
-                onClick={createCaseWorker} 
-                disabled={creating || !form.email || !form.password}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                {creating ? "Creating…" : "Create Case Worker"}
-              </Button>
-            </div>
-          </div>
+          <RecaptchaProtection>
+            {({ executeRecaptcha }) => (
+              <div className="grid md:grid-cols-4 gap-3 items-end">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <Input 
+                    placeholder="Enter full name" 
+                    value={form.name} 
+                    onChange={(e)=>setForm(f=>({ ...f, name: e.target.value }))} 
+                    className="rounded-2xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <Input 
+                    type="email"
+                    placeholder="Enter email" 
+                    value={form.email} 
+                    onChange={(e)=>setForm(f=>({ ...f, email: e.target.value }))} 
+                    className="rounded-2xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <Input 
+                    type="password" 
+                    placeholder="Enter password" 
+                    value={form.password} 
+                    onChange={(e)=>setForm(f=>({ ...f, password: e.target.value }))} 
+                    className="rounded-2xl"
+                  />
+                </div>
+                <div>
+                  <Button 
+                    className="w-full rounded-2xl bg-green-600 hover:bg-green-700" 
+                    onClick={() => createCaseWorker(executeRecaptcha)} 
+                    disabled={creating || !form.email || !form.password}
+                  >
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    {creating ? "Creating…" : "Create Case Worker"}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </RecaptchaProtection>
           
           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-100 p-3 rounded-lg">
             <Mail className="h-4 w-4" />

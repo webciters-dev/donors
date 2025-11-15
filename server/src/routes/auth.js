@@ -214,7 +214,7 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
    DONOR REGISTER
    body: { name, email, password, organization? }
 ========================= */
-router.post("/register-donor", async (req, res) => {
+router.post("/register-donor", requireStrictRecaptcha, async (req, res) => {
   try {
     const { name, email, password, organization, country, phone } = req.body || {};
     if (!name || !email || !password) {
@@ -271,9 +271,9 @@ router.post("/register-donor", async (req, res) => {
 /* =========================
    PASSWORD RESET — request
    body: { email }
-   (In production you’d email the token. Here we return it for testing.)
+   (In production you'd email the token. Here we return it for testing.)
 ========================= */
-router.post("/request-password-reset", async (req, res) => {
+router.post("/request-password-reset", requireStrictRecaptcha, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: "email required" });

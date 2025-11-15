@@ -10,6 +10,7 @@ import { Calendar, Clock, Users, MessageSquare, CheckCircle, XCircle, AlertCircl
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 import { API } from "@/lib/api";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 export default function InterviewManager() {
   const { token, user } = useAuth();
@@ -107,12 +108,15 @@ export default function InterviewManager() {
     }
   };
 
-  const scheduleInterview = async () => {
+  const scheduleInterview = async (executeRecaptcha) => {
     try {
       if (!scheduleForm.studentId || !scheduleForm.applicationId || !scheduleForm.scheduledAt) {
         toast.error("Please fill in all required fields");
         return;
       }
+
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('scheduleInterview') : null;
 
       setLoading(true);
       const response = await fetch(`${API.baseURL}/api/interviews`, {
@@ -123,7 +127,8 @@ export default function InterviewManager() {
         },
         body: JSON.stringify({
           ...scheduleForm,
-          scheduledAt: new Date(scheduleForm.scheduledAt).toISOString()
+          scheduledAt: new Date(scheduleForm.scheduledAt).toISOString(),
+          recaptchaToken
         })
       });
 
@@ -238,7 +243,10 @@ export default function InterviewManager() {
       {showScheduleForm && (
         <Card className="p-6 bg-blue-50 border-2 border-blue-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Schedule New Interview</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <RecaptchaProtection>
+            {({ executeRecaptcha }) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Student *
@@ -372,12 +380,14 @@ export default function InterviewManager() {
               Cancel
             </Button>
             <Button 
-              onClick={scheduleInterview}
+              onClick={() => scheduleInterview(executeRecaptcha)}
               disabled={loading}
             >
               {loading ? "Scheduling..." : "Schedule Interview"}
             </Button>
           </div>
+            )}
+          </RecaptchaProtection>
         </Card>
       )}
 

@@ -13,6 +13,7 @@ import { getPKRToUSDRate } from "@/lib/currency";
 import { getAllCMSContent, updateCMSContent, resetCMSContent, exportCMSContent, importCMSContent } from "@/lib/cms";
 import { API } from "@/lib/api";
 import SuperAdminSettings from "./SuperAdminSettings";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 export default function AdminSettings() {
   const { token, user } = useAuth();
@@ -199,12 +200,15 @@ export default function AdminSettings() {
     }
   };
 
-  const createBoardMember = async () => {
+  const createBoardMember = async (executeRecaptcha) => {
     try {
       if (!newBoardMember.name || !newBoardMember.email || !newBoardMember.title) {
         toast.error("Please fill in all required fields");
         return;
       }
+
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('createBoardMember') : null;
 
       setBoardLoading(true);
       const response = await fetch(`${API.baseURL}/api/board-members`, {
@@ -213,7 +217,7 @@ export default function AdminSettings() {
           'Content-Type': 'application/json',
           ...authHeader 
         },
-        body: JSON.stringify(newBoardMember)
+        body: JSON.stringify({ ...newBoardMember, recaptchaToken })
       });
 
       const data = await response.json();
@@ -771,56 +775,63 @@ export default function AdminSettings() {
             {showAddBoard && (
               <Card className="p-4 bg-gray-50 border-2 border-dashed border-gray-300">
                 <h4 className="font-medium text-gray-900 mb-3">Add New Board Member</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name *
-                    </label>
-                    <Input
-                      value={newBoardMember.name}
-                      onChange={(e) => setNewBoardMember(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="Enter full name"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address *
-                    </label>
-                    <Input
-                      type="email"
-                      value={newBoardMember.email}
-                      onChange={(e) => setNewBoardMember(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title/Position *
-                    </label>
-                    <Input
-                      value={newBoardMember.title}
-                      onChange={(e) => setNewBoardMember(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g., Board Chair, Academic Director, etc."
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setShowAddBoard(false);
-                      setNewBoardMember({ name: '', email: '', title: '', isActive: true });
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={createBoardMember}
-                    disabled={boardLoading}
-                  >
-                    {boardLoading ? "Creating..." : "Create Board Member"}
-                  </Button>
-                </div>
+                
+                <RecaptchaProtection>
+                  {({ executeRecaptcha }) => (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Full Name *
+                          </label>
+                          <Input
+                            value={newBoardMember.name}
+                            onChange={(e) => setNewBoardMember(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Enter full name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Email Address *
+                          </label>
+                          <Input
+                            type="email"
+                            value={newBoardMember.email}
+                            onChange={(e) => setNewBoardMember(prev => ({ ...prev, email: e.target.value }))}
+                            placeholder="Enter email address"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Title/Position *
+                          </label>
+                          <Input
+                            value={newBoardMember.title}
+                            onChange={(e) => setNewBoardMember(prev => ({ ...prev, title: e.target.value }))}
+                            placeholder="e.g., Board Chair, Academic Director, etc."
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-3 mt-4">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setShowAddBoard(false);
+                            setNewBoardMember({ name: '', email: '', title: '', isActive: true });
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          onClick={() => createBoardMember(executeRecaptcha)}
+                          disabled={boardLoading}
+                        >
+                          {boardLoading ? "Creating..." : "Create Board Member"}
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </RecaptchaProtection>
               </Card>
             )}
 

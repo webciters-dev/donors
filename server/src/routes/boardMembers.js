@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, onlyRoles } from '../middleware/auth.js';
+import { requireBasicRecaptcha } from '../middleware/recaptcha.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -76,7 +77,7 @@ router.get('/:id', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
 });
 
 // POST /api/boardMembers - Create new board member (Admin only)
-router.post('/', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
+router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (req, res) => {
   try {
     const { name, email, title, isActive = true } = req.body;
 

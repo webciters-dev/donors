@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, onlyRoles } from '../middleware/auth.js';
+import { requireBasicRecaptcha } from '../middleware/recaptcha.js';
 import { 
   sendInterviewScheduledStudentEmail, 
   sendInterviewScheduledBoardMemberEmail 
@@ -84,7 +85,7 @@ router.get('/:id', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
 });
 
 // POST /api/interviews - Schedule new interview (Admin only)
-router.post('/', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
+router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (req, res) => {
   try {
     const { 
       studentId, 

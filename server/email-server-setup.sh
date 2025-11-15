@@ -40,7 +40,6 @@ apt install -y \
     mysql-server \
     postfix-mysql \
     mailutils \
-    dkim-milter \
     opendkim \
     opendkim-tools \
     spamassassin \

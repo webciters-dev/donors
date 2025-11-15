@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { calculateProfileCompleteness } from "@/lib/profileValidation";
 import { API } from "@/lib/api";
 import { fmtAmount, fmtAmountDual } from "@/lib/currency";
+import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 const DEMO_STUDENT_ID = import.meta.env.VITE_DEMO_STUDENT_ID || "";
 
@@ -215,7 +216,7 @@ export const MyApplication = () => {
   }, [application?.studentId, application?.id, token]);
 
   // Send reply to admin or donor
-  async function sendReply() {
+  async function sendReply(executeRecaptcha) {
     if (!replyText.trim()) {
       toast.error("Please enter a reply message");
       return;
@@ -224,6 +225,9 @@ export const MyApplication = () => {
     try {
       setSendingReply(true);
       console.log('🔍 MyApplication: Sending reply. ActiveConversationId:', activeConversationId);
+      
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('sendReply') : null;
       
       // Try conversation-based reply first if we have an active conversation
       if (activeConversationId) {
@@ -234,7 +238,8 @@ export const MyApplication = () => {
             ...authHeader
           },
           body: JSON.stringify({
-            text: replyText.trim()
+            text: replyText.trim(),
+            recaptchaToken
           })
         });
         
@@ -261,7 +266,8 @@ export const MyApplication = () => {
           studentId: application.studentId,
           applicationId: application.id,
           text: replyText.trim(),
-          fromRole: 'student'
+          fromRole: 'student',
+          recaptchaToken
         })
       });
       
@@ -444,10 +450,14 @@ export const MyApplication = () => {
     [currentDocChecklist, haveDocs]
   );
 
-  async function sendMessage(textOverride) {
+  async function sendMessage(textOverride, executeRecaptcha) {
     const textToSend = (typeof textOverride === "string" ? textOverride : message).trim();
     if (!textToSend || !application?.studentId) return;
     try {
+      
+      // Generate reCAPTCHA token
+      const recaptchaToken = executeRecaptcha ? await executeRecaptcha('sendMessage') : null;
+      
       const res = await fetch(`${API.baseURL}/api/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader },
@@ -456,6 +466,7 @@ export const MyApplication = () => {
           applicationId: application.id || null,
           text: textToSend,
           fromRole: "student",
+          recaptchaToken,
         }),
       });
       if (!res.ok) {
@@ -943,40 +954,44 @@ export const MyApplication = () => {
                     {rawMessages.some(msg => msg.fromRole === 'donor') ? 'Reply to Donor' : 'Reply to Admin'}
                   </Button>
                 ) : (
-                  <div className="space-y-3 bg-green-50 p-4 rounded-lg border border-green-200">
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4 text-green-600" />
-                      <span className="font-medium text-green-800">
-                        {rawMessages.some(msg => msg.fromRole === 'donor') ? 'Reply to Donor' : 'Reply to Admin'}
-                      </span>
-                    </div>
-                    <textarea
-                      value={replyText}
-                      onChange={(e) => setReplyText(e.target.value)}
-                      placeholder="Type your reply here..."
-                      className="w-full p-3 border border-green-300 rounded-md resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      rows={4}
-                    />
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={sendReply}
-                        disabled={sendingReply || !replyText.trim()}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                      >
-                        {sendingReply ? 'Sending...' : 'Send Reply'}
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        onClick={() => {
-                          setShowReplyBox(false);
-                          setReplyText("");
-                        }}
-                        disabled={sendingReply}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
+                  <RecaptchaProtection>
+                    {({ executeRecaptcha }) => (
+                      <div className="space-y-3 bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4 text-green-600" />
+                          <span className="font-medium text-green-800">
+                            {rawMessages.some(msg => msg.fromRole === 'donor') ? 'Reply to Donor' : 'Reply to Admin'}
+                          </span>
+                        </div>
+                        <textarea
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Type your reply here..."
+                          className="w-full p-3 border border-green-300 rounded-md resize-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          rows={4}
+                        />
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => sendReply(executeRecaptcha)}
+                            disabled={sendingReply || !replyText.trim()}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            {sendingReply ? 'Sending...' : 'Send Reply'}
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              setShowReplyBox(false);
+                              setReplyText("");
+                            }}
+                            disabled={sendingReply}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </RecaptchaProtection>
                 )}
               </div>
             )}
