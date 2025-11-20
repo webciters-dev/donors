@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,9 @@ export default function ForgotPassword() {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
 
-  // reCAPTCHA protection
-  const recaptchaRef = useRef();
 
-  async function submit(e) {
+
+  async function submit(e, executeRecaptcha) {
     e.preventDefault();
     if (!email) {
       toast.error("Please enter your email.");
@@ -26,9 +25,9 @@ export default function ForgotPassword() {
 
       // 🛡️ reCAPTCHA Protection - Get verification token
       let recaptchaToken = null;
-      if (recaptchaRef.current) {
+      if (executeRecaptcha) {
         try {
-          recaptchaToken = await recaptchaRef.current.executeRecaptcha('reset');
+          recaptchaToken = await executeRecaptcha('reset');
           console.log('reCAPTCHA token obtained for password reset');
         } catch (recaptchaError) {
           console.error('reCAPTCHA failed:', recaptchaError);
@@ -67,32 +66,30 @@ export default function ForgotPassword() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Forgot Password</h1>
 
-      <Card className="p-6 max-w-lg">
-        <form onSubmit={submit} className="grid gap-4">
+      <RecaptchaProtection 
+        version="v3"
+        onError={(error) => {
+          console.error('reCAPTCHA error:', error);
+          toast.error('Security verification failed. Please refresh and try again.');
+        }}
+      >
+        {({ executeRecaptcha }) => (
+          <Card className="p-6 max-w-lg">
+            <form onSubmit={(e) => submit(e, executeRecaptcha)} className="grid gap-4">
           <Input
             type="email"
             placeholder="Your account email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          
-          {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
-          <div>
-            <RecaptchaProtection 
-              ref={recaptchaRef}
-              version="v3"
-              onError={(error) => {
-                console.error('reCAPTCHA error:', error);
-                toast.error('Security verification failed. Please refresh and try again.');
-              }}
-            />
-            {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
-                <Shield className="h-3 w-3" />
-                <span>Protected by reCAPTCHA</span>
-              </div>
-            )}
-          </div>
+
+          {/* 🛡️ reCAPTCHA Protection Indicator */}
+          {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
+              <Shield className="h-3 w-3" />
+              <span>Protected by reCAPTCHA</span>
+            </div>
+          )}
           
           <Button type="submit" disabled={busy}>
             {busy ? "Sending…" : "Send reset link"}
@@ -103,8 +100,10 @@ export default function ForgotPassword() {
               response for the token.)
             </p>
           )}
-        </form>
-      </Card>
+            </form>
+          </Card>
+        )}
+      </RecaptchaProtection>
     </div>
   );
 }

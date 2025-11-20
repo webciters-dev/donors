@@ -5,7 +5,9 @@ import ReCAPTCHA from 'react-google-recaptcha';
 const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' || 
+                     window.location.hostname.includes('localhost');
   const [grecaptchaLoaded, setGrecaptchaLoaded] = useState(false);
 
   // Load reCAPTCHA v3 script
@@ -50,6 +52,14 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
   useImperativeHandle(ref, () => ({
     // Execute reCAPTCHA and get token
     executeRecaptcha: async (action = 'submit') => {
+      // Debug logging
+      console.log('🔍 reCAPTCHA Debug:', {
+        isDevelopment,
+        isLocalhost,
+        hostname: window.location.hostname,
+        shouldBypass: isDevelopment && isLocalhost
+      });
+      
       // 🚀 Development bypass for localhost
       if (isDevelopment && isLocalhost) {
         console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
@@ -79,7 +89,7 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
     reset: () => {
       // v3 doesn't need reset
     }
-  }));
+  }), [isDevelopment, isLocalhost, grecaptchaLoaded, siteKey, onError]); // Add dependencies
 
   if (!siteKey) {
     console.warn('reCAPTCHA site key not configured');
@@ -178,7 +188,9 @@ const RecaptchaProtection = forwardRef(({
 }, ref) => {
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
   const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' || 
+                     window.location.hostname.includes('localhost');
   const recaptchaRef = useRef();
 
   // Handle development mode with render prop pattern
@@ -186,7 +198,13 @@ const RecaptchaProtection = forwardRef(({
     // For render prop pattern, provide mock executeRecaptcha function
     if (typeof children === 'function') {
       const mockExecuteRecaptcha = async (action = 'submit') => {
-        console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
+        console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost (render prop)');
+        console.log('🔍 Render Prop Debug:', {
+          isDevelopment,
+          isLocalhost,
+          hostname: window.location.hostname,
+          shouldBypass: isDevelopment && isLocalhost
+        });
         return 'development-bypass-token';
       };
       return (
@@ -221,12 +239,12 @@ const RecaptchaProtection = forwardRef(({
   return (
     <div className={className}>
       <RecaptchaV3 
-        ref={recaptchaRef}
+        ref={ref}
         onVerify={onVerify}
         onError={onError}
         onExpired={onExpired}
       />
-      {typeof children === 'function' ? children({ executeRecaptcha: recaptchaRef?.current?.executeRecaptcha }) : children}
+      {typeof children === 'function' ? children({ executeRecaptcha: ref?.current?.executeRecaptcha }) : children}
     </div>
   );
 });

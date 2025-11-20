@@ -67,9 +67,7 @@ export const ApplicationForm = () => {
   const [isRegistered, setIsRegistered] = useState(!!user); // If user exists, they're registered
   const [studentId, setStudentId] = useState(user?.studentId || null); // Use existing student ID
 
-  // reCAPTCHA protection
-  const recaptchaRef = useRef();
-
+  // reCAPTCHA protection removed - using render props pattern below
 
     
   useEffect(() => {
@@ -370,7 +368,7 @@ export const ApplicationForm = () => {
 
 
   // Handle Student Registration at Step 1
-  const handleStep1Registration = async () => {
+  const handleStep1Registration = async (executeRecaptcha) => {
     // Validation
     if (!form.name || !form.email || !form.password || !form.gender) {
       toast.error("Please complete all fields.");
@@ -390,9 +388,9 @@ export const ApplicationForm = () => {
 
       // 🛡️ reCAPTCHA Protection - Get verification token (v3)
       let recaptchaToken = null;
-      if (recaptchaRef.current) {
+      if (executeRecaptcha) {
         try {
-          recaptchaToken = await recaptchaRef.current.executeRecaptcha('register');
+          recaptchaToken = await executeRecaptcha('register');
           console.log('reCAPTCHA token obtained for student registration');
         } catch (recaptchaError) {
           console.error('reCAPTCHA failed:', recaptchaError);
@@ -1023,32 +1021,34 @@ export const ApplicationForm = () => {
             </div>
 
             {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
-            <div className="sm:col-span-2">
-              <RecaptchaProtection 
-                ref={recaptchaRef}
-                version="v3"
-                onError={(error) => {
-                  console.error('reCAPTCHA error:', error);
-                  toast.error('Security verification failed. Please refresh and try again.');
-                }}
-              />
-              {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
-                  <Shield className="h-3 w-3" />
-                  <span>Protected by reCAPTCHA</span>
+            <RecaptchaProtection 
+              version="v3"
+              onError={(error) => {
+                console.error('reCAPTCHA error:', error);
+                toast.error('Security verification failed. Please refresh and try again.');
+              }}
+            >
+              {({ executeRecaptcha }) => (
+                <div className="sm:col-span-2 space-y-4">
+                  {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
+                    <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                      <Shield className="h-3 w-3" />
+                      <span>Protected by reCAPTCHA</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex flex-col sm:flex-row justify-end">
+                    <Button
+                      onClick={() => handleStep1Registration(executeRecaptcha)}
+                      disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender || !form.photoUrl}
+                      className="min-h-[44px] w-full sm:w-auto"
+                    >
+                      {loading ? "Creating Account..." : "Create Account & Continue"}
+                    </Button>
+                  </div>
                 </div>
               )}
-            </div>
-
-            <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
-              <Button
-                onClick={handleStep1Registration}
-                disabled={loading || !form.name || !form.email || !form.password || form.password !== form.confirm || !form.gender || !form.photoUrl}
-                className="min-h-[44px] w-full sm:w-auto"
-              >
-                {loading ? "Creating Account..." : "Create Account & Continue"}
-              </Button>
-            </div>
+            </RecaptchaProtection>
           </div>
         )}
 

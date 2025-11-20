@@ -319,14 +319,7 @@ function Shell() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/test"
-              element={
-                <div style={{padding: '20px', fontSize: '24px', color: 'blue'}}>
-                  🧪 TEST ROUTE WORKING
-                </div>
-              }
-            />
+
             <Route
               path="/admin/donors/:donorId"
               element={

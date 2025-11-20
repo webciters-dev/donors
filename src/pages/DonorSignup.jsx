@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -222,10 +222,7 @@ export default function DonorSignup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // reCAPTCHA protection
-  const recaptchaRef = useRef();
-
-  async function submit(e) {
+  async function submit(e, executeRecaptcha) {
     e.preventDefault();
     if (!form.name || !form.email || !form.password || !form.country) {
       toast.error("Please fill all required fields.");
@@ -245,9 +242,9 @@ export default function DonorSignup() {
 
       // 🛡️ reCAPTCHA Protection - Get verification token
       let recaptchaToken = null;
-      if (recaptchaRef.current) {
+      if (executeRecaptcha) {
         try {
-          recaptchaToken = await recaptchaRef.current.executeRecaptcha('register');
+          recaptchaToken = await executeRecaptcha('register');
           console.log('reCAPTCHA token obtained for donor registration');
         } catch (recaptchaError) {
           console.error('reCAPTCHA failed:', recaptchaError);
@@ -333,8 +330,16 @@ export default function DonorSignup() {
         </Card>
       )}
 
-      <Card className="p-6">
-        <form onSubmit={submit} className="grid gap-4">
+      <RecaptchaProtection 
+        version="v3"
+        onError={(error) => {
+          console.error('reCAPTCHA error:', error);
+          toast.error('Security verification failed. Please refresh and try again.');
+        }}
+      >
+        {({ executeRecaptcha }) => (
+          <Card className="p-6">
+            <form onSubmit={(e) => submit(e, executeRecaptcha)} className="grid gap-4">
           <Input
             placeholder="Full name"
             value={form.name}
@@ -416,23 +421,13 @@ export default function DonorSignup() {
             setShow={setShowConfirmPassword}
           />
 
-          {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
-          <div>
-            <RecaptchaProtection 
-              ref={recaptchaRef}
-              version="v3"
-              onError={(error) => {
-                console.error('reCAPTCHA error:', error);
-                toast.error('Security verification failed. Please refresh and try again.');
-              }}
-            />
-            {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
-                <Shield className="h-3 w-3" />
-                <span>Protected by reCAPTCHA</span>
-              </div>
-            )}
-          </div>
+          {/* 🛡️ reCAPTCHA Protection Indicator */}
+          {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
+            <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
+              <Shield className="h-3 w-3" />
+              <span>Protected by reCAPTCHA</span>
+            </div>
+          )}
 
           <div className="flex gap-2">
             <Button type="submit" disabled={busy} className="rounded-2xl">
@@ -449,6 +444,8 @@ export default function DonorSignup() {
           </div>
         </form>
       </Card>
+        )}
+      </RecaptchaProtection>
     </div>
   );
 }
