@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "../prismaClient.js";
 import { sendStudentWelcomeEmail, sendDonorWelcomeEmail, sendPasswordResetEmail } from "../lib/emailService.js";
-import { requireStrictRecaptcha } from "../middleware/recaptcha.js";
+import { requireStrictRecaptcha, requireMediumRecaptcha } from "../middleware/recaptcha.js";
 
 const router = express.Router();
 
@@ -273,7 +273,7 @@ router.post("/register-donor", requireStrictRecaptcha, async (req, res) => {
    body: { email }
    (In production you'd email the token. Here we return it for testing.)
 ========================= */
-router.post("/request-password-reset", requireStrictRecaptcha, async (req, res) => {
+router.post("/request-password-reset", requireMediumRecaptcha, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: "email required" });
@@ -318,11 +318,13 @@ router.post("/request-password-reset", requireStrictRecaptcha, async (req, res) 
 router.post("/reset-password", async (req, res) => {
   try {
     const { token, password } = req.body || {};
+    
     if (!token || !password) {
       return res.status(400).json({ error: "token and password required" });
     }
 
     const pr = await prisma.passwordReset.findUnique({ where: { token } });
+    
     if (!pr || pr.used || pr.expiresAt < new Date()) {
       return res.status(400).json({ error: "Invalid or expired token" });
     }

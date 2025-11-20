@@ -2,6 +2,7 @@ import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, onlyRoles } from '../middleware/auth.js';
 import { requireBasicRecaptcha } from '../middleware/recaptcha.js';
+import { sendBoardMemberWelcomeEmail } from '../lib/emailService.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -109,6 +110,16 @@ router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (
         title: title.trim(),
         isActive: Boolean(isActive)
       }
+    });
+
+    // Send welcome email to new board member (async, don't block response)
+    sendBoardMemberWelcomeEmail({
+      email: boardMember.email,
+      name: boardMember.name,
+      title: boardMember.title
+    }).catch(emailError => {
+      console.error('Failed to send board member welcome email:', emailError);
+      // Don't fail the request if email fails
     });
 
     res.status(201).json({ 

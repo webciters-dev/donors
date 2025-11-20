@@ -40,6 +40,18 @@ router.get("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res)
 router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requireBasicRecaptcha, async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
+    
+    // Debug logging to diagnose production issue
+    console.log("🔍 Case Worker Creation Debug:", {
+      requestBody: req.body,
+      name, 
+      email, 
+      password: password ? '[PROVIDED]' : '[MISSING]',
+      bodyKeys: Object.keys(req.body || {}),
+      contentType: req.headers['content-type'],
+      timestamp: new Date().toISOString()
+    });
+    
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ error: "Email already registered" });
@@ -72,6 +84,18 @@ router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requi
 router.post("/case-workers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requireBasicRecaptcha, async (req, res) => {
   try {
     const { name, email, password } = req.body || {};
+    
+    // Debug logging to diagnose production issue
+    console.log("🔍 Case Worker Creation Debug (case-workers endpoint):", {
+      requestBody: req.body,
+      name, 
+      email, 
+      password: password ? '[PROVIDED]' : '[MISSING]',
+      bodyKeys: Object.keys(req.body || {}),
+      contentType: req.headers['content-type'],
+      timestamp: new Date().toISOString()
+    });
+    
     if (!email || !password) return res.status(400).json({ error: "email and password are required" });
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ error: "Email already registered" });

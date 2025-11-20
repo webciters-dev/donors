@@ -175,7 +175,7 @@ export const requireMediumRecaptcha = requireRecaptcha({
  */
 export const requireBasicRecaptcha = requireRecaptcha({
   minScore: 0.3,
-  allowedActions: ['submit', 'register', 'login', 'reset', 'form'],
+  allowedActions: ['submit', 'register', 'login', 'reset', 'form', 'createCaseWorker'],
   skipOnMissing: true
 });
 

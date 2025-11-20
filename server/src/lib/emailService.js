@@ -580,12 +580,105 @@ export async function sendDonorWelcomeEmail({ email, name, organization }) {
   }
 }
 
+export async function sendBoardMemberWelcomeEmail({ email, name, title }) {
+  try {
+    const transporter = createTransporter();
+    
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@awakeconnect.org>',
+      to: email,
+      subject: 'Welcome to AWAKE Connect Board - Student Interview Assignment',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #059669; margin: 0; font-size: 28px;">AWAKE Connect</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="margin-bottom: 30px;">
+              <h2 style="color: #111827; margin-bottom: 15px;">Welcome to the AWAKE Connect Board</h2>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                Dear ${name.split(' ')[0]},
+              </p>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                You have been added to the AWAKE Connect Board as <strong>${title}</strong>. Thank you for volunteering your time to help evaluate student scholarship applications.
+              </p>
+              
+              <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #0369a1; margin-top: 0;">Your Role & Responsibilities:</h3>
+                <ul style="color: #374151; margin: 10px 0; padding-left: 20px;">
+                  <li>Participate in student interviews when scheduled</li>
+                  <li>Evaluate students based on academic merit and financial need</li>
+                  <li>Provide fair and constructive feedback</li>
+                  <li>Help make scholarship award decisions</li>
+                </ul>
+              </div>
+              
+              <div style="background-color: #ecfdf5; border: 2px solid #10b981; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #047857; margin-top: 0;">How It Works:</h3>
+                <ol style="color: #374151; margin: 10px 0; padding-left: 20px;">
+                  <li>You'll receive email notifications when interviews are scheduled</li>
+                  <li>Join interviews via provided meeting links (Zoom, etc.)</li>
+                  <li>Participate in student evaluation discussions</li>
+                  <li>Your input helps determine scholarship awards</li>
+                </ol>
+              </div>
+            </div>
+            
+            <!-- Next Steps -->
+            <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
+              <h3 style="color: #92400e; margin-top: 0;">What's Next:</h3>
+              <p style="color: #374151; margin: 10px 0;">You'll receive email notifications when:</p>
+              <ul style="color: #374151; margin: 10px 0; padding-left: 20px;">
+                <li>Student interviews are scheduled</li>
+                <li>Meeting details and candidate information is available</li>
+                <li>Your participation is requested</li>
+              </ul>
+              <p style="color: #374151; margin: 10px 0 0 0;"><strong>No login required</strong> - everything is handled via email notifications.</p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                If you have any questions about your role or responsibilities, please contact:<br>
+                <a href="mailto:admin@awakeconnect.org" style="color: #2563eb;">admin@awakeconnect.org</a>
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('📧 Board Member Welcome Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send board member welcome email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function sendPasswordResetEmail({ email, name, resetToken, userRole }) {
   try {
     const transporter = createTransporter();
     
     const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
-    const resetUrl = `${loginUrl}/reset-password?token=${resetToken}`;
+    const resetUrl = `${loginUrl}/#/reset-password/${resetToken}`;  // Added # for HashRouter
     
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@awakeconnect.org>',
