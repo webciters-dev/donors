@@ -11,13 +11,14 @@ import { filterCountryOptions, getDonorFilterMessage } from "@/lib/countryFilter
 import RecaptchaProtection from "@/components/RecaptchaProtection";
 
 // Country options with priority grouping
+// Priority: Pakistan first (students/universities), then major donor countries (USA, UK, Canada, Australia)
 const COUNTRY_OPTIONS = {
   primary: [
+    { code: "PK", name: "Pakistan" },
     { code: "US", name: "United States" },
     { code: "GB", name: "United Kingdom" },
     { code: "CA", name: "Canada" },
     { code: "AU", name: "Australia" },
-    { code: "PK", name: "Pakistan" },
   ],
   european: [
     { code: "AT", name: "Austria" },

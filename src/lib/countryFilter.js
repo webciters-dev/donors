@@ -5,7 +5,9 @@
 // This filter system preserves all existing country logic while hiding non-Pakistani options
 // Can be easily disabled by changing PAKISTAN_ONLY_MODE to false
 
-export const PAKISTAN_ONLY_MODE = true;
+// NOTE: Donors can be from anywhere in the world - this filter is disabled for donor registration
+// Students/Universities remain Pakistan-only
+export const PAKISTAN_ONLY_MODE = false;
 
 // Filter function for DonorSignup.jsx COUNTRY_OPTIONS
 export const filterCountryOptions = (countryOptions) => {
