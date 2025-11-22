@@ -193,23 +193,29 @@ const RecaptchaProtection = forwardRef(({
                      window.location.hostname.includes('localhost');
   const recaptchaRef = useRef();
 
+  // Create a stable executeRecaptcha function that wraps the ref
+  const executeRecaptcha = async (action = 'submit') => {
+    // Development mode bypass
+    if (isDevelopment && isLocalhost) {
+      console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
+      return 'development-bypass-token';
+    }
+
+    // Production mode - call the ref method
+    if (recaptchaRef.current && recaptchaRef.current.executeRecaptcha) {
+      return await recaptchaRef.current.executeRecaptcha(action);
+    }
+    
+    throw new Error('reCAPTCHA not initialized');
+  };
+
   // Handle development mode with render prop pattern
   if (isDevelopment && isLocalhost) {
     // For render prop pattern, provide mock executeRecaptcha function
     if (typeof children === 'function') {
-      const mockExecuteRecaptcha = async (action = 'submit') => {
-        console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost (render prop)');
-        console.log('🔍 Render Prop Debug:', {
-          isDevelopment,
-          isLocalhost,
-          hostname: window.location.hostname,
-          shouldBypass: isDevelopment && isLocalhost
-        });
-        return 'development-bypass-token';
-      };
       return (
         <div className={className}>
-          {children({ executeRecaptcha: mockExecuteRecaptcha })}
+          {children({ executeRecaptcha })}
         </div>
       );
     }
@@ -225,12 +231,12 @@ const RecaptchaProtection = forwardRef(({
     return (
       <div className={className}>
         <RecaptchaV2 
-          ref={ref}
+          ref={recaptchaRef}
           onVerify={onVerify}
           onError={onError}
           onExpired={onExpired}
         />
-        {typeof children === 'function' ? children({ executeRecaptcha: ref?.current?.executeRecaptcha }) : children}
+        {typeof children === 'function' ? children({ executeRecaptcha }) : children}
       </div>
     );
   }
@@ -239,12 +245,12 @@ const RecaptchaProtection = forwardRef(({
   return (
     <div className={className}>
       <RecaptchaV3 
-        ref={ref}
+        ref={recaptchaRef}
         onVerify={onVerify}
         onError={onError}
         onExpired={onExpired}
       />
-      {typeof children === 'function' ? children({ executeRecaptcha: ref?.current?.executeRecaptcha }) : children}
+      {typeof children === 'function' ? children({ executeRecaptcha }) : children}
     </div>
   );
 });
