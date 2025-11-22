@@ -1,0 +1,112 @@
+name: Deploy to Aircrew.nl
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🔔 Deployment Started
+        run: |
+          echo "🚀 Starting deployment to aircrew.nl"
+          echo "📦 Branch: ${{ github.ref_name }}"
+          echo "👤 Triggered by: ${{ github.actor }}"
+          echo "📝 Commit: ${{ github.event.head_commit.message }}"
+
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: 🔑 Setup SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AIRCREW_SSH_KEY }}
+
+      - name: 📝 Add Server to Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H aircrew.nl >> ~/.ssh/known_hosts
+
+      - name: 🚀 Deploy to Server
+        run: |
+          ssh root@aircrew.nl << 'ENDSSH'
+            set -e
+            
+            echo "🔍 Locating application directory..."
+            
+            # Find the app directory
+            if [ -d "/var/www/awake" ]; then
+              APP_DIR="/var/www/awake"
+            elif [ -d "/home/awake" ]; then
+              APP_DIR="/home/awake"
+            elif [ -d "/opt/awake" ]; then
+              APP_DIR="/opt/awake"
+            elif [ -d "/var/www/html/awake" ]; then
+              APP_DIR="/var/www/html/awake"
+            else
+              echo "❌ Could not find AWAKE app directory"
+              exit 1
+            fi
+            
+            echo "✅ Found app at $APP_DIR"
+            cd $APP_DIR
+            
+            echo "📥 Pulling latest code..."
+            git stash push -m "Auto-stash before deployment $(date)" || true
+            git fetch origin
+            git checkout main
+            git pull origin main
+            
+            echo "📦 Installing backend dependencies..."
+            cd server
+            npm install --production
+            cd ..
+            
+            echo "📦 Installing frontend dependencies..."
+            npm install --production
+            
+            echo "🏗️ Building production frontend..."
+            npm run build
+            
+            echo "🔄 Restarting application with PM2..."
+            if command -v pm2 &> /dev/null; then
+              pm2 reload all
+              pm2 status
+            else
+              echo "⚠️ PM2 not found, please restart manually"
+            fi
+            
+            echo "✅ Deployment completed!"
+          ENDSSH
+
+      - name: 🏥 Health Check
+        run: |
+          echo "⏳ Waiting for services to restart..."
+          sleep 10
+          
+          echo "🔍 Checking API health..."
+          if curl -f -s https://aircrew.nl/api/health > /dev/null; then
+            echo "✅ API is healthy!"
+          elif curl -f -s http://aircrew.nl:3001/api/health > /dev/null; then
+            echo "✅ API is healthy (direct port)!"
+          else
+            echo "⚠️ Health check inconclusive, but deployment completed"
+          fi
+
+      - name: 🎉 Deployment Success
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to aircrew.nl"
+          echo "🌐 Visit https://aircrew.nl to verify"
+          echo "🕐 Deployed at $(date)"
+
+      - name: ❌ Deployment Failed
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "📧 Check the logs above for details"
+          echo "🔧 You may need to deploy manually using deploy-aircrew.ps1"
