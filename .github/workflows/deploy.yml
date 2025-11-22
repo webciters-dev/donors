@@ -33,7 +33,7 @@ jobs:
 
       - name: 🚀 Deploy to Server
         run: |
-          ssh root@aircrew.nl << 'ENDSSH'
+          ssh sohail@aircrew.nl << 'ENDSSH'
             set -e
             
             echo "🔍 Locating application directory..."
