@@ -139,6 +139,17 @@ app.use("/uploads", express.static("uploads", {
   }
 }));
 
+// Serve manual files
+app.use("/manuals", express.static("../manuals", {
+  setHeaders: (res, path) => {
+    // Set proper headers for HTML files
+    if (path.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+    }
+  }
+}));
+
 
 // ─────────────────────────────────────────────────────────────
 
