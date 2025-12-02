@@ -34,7 +34,7 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
 
     // Skip loading reCAPTCHA script in development on localhost
     if (isDevelopment && isLocalhost) {
-      console.log('🚀 Development mode: Skipping reCAPTCHA script load for localhost');
+      console.log(' Development mode: Skipping reCAPTCHA script load for localhost');
       setGrecaptchaLoaded(true);
       return;
     }
@@ -53,16 +53,16 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
     // Execute reCAPTCHA and get token
     executeRecaptcha: async (action = 'submit') => {
       // Debug logging
-      console.log('🔍 reCAPTCHA Debug:', {
+      console.log(' reCAPTCHA Debug:', {
         isDevelopment,
         isLocalhost,
         hostname: window.location.hostname,
         shouldBypass: isDevelopment && isLocalhost
       });
       
-      // 🚀 Development bypass for localhost
+      //  Development bypass for localhost
       if (isDevelopment && isLocalhost) {
-        console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
+        console.log(' Development mode: Bypassing reCAPTCHA for localhost');
         return 'development-bypass-token';
       }
 
@@ -98,7 +98,7 @@ const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
 
   // Show development status for localhost (but don't block children)
   if (isDevelopment && isLocalhost) {
-    console.log('🚀 Development Mode: reCAPTCHA bypassed for localhost');
+    console.log(' Development Mode: reCAPTCHA bypassed for localhost');
   }
 
   // v3 is invisible, no UI component needed
@@ -197,7 +197,7 @@ const RecaptchaProtection = forwardRef(({
   const executeRecaptcha = async (action = 'submit') => {
     // Development mode bypass
     if (isDevelopment && isLocalhost) {
-      console.log('🚀 Development mode: Bypassing reCAPTCHA for localhost');
+      console.log(' Development mode: Bypassing reCAPTCHA for localhost');
       return 'development-bypass-token';
     }
 

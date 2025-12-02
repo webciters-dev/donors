@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { sendStudentWelcomeEmail } from './src/lib/emailService.js';
 
-console.log('🔧 Testing email service...');
+console.log(' Testing email service...');
 
 // Debug environment variables
 console.log('EMAIL_HOST:', process.env.EMAIL_HOST);
@@ -13,7 +13,7 @@ sendStudentWelcomeEmail({
   email: 'test@example.com',
   name: 'Test Student'
 }).then(result => {
-  console.log('✅ Email test result:', result);
+  console.log(' Email test result:', result);
 }).catch(error => {
-  console.error('❌ Email test failed:', error);
+  console.error(' Email test failed:', error);
 });

@@ -14,12 +14,12 @@ export default function ResetPassword() {
   const [busy, setBusy] = useState(false);
   const [validToken, setValidToken] = useState(true);
 
-  console.log('🔍 ResetPassword component rendered with token:', token);
+  console.log(' ResetPassword component rendered with token:', token);
 
   useEffect(() => {
-    console.log('🔍 ResetPassword useEffect - token:', token);
+    console.log(' ResetPassword useEffect - token:', token);
     if (!token) {
-      console.log('❌ No token found, redirecting to forgot-password');
+      console.log(' No token found, redirecting to forgot-password');
       toast.error("Invalid reset link. Please request a new password reset.");
       navigate("/forgot-password");
     }

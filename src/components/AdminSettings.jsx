@@ -461,7 +461,7 @@ export default function AdminSettings() {
                 </div>
                 
                 <div className="text-xs text-gray-500 mt-3">
-                  💡 This rate will be used for all PKR amounts displayed to international donors
+                   This rate will be used for all PKR amounts displayed to international donors
                 </div>
               </div>
             </div>

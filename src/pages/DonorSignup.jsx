@@ -241,7 +241,7 @@ export default function DonorSignup() {
     try {
       setBusy(true);
 
-      // 🛡️ reCAPTCHA Protection - Get verification token
+      // ️ reCAPTCHA Protection - Get verification token
       let recaptchaToken = null;
       if (executeRecaptcha) {
         try {
@@ -262,7 +262,7 @@ export default function DonorSignup() {
         country: form.country,
         organization: form.organization.trim() || null,
         phone: form.phone.trim() || null,
-        // 🛡️ reCAPTCHA Protection
+        // ️ reCAPTCHA Protection
         recaptchaToken: recaptchaToken
       };
       
@@ -294,7 +294,7 @@ export default function DonorSignup() {
         },
       });
 
-      toast.success(`Welcome ${data.donor.name}! 🎉 Your donor account is ready.`);
+      toast.success(`Welcome ${data.donor.name}!  Your donor account is ready.`);
       
       // Navigate to donor dashboard instead of login page
       navigate("/donor-dashboard", { replace: true });
@@ -364,7 +364,7 @@ export default function DonorSignup() {
               
               {/* Primary Donor Countries */}
               {filteredCountryOptions.primary.length > 0 && (
-                <optgroup label="🔝 Primary Countries">
+                <optgroup label=" Primary Countries">
                   {filteredCountryOptions.primary.map((country) => (
                     <option key={country.code} value={country.name}>
                       {country.name}
@@ -375,7 +375,7 @@ export default function DonorSignup() {
               
               {/* European Countries */}
               {filteredCountryOptions.european.length > 0 && (
-                <optgroup label="🇪🇺 European Countries">
+                <optgroup label=" European Countries">
                   {filteredCountryOptions.european.map((country) => (
                     <option key={country.code} value={country.name}>
                       {country.name}
@@ -386,7 +386,7 @@ export default function DonorSignup() {
               
               {/* Other Countries */}
               {filteredCountryOptions.other.length > 0 && (
-                <optgroup label="🌍 Other Countries">
+                <optgroup label=" Other Countries">
                   {filteredCountryOptions.other.map((country) => (
                     <option key={country.code} value={country.name}>
                       {country.name}
@@ -422,7 +422,7 @@ export default function DonorSignup() {
             setShow={setShowConfirmPassword}
           />
 
-          {/* 🛡️ reCAPTCHA Protection Indicator */}
+          {/* ️ reCAPTCHA Protection Indicator */}
           {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
               <Shield className="h-3 w-3" />

@@ -26,7 +26,15 @@ const storage = multer.diskStorage({
     cb(null, unique + path.extname(file.originalname));
   },
 });
-const upload = multer({ storage });
+
+// Configure multer with explicit size limits for documents
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB limit per file (reasonable for documents)
+    files: 1 // Only allow single file at a time
+  }
+});
 
 /**
  * Helper: can this user access documents for studentId?
@@ -85,10 +93,13 @@ router.post("/", requireAuth, upload.single("file"), async (req, res) => {
       },
     });
 
-    // Send email notification to assigned field officer/admin (async, don't block response)
+    // Send email notification to case worker/admin ONLY if documents were requested
+    // Email is triggered when:
+    // 1. Case worker previously requested specific documents
+    // 2. Student uploads a document after that request
+    // This prevents email spam during initial application submission.
     if (applicationId && req.user.role === 'STUDENT') {
-      // Only notify when student uploads documents (not when admin/field officers upload)
-      notifyDocumentUpload(applicationId, studentId, doc.originalName || doc.type).catch(err => {
+      notifyDocumentUploadAfterRequest(applicationId, studentId, doc.originalName || doc.type).catch(err => {
         console.error('Failed to send document upload notification:', err);
       });
     }
@@ -163,8 +174,16 @@ router.delete("/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Helper function to notify field officer/admin about document uploads
-async function notifyDocumentUpload(applicationId, studentId, documentName) {
+/**
+ * Helper function to notify field officer/admin about document uploads
+ * ONLY when documents are uploaded AFTER a missing documents request was made
+ * 
+ * This prevents email spam during initial application submission.
+ * Emails are only sent when:
+ * 1. Case worker requested specific missing documents
+ * 2. Student uploads documents after that request
+ */
+async function notifyDocumentUploadAfterRequest(applicationId, studentId, documentName) {
   try {
     // Get student info
     const student = await prisma.student.findUnique({
@@ -174,7 +193,7 @@ async function notifyDocumentUpload(applicationId, studentId, documentName) {
 
     if (!student) return;
 
-    // Find who is assigned to review this application
+    // Find the most recent field review with document requests
     const fieldReview = await prisma.fieldReview.findFirst({
       where: { applicationId },
       include: {
@@ -184,6 +203,13 @@ async function notifyDocumentUpload(applicationId, studentId, documentName) {
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    // Only send email if documents were explicitly requested
+    // (indicated by additionalDocumentsRequested array being non-empty)
+    if (!fieldReview || !fieldReview.additionalDocumentsRequested || fieldReview.additionalDocumentsRequested.length === 0) {
+      // No document request was made, so don't send email
+      return;
+    }
 
     let recipientEmail = null;
     let recipientName = null;
@@ -215,7 +241,7 @@ async function notifyDocumentUpload(applicationId, studentId, documentName) {
       });
     }
   } catch (error) {
-    console.error('Error in notifyDocumentUpload:', error);
+    console.error('Error in notifyDocumentUploadAfterRequest:', error);
   }
 }
 

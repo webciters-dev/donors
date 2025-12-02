@@ -35,13 +35,14 @@ export const MyApplication = () => {
   // Redirect ACTIVE students to their clean dashboard
   useEffect(() => {
     if (user?.studentPhase === 'ACTIVE') {
-      console.log('🔄 Active student detected, redirecting to clean dashboard...');
+      console.log(' Active student detected, redirecting to clean dashboard...');
       navigate('/student/active', { replace: true });
       return;
     }
   }, [user?.studentPhase, navigate]);
 
   const [application, setApplication] = useState(null);
+  const [loadingInitial, setLoadingInitial] = useState(true); // Track initial load
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [rawMessages, setRawMessages] = useState([]); // keep raw for parsing
@@ -63,6 +64,7 @@ export const MyApplication = () => {
   useEffect(() => {
     let timer;
     let dead = false;
+    let isFirstLoad = true;
 
     async function loadApp() {
       try {
@@ -83,12 +85,24 @@ export const MyApplication = () => {
           app = list.find((a) => a.studentId === targetStudentId) || null;
         }
         // Do NOT fallback to the first item to avoid showing someone else's application.
-        if (!dead) setApplication(app);
+        if (!dead) {
+          setApplication(app);
+          // Only set loading to false after the first successful load
+          if (isFirstLoad) {
+            setLoadingInitial(false);
+            isFirstLoad = false;
+          }
+        }
       } catch (err) {
         console.error(err);
         if (!dead) {
           setApplication(null);
           toast.error("Failed to load application");
+          // Still mark as not loading even on error
+          if (isFirstLoad) {
+            setLoadingInitial(false);
+            isFirstLoad = false;
+          }
         }
       }
     }
@@ -123,7 +137,7 @@ export const MyApplication = () => {
 
     async function loadMessages() {
       try {
-        console.log('🔍 MyApplication: Loading messages for studentId:', application.studentId);
+        console.log(' MyApplication: Loading messages for studentId:', application.studentId);
         
         // Load old messages from the existing API
         const url = new URL(`${API.baseURL}/api/messages`);
@@ -132,35 +146,35 @@ export const MyApplication = () => {
         const res = await fetch(url, { headers: { ...authHeader } });
         const data = await res.json();
         let allMessages = Array.isArray(data?.messages) ? data.messages : [];
-        console.log('🔍 MyApplication: Old messages loaded:', allMessages.length);
+        console.log(' MyApplication: Old messages loaded:', allMessages.length);
         
         // Load new conversation messages
         try {
-          console.log('🔍 MyApplication: Loading conversations...');
+          console.log(' MyApplication: Loading conversations...');
           const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
             headers: { ...authHeader }
           });
-          console.log('🔍 MyApplication: Conversations response status:', convRes.status);
+          console.log(' MyApplication: Conversations response status:', convRes.status);
           
           if (convRes.ok) {
             const convData = await convRes.json();
-            console.log('🔍 MyApplication: Conversations data:', convData);
+            console.log(' MyApplication: Conversations data:', convData);
             const conversations = convData.conversations || [];
-            console.log(`🔍 MyApplication: Found ${conversations.length} conversations`);
+            console.log(` MyApplication: Found ${conversations.length} conversations`);
             
             // Extract messages from conversations and add to allMessages
             conversations.forEach(conv => {
-              console.log('🔍 MyApplication: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
+              console.log(' MyApplication: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
               
               // Set the active conversation ID for replies
               if ((conv.type === 'DONOR_STUDENT' || conv.type === 'STUDENT_ADMIN') && !activeConversationId) {
                 setActiveConversationId(conv.id);
-                console.log('🔍 MyApplication: Set active conversation for replies:', conv.id, 'Type:', conv.type);
+                console.log(' MyApplication: Set active conversation for replies:', conv.id, 'Type:', conv.type);
               }
               
               if (conv.messages) {
                 conv.messages.forEach(msg => {
-                  console.log('🔍 MyApplication: Adding conversation message:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
+                  console.log(' MyApplication: Adding conversation message:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
                   allMessages.push({
                     id: msg.id,
                     text: msg.text,
@@ -175,10 +189,10 @@ export const MyApplication = () => {
             });
           } else {
             const errorText = await convRes.text();
-            console.error('🔍 MyApplication: Conversations API error:', convRes.status, errorText);
+            console.error(' MyApplication: Conversations API error:', convRes.status, errorText);
           }
         } catch (convError) {
-          console.error('🔍 MyApplication: Failed to load conversations:', convError);
+          console.error(' MyApplication: Failed to load conversations:', convError);
         }
         
         // Filter out admin assignment messages if student is APPROVED
@@ -190,19 +204,19 @@ export const MyApplication = () => {
               (msg.text.includes('Assignment removed') || msg.text.includes('unassigned'));
             return !isAssignmentMessage;
           });
-          console.log('🔍 MyApplication: Filtered out assignment messages for APPROVED student');
+          console.log(' MyApplication: Filtered out assignment messages for APPROVED student');
         }
         
         // Sort all messages by date (newest first for better UX)
         filteredMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        console.log('🔍 MyApplication: Total messages after processing:', filteredMessages.length);
+        console.log(' MyApplication: Total messages after processing:', filteredMessages.length);
         
         if (!cancel) {
           setRawMessages(filteredMessages);
           setMessages(filteredMessages.map((m) => ({ from: m.fromRole, text: m.text, senderName: m.senderName })));
         }
       } catch (err) {
-        console.error('🔍 MyApplication: Error loading messages:', err);
+        console.error(' MyApplication: Error loading messages:', err);
       }
     }
 
@@ -224,7 +238,7 @@ export const MyApplication = () => {
     
     try {
       setSendingReply(true);
-      console.log('🔍 MyApplication: Sending reply. ActiveConversationId:', activeConversationId);
+      console.log(' MyApplication: Sending reply. ActiveConversationId:', activeConversationId);
       
       // Generate reCAPTCHA token
       const recaptchaToken = executeRecaptcha ? await executeRecaptcha('sendReply') : null;
@@ -244,14 +258,14 @@ export const MyApplication = () => {
         });
         
         if (response.ok) {
-          console.log('🔍 MyApplication: Reply sent via conversation');
+          console.log(' MyApplication: Reply sent via conversation');
           toast.success("Reply sent successfully!");
           setReplyText("");
           setShowReplyBox(false);
           await reloadMessages();
           return;
         } else {
-          console.log('🔍 MyApplication: Conversation reply failed, trying simple message API');
+          console.log(' MyApplication: Conversation reply failed, trying simple message API');
         }
       }
       
@@ -272,18 +286,18 @@ export const MyApplication = () => {
       });
       
       if (messageResponse.ok) {
-        console.log('🔍 MyApplication: Reply sent via message API');
+        console.log(' MyApplication: Reply sent via message API');
         toast.success("Reply sent successfully!");
         setReplyText("");
         setShowReplyBox(false);
         await reloadMessages();
       } else {
         const errorData = await messageResponse.json();
-        console.error('🔍 MyApplication: Failed to send message:', errorData);
+        console.error(' MyApplication: Failed to send message:', errorData);
         toast.error(errorData.error || "Failed to send reply");
       }
     } catch (error) {
-      console.error('🔍 MyApplication: Error sending reply:', error);
+      console.error(' MyApplication: Error sending reply:', error);
       toast.error("Failed to send reply");
     } finally {
       setSendingReply(false);
@@ -294,7 +308,7 @@ export const MyApplication = () => {
     if (!application?.studentId) return;
     try {
       setReloadingMsgs(true);
-      console.log('🔍 MyApplication: Reloading messages for studentId:', application.studentId);
+      console.log(' MyApplication: Reloading messages for studentId:', application.studentId);
       
       // Load old messages
       const url = new URL(`${API.baseURL}/api/messages`);
@@ -302,11 +316,11 @@ export const MyApplication = () => {
       const res = await fetch(url, { headers: { ...authHeader } });
       const data = await res.json();
       let allMessages = Array.isArray(data?.messages) ? data.messages : [];
-      console.log('🔍 MyApplication: Old messages reloaded:', allMessages.length);
+      console.log(' MyApplication: Old messages reloaded:', allMessages.length);
       
       // Load new conversation messages
       try {
-        console.log('🔍 MyApplication: Reloading conversations...');
+        console.log(' MyApplication: Reloading conversations...');
         const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, {
           headers: { ...authHeader }
         });
@@ -314,7 +328,7 @@ export const MyApplication = () => {
         if (convRes.ok) {
           const convData = await convRes.json();
           const conversations = convData.conversations || [];
-          console.log(`🔍 MyApplication: Reloaded ${conversations.length} conversations`);
+          console.log(` MyApplication: Reloaded ${conversations.length} conversations`);
           
           // Extract messages from conversations
           conversations.forEach(conv => {
@@ -338,10 +352,10 @@ export const MyApplication = () => {
             }
           });
         } else {
-          console.error('🔍 MyApplication: Conversations reload failed:', convRes.status);
+          console.error(' MyApplication: Conversations reload failed:', convRes.status);
         }
       } catch (convError) {
-        console.error('🔍 MyApplication: Failed to reload conversations:', convError);
+        console.error(' MyApplication: Failed to reload conversations:', convError);
       }
       
       // Filter out admin assignment messages if student is APPROVED
@@ -352,17 +366,17 @@ export const MyApplication = () => {
             (msg.text.includes('Assignment removed') || msg.text.includes('unassigned'));
           return !isAssignmentMessage;
         });
-        console.log('🔍 MyApplication: Filtered out assignment messages for APPROVED student');
+        console.log(' MyApplication: Filtered out assignment messages for APPROVED student');
       }
       
       // Sort all messages by date (newest first for better UX)
       filteredMessages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-      console.log('🔍 MyApplication: Total messages after reload:', filteredMessages.length);
+      console.log(' MyApplication: Total messages after reload:', filteredMessages.length);
       
       setRawMessages(filteredMessages);
       setMessages(filteredMessages.map((m) => ({ from: m.fromRole, text: m.text, senderName: m.senderName })));
     } catch (e) {
-      console.error('🔍 MyApplication: Error reloading messages:', e);
+      console.error(' MyApplication: Error reloading messages:', e);
       toast.error("Failed to refresh messages");
     } finally {
       setReloadingMsgs(false);
@@ -551,7 +565,7 @@ export const MyApplication = () => {
   }, [rawMessages]);
 
   const requestedItemsParsed = useMemo(() => {
-    // find messages from admin/sub_admin that have "Missing info requested: ..."
+    // find messages from admin/case worker that have "Missing info requested: ..."
     const items = [];
     let lastRequestText = null;
     for (const m of rawMessages) {
@@ -704,6 +718,22 @@ export const MyApplication = () => {
 // ...existing code...
 
   
+  // Show loading skeleton while initially fetching data
+  if (loadingInitial) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold">My Application</h1>
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="h-4 bg-slate-200 rounded w-3/4 animate-pulse"></div>
+            <div className="h-4 bg-slate-200 rounded w-1/2 animate-pulse"></div>
+            <div className="h-32 bg-slate-200 rounded animate-pulse mt-6"></div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   // REPLACE THIS SECTION (around line 101-103):
   if (!application) {
     return (
@@ -874,7 +904,7 @@ export const MyApplication = () => {
       {/* Enhanced Messages Section */}
       <Card className="p-6 space-y-4 border-l-4 border-blue-400 bg-blue-50">
         <div className="flex items-center gap-2">
-          <h3 className="font-medium text-blue-800">💬 Messages from Awake</h3>
+          <h3 className="font-medium text-blue-800"> Messages from Awake</h3>
           {rawMessages.length > 0 && (
             <Badge variant="secondary" className="bg-blue-100 text-blue-800">
               {rawMessages.length} message{rawMessages.length !== 1 ? 's' : ''}
@@ -917,8 +947,8 @@ export const MyApplication = () => {
                           {message.fromRole === 'admin' || message.fromRole === 'sub_admin' 
                             ? 'Admin' 
                             : message.fromRole === 'donor'
-                              ? `💝 Donor${message.senderName ? `: ${message.senderName}` : ''}`
-                              : '👤 You'}
+                              ? ` Donor${message.senderName ? `: ${message.senderName}` : ''}`
+                              : ' You'}
                         </span>
                         <span>•</span>
                         <span>{message.createdAt ? new Date(message.createdAt).toLocaleDateString() : 'Recent'}</span>
@@ -929,7 +959,7 @@ export const MyApplication = () => {
                         )}
                         {needsAttention && (
                           <Badge className="ml-2 text-xs bg-green-600 text-white animate-pulse">
-                            ✨ New - Reply Needed
+                             New - Reply Needed
                           </Badge>
                         )}
                       </div>
@@ -999,11 +1029,11 @@ export const MyApplication = () => {
         )}
       </Card>
 
-      {/* Action Required - Requests from Admin/Sub Admin */}
+      {/* Action Required - Requests from Admin/Case Worker */}
       {requestedItems.length > 0 && (
         <Card className="p-6 space-y-4 border-l-4 border-amber-400 bg-amber-50">
           <div className="flex items-center gap-2">
-            <h3 className="font-medium text-amber-800 animate-pulse">⚠️ Action Required - Requests from Admin/Sub Admin</h3>
+            <h3 className="font-medium text-amber-800 animate-pulse">️ Action Required - Requests from Admin/Case Worker</h3>
             <Badge variant="secondary" className="bg-amber-100 text-amber-800">
               {requestedItems.length} request{requestedItems.length !== 1 ? 's' : ''}
             </Badge>
@@ -1100,10 +1130,10 @@ export const MyApplication = () => {
                                   rel="noreferrer"
                                   className="text-green-700 hover:underline text-xs"
                                 >
-                                  📄 {uploaded.originalName || 'Download'}
+                                   {uploaded.originalName || 'Download'}
                                 </a>
                               ) : (
-                                <span className="text-amber-600 text-xs">⚠️ Required - Please upload</span>
+                                <span className="text-amber-600 text-xs">️ Required - Please upload</span>
                               )}
                             </div>
                           </div>
@@ -1165,7 +1195,7 @@ export const MyApplication = () => {
                                   rel="noreferrer"
                                   className="text-emerald-700 hover:underline text-xs"
                                 >
-                                  📄 {uploaded.originalName || 'Download'}
+                                   {uploaded.originalName || 'Download'}
                                 </a>
                               ) : (
                                 <span className="text-slate-500 text-xs">Optional document</span>
@@ -1229,7 +1259,7 @@ export const MyApplication = () => {
                                     rel="noreferrer"
                                     className="text-blue-700 hover:underline text-xs"
                                   >
-                                    📄 {d.originalName || 'Download'}
+                                     {d.originalName || "Download"}
                                   </a>
                                 </div>
                               </div>
@@ -1259,7 +1289,7 @@ export const MyApplication = () => {
       {/* Old section removed - now using enhanced Action Required section above */}
       {false && <Card className="p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium">Requests from Admin/Sub Admin</h3>
+          <h3 className="font-medium">Requests from Admin/Case Worker</h3>
           <div className="flex items-center gap-2">
             <Badge variant="secondary">{requestedItems.filter(r=>!r.addressed).length} open</Badge>
             <Button variant="outline" size="sm" className="rounded-2xl" onClick={reloadMessages} disabled={reloadingMsgs}>
@@ -1316,41 +1346,61 @@ export const MyApplication = () => {
       </Card>}
 
       {/* Submit */}
-      <Card className="p-6 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium">Submit Application</div>
-            <div className="text-sm text-slate-600">We’ll check your profile, required documents, and any requested items before sending it for review.</div>
-          </div>
-          <Button 
-            className={`rounded-2xl ${completeness.percent < 100 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={completeness.percent < 100 ? undefined : submitApplication}
-            disabled={completeness.percent < 100}
-          >
-            Submit for Review
-          </Button>
-        </div>
-        <ul className="text-sm text-slate-600 list-disc pl-5">
-          <li>Profile complete: {completeness.percent}%</li>
-          <li>Required documents: {REQUIRED_DOCS.filter(d=>haveDocs.has(d)).length}/{REQUIRED_DOCS.length}</li>
-          <li>Open requests: {requestedItems.filter(r=>!r.addressed).length}</li>
-        </ul>
-        
-        {completeness.percent < 100 && (
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div className="text-sm text-yellow-800 font-medium">Profile Incomplete ({completeness.percent}%)</div>
-            <div className="text-xs text-yellow-700 mt-1">
-              Complete your profile in "My Profile" section before submitting for review.
-              {completeness.missing.length > 0 && (
-                <><br />Missing profile fields: {completeness.missing.join(", ")}</>
-              )}
-              {completeness.missingDocs.length > 0 && (
-                <><br />Missing documents: {completeness.missingDocs.join(", ")}</>
-              )}
+      {application.status === 'PENDING' || application.status === 'PROCESSING' || application.status === 'APPROVED' ? (
+        <Card className="p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Application Status</div>
+              <div className="text-sm text-slate-600">Your application has been submitted for review.</div>
             </div>
+            <Badge variant="secondary" className="text-base">
+              {application.status === 'PENDING' ? ' Submitted for Review' : application.status === 'PROCESSING' ? ' Under Review' : ' Approved'}
+            </Badge>
           </div>
-        )}
-      </Card>
+          <p className="text-sm text-slate-600 mt-2">
+            {application.status === 'PENDING' && "Your application is queued for review. You'll receive updates via email."}
+            {application.status === 'PROCESSING' && "Our team is currently reviewing your application. You'll receive updates via email."}
+            {application.status === 'APPROVED' && "Congratulations! Your application has been approved."}
+          </p>
+        </Card>
+      ) : (
+        <Card className="p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Submit Application</div>
+              <div className="text-sm text-slate-600">We'll check your profile, required documents, and any requested items before sending it for review.</div>
+            </div>
+            <Button 
+              className={`rounded-2xl ${completeness.percent < 100 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={completeness.percent < 100 ? undefined : submitApplication}
+              disabled={completeness.percent < 100}
+            >
+              Submit for Review
+            </Button>
+          </div>
+          <ul className="text-sm text-slate-600 list-disc pl-5">
+            <li>Profile complete: {completeness.percent}%</li>
+            <li>Required documents: {REQUIRED_DOCS.filter(d=>haveDocs.has(d)).length}/{REQUIRED_DOCS.length}</li>
+            <li>Open requests: {requestedItems.filter(r=>!r.addressed).length}</li>
+          </ul>
+          
+          {completeness.percent < 100 && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="text-sm text-yellow-800 font-medium">Profile Incomplete ({completeness.percent}%)</div>
+              <div className="text-xs text-yellow-700 mt-1">
+                Complete your profile in "My Profile" section before submitting for review.
+                {completeness.missing.length > 0 && (
+                  <><br />Missing profile fields: {completeness.missing.join(", ")}</>
+                )}
+                {completeness.missingDocs.length > 0 && (
+                  <><br />Missing documents: {completeness.missingDocs.join(", ")}</>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+      
 
       {/* My Profile Link for Incomplete Profiles */}
       {completeness.percent < 100 && user?.role === "STUDENT" && (

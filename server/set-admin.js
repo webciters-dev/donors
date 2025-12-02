@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function setAdminPassword() {
   try {
-    console.log('🔐 Setting admin password...');
+    console.log(' Setting admin password...');
     
     // Check if admin exists
     const admin = await prisma.user.findUnique({
@@ -13,11 +13,11 @@ async function setAdminPassword() {
     });
     
     if (!admin) {
-      console.log('❌ Admin user not found!');
+      console.log(' Admin user not found!');
       return;
     }
     
-    console.log('👤 Found admin:', admin.email);
+    console.log(' Found admin:', admin.email);
     
     // Hash the new password
     const hashedPassword = await bcrypt.hash('Admin@123', 12);
@@ -31,12 +31,12 @@ async function setAdminPassword() {
       }
     });
     
-    console.log('✅ Admin password set to: Admin@123');
-    console.log('✅ Admin name set to: Admin User');
+    console.log(' Admin password set to: Admin@123');
+    console.log(' Admin name set to: Admin User');
     
     await prisma.$disconnect();
   } catch (error) {
-    console.error('❌ Error:', error.message);
+    console.error(' Error:', error.message);
     await prisma.$disconnect();
   }
 }

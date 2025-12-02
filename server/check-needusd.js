@@ -1,7 +1,7 @@
 import prisma from './src/prismaClient.js';
 
 async function checkNeedUSD() {
-  console.log('🔍 Checking needUSD values...\n');
+  console.log(' Checking needUSD values...\n');
   
   const students = await prisma.student.findMany({
     include: {

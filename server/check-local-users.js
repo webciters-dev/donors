@@ -15,10 +15,10 @@ async function checkUsers() {
       }
     });
 
-    console.log(`\n📊 Total users in local database: ${users.length}\n`);
+    console.log(`\n Total users in local database: ${users.length}\n`);
     
     if (users.length === 0) {
-      console.log('❌ No users found in database');
+      console.log(' No users found in database');
     } else {
       users.forEach((user, index) => {
         console.log(`${index + 1}. ${user.role} - ${user.email}`);
@@ -28,7 +28,7 @@ async function checkUsers() {
       });
     }
   } catch (error) {
-    console.error('❌ Failed to check users:', error.message);
+    console.error(' Failed to check users:', error.message);
   } finally {
     await prisma.$disconnect();
   }

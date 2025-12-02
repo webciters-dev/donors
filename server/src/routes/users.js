@@ -42,7 +42,7 @@ router.post("/sub-admins", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), requi
     const { name, email, password } = req.body || {};
     
     // Debug logging to diagnose production issue
-    console.log("🔍 Case Worker Creation Debug:", {
+    console.log(" Case Worker Creation Debug:", {
       requestBody: req.body,
       name, 
       email, 
@@ -86,7 +86,7 @@ router.post("/case-workers", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), req
     const { name, email, password } = req.body || {};
     
     // Debug logging to diagnose production issue
-    console.log("🔍 Case Worker Creation Debug (case-workers endpoint):", {
+    console.log(" Case Worker Creation Debug (case-workers endpoint):", {
       requestBody: req.body,
       name, 
       email, 

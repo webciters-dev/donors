@@ -619,8 +619,8 @@ const allAcademicData = {
 };
 
 async function seedUniversityAcademics() {
-  console.log('🌱 Starting enhanced university academics seeding...');
-  console.log('🇵🇰 Focus: Pakistani Universities with comprehensive academic programs');
+  console.log(' Starting enhanced university academics seeding...');
+  console.log(' Focus: Pakistani Universities with comprehensive academic programs');
 
   let totalUniversities = 0;
   let totalDegrees = 0;
@@ -629,7 +629,7 @@ async function seedUniversityAcademics() {
 
   for (const [universityName, data] of Object.entries(allAcademicData)) {
     try {
-      console.log(`\n🏛️  Processing ${universityName}...`);
+      console.log(`\n️  Processing ${universityName}...`);
 
       // Find the university
       const university = await prisma.university.findUnique({
@@ -642,17 +642,17 @@ async function seedUniversityAcademics() {
       });
 
       if (!university) {
-        console.log(`⚠️  University "${universityName}" not found in database.`);
+        console.log(`️  University "${universityName}" not found in database.`);
         console.log(`   Make sure to run the university seeding script first.`);
         continue;
       }
 
-      console.log(`   ✅ Found university in database (ID: ${university.id})`);
+      console.log(`    Found university in database (ID: ${university.id})`);
       totalUniversities++;
 
       // Process each degree level
       for (const [degreeLevel, fields] of Object.entries(data.academics)) {
-        console.log(`     🎓 Processing degree level: ${degreeLevel}`);
+        console.log(`      Processing degree level: ${degreeLevel}`);
 
         // Create or get degree level
         let degreeLevelRecord;
@@ -663,7 +663,7 @@ async function seedUniversityAcademics() {
               degreeLevel
             }
           });
-          console.log(`       ✨ Created degree level: ${degreeLevel}`);
+          console.log(`        Created degree level: ${degreeLevel}`);
           totalDegrees++;
         } catch (error) {
           if (error.code === 'P2002') {
@@ -676,7 +676,7 @@ async function seedUniversityAcademics() {
                 }
               }
             });
-            console.log(`       ♻️  Degree level already exists: ${degreeLevel}`);
+            console.log(`       ️  Degree level already exists: ${degreeLevel}`);
           } else {
             throw error;
           }
@@ -684,7 +684,7 @@ async function seedUniversityAcademics() {
 
         // Process each field
         for (const [fieldName, programs] of Object.entries(fields)) {
-          console.log(`       📚 Processing field: ${fieldName} (${programs.length} programs)`);
+          console.log(`        Processing field: ${fieldName} (${programs.length} programs)`);
 
           // Create or get field
           let fieldRecord;
@@ -697,7 +697,7 @@ async function seedUniversityAcademics() {
                 fieldName
               }
             });
-            console.log(`         ✨ Created field: ${fieldName}`);
+            console.log(`          Created field: ${fieldName}`);
             totalFields++;
           } catch (error) {
             if (error.code === 'P2002') {
@@ -711,7 +711,7 @@ async function seedUniversityAcademics() {
                   }
                 }
               });
-              console.log(`         ♻️  Field already exists: ${fieldName}`);
+              console.log(`         ️  Field already exists: ${fieldName}`);
             } else {
               throw error;
             }
@@ -730,11 +730,11 @@ async function seedUniversityAcademics() {
                   programName
                 }
               });
-              console.log(`           ✨ Created program: ${programName}`);
+              console.log(`            Created program: ${programName}`);
               totalPrograms++;
             } catch (error) {
               if (error.code === 'P2002') {
-                console.log(`           ♻️  Program already exists: ${programName}`);
+                console.log(`           ️  Program already exists: ${programName}`);
               } else {
                 throw error;
               }
@@ -743,19 +743,19 @@ async function seedUniversityAcademics() {
         }
       }
 
-      console.log(`   ✅ Completed ${universityName}`);
+      console.log(`    Completed ${universityName}`);
 
     } catch (error) {
-      console.error(`   ❌ Error processing ${universityName}:`, error);
+      console.error(`    Error processing ${universityName}:`, error);
     }
   }
 
-  console.log('\n🎉 Enhanced university academics seeding completed!');
-  console.log('\n📊 Summary:');
-  console.log(`   📚 Universities processed: ${totalUniversities}`);
-  console.log(`   🎓 Degree levels created: ${totalDegrees}`);
-  console.log(`   📖 Fields created: ${totalFields}`);
-  console.log(`   📝 Programs created: ${totalPrograms}`);
+  console.log('\n Enhanced university academics seeding completed!');
+  console.log('\n Summary:');
+  console.log(`    Universities processed: ${totalUniversities}`);
+  console.log(`    Degree levels created: ${totalDegrees}`);
+  console.log(`    Fields created: ${totalFields}`);
+  console.log(`    Programs created: ${totalPrograms}`);
   
   // Show database statistics
   const stats = await prisma.university.count();
@@ -763,24 +763,24 @@ async function seedUniversityAcademics() {
   const fieldStats = await prisma.universityField.count();
   const programStats = await prisma.universityProgram.count();
   
-  console.log('\n📈 Current Database Totals:');
-  console.log(`   🏛️  Total Universities: ${stats}`);
-  console.log(`   🎓 Total Degree Levels: ${degreeStats}`);
-  console.log(`   📖 Total Fields: ${fieldStats}`);
-  console.log(`   📝 Total Programs: ${programStats}`);
+  console.log('\n Current Database Totals:');
+  console.log(`   ️  Total Universities: ${stats}`);
+  console.log(`    Total Degree Levels: ${degreeStats}`);
+  console.log(`    Total Fields: ${fieldStats}`);
+  console.log(`    Total Programs: ${programStats}`);
   
   // Pakistani universities specific stats
   const pakistaniUniCount = Object.keys(pakistaniUniversitiesData).length;
-  console.log('\n🇵🇰 Pakistani Universities Enhanced:');
-  console.log(`   📚 ${pakistaniUniCount} Pakistani universities now have comprehensive academic data`);
-  console.log(`   🎯 These universities are now ready for testing with rich program options`);
+  console.log('\n Pakistani Universities Enhanced:');
+  console.log(`    ${pakistaniUniCount} Pakistani universities now have comprehensive academic data`);
+  console.log(`    These universities are now ready for testing with rich program options`);
 }
 
 async function main() {
   try {
     await seedUniversityAcademics();
   } catch (error) {
-    console.error('❌ Seeding failed:', error);
+    console.error(' Seeding failed:', error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

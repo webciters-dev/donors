@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log(' Starting database seed...');
 
   // Create sample students
   const students = await Promise.all([
@@ -89,7 +89,7 @@ async function main() {
     })
   ]);
 
-  console.log('✅ Created students:', students.length);
+  console.log(' Created students:', students.length);
 
   // Create sample donors
   const donors = await Promise.all([
@@ -118,7 +118,7 @@ async function main() {
     })
   ]);
 
-  console.log('✅ Created donors:', donors.length);
+  console.log(' Created donors:', donors.length);
 
   // Create sample sponsorships
   const sponsorships = await Promise.all([
@@ -149,7 +149,7 @@ async function main() {
     data: { sponsored: true }
   });
 
-  console.log('✅ Created sponsorships:', sponsorships.length);
+  console.log(' Created sponsorships:', sponsorships.length);
 
   // Create sample applications
   const applications = await Promise.all([
@@ -182,7 +182,7 @@ async function main() {
     })
   ]);
 
-  console.log('✅ Created applications:', applications.length);
+  console.log(' Created applications:', applications.length);
 
   // Create sample disbursements
   const disbursements = await Promise.all([
@@ -212,14 +212,14 @@ async function main() {
     })
   ]);
 
-  console.log('✅ Created disbursements:', disbursements.length);
+  console.log(' Created disbursements:', disbursements.length);
 
-  console.log('🎉 Database seeded successfully!');
+  console.log(' Database seeded successfully!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
+    console.error(' Error seeding database:', e);
     process.exit(1);
   })
   .finally(async () => {

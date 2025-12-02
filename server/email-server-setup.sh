@@ -10,9 +10,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Starting Professional Email Server Setup${NC}"
-echo -e "${YELLOW}📧 Domain: aircrew.nl${NC}"
-echo -e "${YELLOW}📍 Server: 136.144.175.93${NC}"
+echo -e "${GREEN} Starting Professional Email Server Setup${NC}"
+echo -e "${YELLOW} Domain: aircrew.nl${NC}"
+echo -e "${YELLOW} Server: 136.144.175.93${NC}"
 
 # Configuration
 DOMAIN="aircrew.nl"
@@ -20,16 +20,16 @@ HOSTNAME="mail.aircrew.nl"
 ADMIN_EMAIL="admin@aircrew.nl"
 
 # Update system
-echo -e "\n${GREEN}📦 Updating system packages...${NC}"
+echo -e "\n${GREEN} Updating system packages...${NC}"
 apt update && apt upgrade -y
 
 # Set hostname
-echo -e "\n${GREEN}🏷️ Setting hostname...${NC}"
+echo -e "\n${GREEN}️ Setting hostname...${NC}"
 hostnamectl set-hostname $HOSTNAME
 echo "127.0.0.1 $HOSTNAME" >> /etc/hosts
 
 # Install required packages
-echo -e "\n${GREEN}📥 Installing email server packages...${NC}"
+echo -e "\n${GREEN} Installing email server packages...${NC}"
 apt install -y \
     postfix \
     dovecot-core \
@@ -53,11 +53,11 @@ apt install -y \
     nginx
 
 # Secure MySQL installation
-echo -e "\n${GREEN}🔒 Securing MySQL...${NC}"
+echo -e "\n${GREEN} Securing MySQL...${NC}"
 mysql_secure_installation
 
 # Create mail database and user
-echo -e "\n${GREEN}🗄️ Setting up mail database...${NC}"
+echo -e "\n${GREEN}️ Setting up mail database...${NC}"
 mysql -u root -p << EOF
 CREATE DATABASE mailserver;
 CREATE USER 'mailuser'@'localhost' IDENTIFIED BY 'SecureMailPass2024!';
@@ -94,7 +94,7 @@ INSERT INTO users (email, password) VALUES
 EOF
 
 # Configure Postfix
-echo -e "\n${GREEN}📮 Configuring Postfix...${NC}"
+echo -e "\n${GREEN} Configuring Postfix...${NC}"
 cat > /etc/postfix/main.cf << 'EOF'
 # Basic Configuration
 smtpd_banner = $myhostname ESMTP $mail_name
@@ -196,7 +196,7 @@ mail_log_file = /var/log/postfix.log
 EOF
 
 # Create virtual domain configuration files
-echo -e "\n${GREEN}📝 Creating virtual domain configs...${NC}"
+echo -e "\n${GREEN} Creating virtual domain configs...${NC}"
 
 cat > /etc/postfix/mysql-virtual-mailbox-domains.cf << 'EOF'
 user = mailuser
@@ -223,7 +223,7 @@ query = SELECT destination FROM aliases WHERE source='%s'
 EOF
 
 # Configure master.cf
-echo -e "\n${GREEN}📋 Configuring Postfix master...${NC}"
+echo -e "\n${GREEN} Configuring Postfix master...${NC}"
 cat > /etc/postfix/master.cf << 'EOF'
 # Postfix master process configuration file
 smtp      inet  n       -       y       -       -       smtpd
@@ -274,14 +274,14 @@ scache    unix  -       -       y       -       1       scache
 EOF
 
 # Create virtual mail user
-echo -e "\n${GREEN}👤 Creating virtual mail user...${NC}"
+echo -e "\n${GREEN} Creating virtual mail user...${NC}"
 useradd -r -u 5000 -g mail -d /var/mail/vmail -s /sbin/nologin -c "Virtual Mail User" vmail
 mkdir -p /var/mail/vmail
 chown -R vmail:mail /var/mail/vmail
 chmod -R 770 /var/mail/vmail
 
 # Configure Dovecot
-echo -e "\n${GREEN}🕊️ Configuring Dovecot...${NC}"
+echo -e "\n${GREEN}️ Configuring Dovecot...${NC}"
 cat > /etc/dovecot/dovecot.conf << 'EOF'
 # Dovecot Configuration for aircrew.nl
 
@@ -387,11 +387,11 @@ service lmtp {
 EOF
 
 # Generate DH parameters
-echo -e "\n${GREEN}🔐 Generating DH parameters...${NC}"
+echo -e "\n${GREEN} Generating DH parameters...${NC}"
 openssl dhparam -out /etc/dovecot/dh.pem 2048
 
 # Configure DKIM
-echo -e "\n${GREEN}🔑 Setting up DKIM...${NC}"
+echo -e "\n${GREEN} Setting up DKIM...${NC}"
 mkdir -p /etc/dkimkeys
 cd /etc/dkimkeys
 opendkim-genkey -s default -d aircrew.nl
@@ -440,11 +440,11 @@ aircrew.nl
 *.aircrew.nl" > /etc/opendkim/trusted.hosts
 
 # Get SSL certificate
-echo -e "\n${GREEN}🔒 Obtaining SSL certificate...${NC}"
+echo -e "\n${GREEN} Obtaining SSL certificate...${NC}"
 certbot certonly --standalone -d mail.aircrew.nl --email $ADMIN_EMAIL --agree-tos --non-interactive
 
 # Configure firewall
-echo -e "\n${GREEN}🛡️ Configuring firewall...${NC}"
+echo -e "\n${GREEN}️ Configuring firewall...${NC}"
 ufw allow 22/tcp
 ufw allow 25/tcp
 ufw allow 53/tcp
@@ -459,7 +459,7 @@ ufw allow 995/tcp
 ufw --force enable
 
 # Configure Fail2ban
-echo -e "\n${GREEN}🔨 Setting up Fail2ban...${NC}"
+echo -e "\n${GREEN} Setting up Fail2ban...${NC}"
 cat > /etc/fail2ban/jail.local << 'EOF'
 [DEFAULT]
 bantime = 3600
@@ -480,12 +480,12 @@ enabled = true
 EOF
 
 # Start services
-echo -e "\n${GREEN}🚀 Starting services...${NC}"
+echo -e "\n${GREEN} Starting services...${NC}"
 systemctl enable postfix dovecot opendkim fail2ban
 systemctl restart postfix dovecot opendkim fail2ban
 
 # Create test email accounts
-echo -e "\n${GREEN}📧 Creating email accounts...${NC}"
+echo -e "\n${GREEN} Creating email accounts...${NC}"
 mysql -u mailuser -pSecureMailPass2024! mailserver << 'EOF'
 INSERT INTO users (email, password) VALUES 
     ('noreply@aircrew.nl', ENCRYPT('NoreplySecure2024!', CONCAT('$6$', SUBSTRING(SHA(RAND()), -16)))),
@@ -498,27 +498,27 @@ INSERT INTO aliases (source, destination) VALUES
     ('hostmaster@aircrew.nl', 'admin@aircrew.nl');
 EOF
 
-echo -e "\n${GREEN}✅ Email server setup complete!${NC}"
-echo -e "\n${YELLOW}📝 IMPORTANT: DNS Records to configure:${NC}"
+echo -e "\n${GREEN} Email server setup complete!${NC}"
+echo -e "\n${YELLOW} IMPORTANT: DNS Records to configure:${NC}"
 echo -e "MX      @               10 mail.aircrew.nl."
 echo -e "A       mail            136.144.175.93"
 echo -e "A       smtp            136.144.175.93"
 echo -e "A       imap            136.144.175.93"
 echo -e "A       pop             136.144.175.93"
 
-echo -e "\n${YELLOW}🔑 DKIM Public Key (add as TXT record):${NC}"
+echo -e "\n${YELLOW} DKIM Public Key (add as TXT record):${NC}"
 echo -e "default._domainkey IN TXT \""
 cat /etc/dkimkeys/default.txt | grep -v "default._domainkey" | tr -d '\n\t " '
 echo -e "\""
 
-echo -e "\n${YELLOW}📧 Test Email Accounts Created:${NC}"
+echo -e "\n${YELLOW} Test Email Accounts Created:${NC}"
 echo -e "noreply@aircrew.nl : NoreplySecure2024!"
 echo -e "admin@aircrew.nl   : AdminSecure2024!"
 echo -e "support@aircrew.nl : SupportSecure2024!"
 
-echo -e "\n${YELLOW}🔧 Server Configuration:${NC}"
+echo -e "\n${YELLOW} Server Configuration:${NC}"
 echo -e "SMTP Server: mail.aircrew.nl (Port 587 - STARTTLS, Port 465 - SSL/TLS)"
 echo -e "IMAP Server: mail.aircrew.nl (Port 993 - SSL/TLS, Port 143 - STARTTLS)"
 echo -e "POP3 Server: mail.aircrew.nl (Port 995 - SSL/TLS, Port 110 - STARTTLS)"
 
-echo -e "\n${GREEN}🎉 Your professional email server is ready!${NC}"
+echo -e "\n${GREEN} Your professional email server is ready!${NC}"

@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('📊 SHOWING ALL PRESERVED DATA IN DATABASE\n');
+console.log(' SHOWING ALL PRESERVED DATA IN DATABASE\n');
 
 try {
   await prisma.$connect();
   
   // Show all users
-  console.log('👥 USERS (6 total):');
+  console.log(' USERS (6 total):');
   console.log('='.repeat(70));
   
   const users = await prisma.user.findMany({
@@ -36,7 +36,7 @@ try {
   });
   
   // Show all students
-  console.log('🎓 STUDENTS (1 total):');
+  console.log(' STUDENTS (1 total):');
   console.log('='.repeat(70));
   
   const students = await prisma.student.findMany({
@@ -74,7 +74,7 @@ try {
   });
   
   // Show all donors
-  console.log('💰 DONORS (3 total):');
+  console.log(' DONORS (3 total):');
   console.log('='.repeat(70));
   
   const donors = await prisma.donor.findMany({
@@ -102,7 +102,7 @@ try {
   });
   
   // Show summary counts
-  console.log('📈 SUMMARY:');
+  console.log(' SUMMARY:');
   console.log('='.repeat(70));
   
   const counts = {
@@ -121,9 +121,9 @@ try {
   });
   
   await prisma.$disconnect();
-  console.log('\n✅ Data display completed');
+  console.log('\n Data display completed');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

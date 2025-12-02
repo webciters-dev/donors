@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 
 const API_BASE = 'http://localhost:3001';
 
-console.log('🧪 Testing duplicate email registration prevention...\n');
+console.log(' Testing duplicate email registration prevention...\n');
 
 const testEmail = 'duplicate-test@example.com';
 const testStudent = {
@@ -42,13 +42,13 @@ async function testDuplicateRegistration() {
     console.log(`   Response:`, result2);
     
     if (response2.status === 409) {
-      console.log('\n✅ SUCCESS: Duplicate email registration properly rejected!');
+      console.log('\n SUCCESS: Duplicate email registration properly rejected!');
     } else {
-      console.log('\n❌ FAILED: Duplicate email registration was allowed!');
+      console.log('\n FAILED: Duplicate email registration was allowed!');
     }
     
   } catch (error) {
-    console.error('❌ Test failed:', error.message);
+    console.error(' Test failed:', error.message);
   }
 }
 

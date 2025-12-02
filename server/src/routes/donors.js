@@ -15,7 +15,7 @@ router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
     const take = parseInt(limit);
     const skip = (parseInt(page) - 1) * take;
 
-    console.log('🔍 Donors API: Fetching donors...');
+    console.log(' Donors API: Fetching donors...');
 
     const [donors, total] = await Promise.all([
       prisma.donor.findMany({
@@ -37,7 +37,7 @@ router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       prisma.donor.count()
     ]);
 
-    console.log(`🔍 Donors API: Found ${donors.length} donors`);
+    console.log(` Donors API: Found ${donors.length} donors`);
 
     // Get sponsorship counts separately
     const donorsWithCounts = await Promise.all(
@@ -62,7 +62,7 @@ router.get("/", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       }
     });
   } catch (e) {
-    console.error('🔍 Donors API Error:', e);
+    console.error(' Donors API Error:', e);
     res.status(500).json({ error: "Failed to load donors" });
   }
 });
@@ -109,7 +109,7 @@ router.get("/:donorId", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
       }
     });
   } catch (e) {
-    console.error('🔍 Individual Donor API Error:', e);
+    console.error(' Individual Donor API Error:', e);
     res.status(500).json({ error: "Failed to load donor details" });
   }
 });

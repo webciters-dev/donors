@@ -9,7 +9,7 @@ const databases = [
 
 for (const dbUrl of databases) {
   const dbName = dbUrl.split('/').pop().split('?')[0];
-  console.log(`\n🔍 Checking database: ${dbName}`);
+  console.log(`\n Checking database: ${dbName}`);
   console.log('='.repeat(50));
   
   const prisma = new PrismaClient({
@@ -30,7 +30,7 @@ for (const dbUrl of databases) {
     const applicationCount = await prisma.application.count();
     const sponsorshipCount = await prisma.sponsorship.count();
     
-    console.log(`📊 Record counts:`);
+    console.log(` Record counts:`);
     console.log(`- Users: ${userCount}`);
     console.log(`- Students: ${studentCount}`);
     console.log(`- Donors: ${donorCount}`);
@@ -48,7 +48,7 @@ for (const dbUrl of databases) {
         take: 3
       });
       
-      console.log(`\n👥 Sample users:`);
+      console.log(`\n Sample users:`);
       users.forEach((user, index) => {
         console.log(`${index + 1}. ${user.email} (${user.role}) - ${user.createdAt.toISOString().split('T')[0]}`);
       });
@@ -66,7 +66,7 @@ for (const dbUrl of databases) {
         take: 3
       });
       
-      console.log(`\n🎓 Sample students:`);
+      console.log(`\n Sample students:`);
       students.forEach((student, index) => {
         console.log(`${index + 1}. ${student.name} (${student.email}) - ${student.createdAt.toISOString().split('T')[0]}`);
       });
@@ -75,6 +75,6 @@ for (const dbUrl of databases) {
     await prisma.$disconnect();
     
   } catch (error) {
-    console.log(`❌ Error accessing ${dbName}:`, error.message);
+    console.log(` Error accessing ${dbName}:`, error.message);
   }
 }

@@ -2,7 +2,7 @@
 
 This project uses GitHub Actions for automatic deployment to aircrew.nl when code is pushed to the `main` branch.
 
-## 🔧 One-Time Setup Required
+##  One-Time Setup Required
 
 ### Step 1: Generate SSH Key on Your Server (aircrew.nl)
 
@@ -46,7 +46,7 @@ Option 2 - Manual trigger:
 2. Select **Deploy to Aircrew.nl** workflow
 3. Click **Run workflow**
 
-## 🚀 How It Works
+##  How It Works
 
 - **Automatic**: Every push to `main` branch triggers deployment
 - **Duration**: ~2-3 minutes from push to live
@@ -57,7 +57,7 @@ Option 2 - Manual trigger:
   4. Restarts PM2 services
   5. Performs health check
 
-## 📊 Monitoring Deployments
+##  Monitoring Deployments
 
 View deployment status:
 - **Actions tab**: https://github.com/webciters-dev/donors/actions
@@ -71,7 +71,7 @@ Add this to your README.md:
 [![Deploy Status](https://github.com/webciters-dev/donors/actions/workflows/deploy.yml/badge.svg)](https://github.com/webciters-dev/donors/actions/workflows/deploy.yml)
 ```
 
-## 🔧 Troubleshooting
+##  Troubleshooting
 
 ### Deployment Fails with "Permission denied"
 - Verify SSH key is correctly added to GitHub Secrets
@@ -87,7 +87,7 @@ Add this to your README.md:
 - This is often a false alarm - manually verify https://aircrew.nl works
 - The app may be running on a different port than expected
 
-## 🛠️ Manual Deployment (Backup)
+## ️ Manual Deployment (Backup)
 
 If GitHub Actions is down or you need to deploy immediately:
 
@@ -95,17 +95,17 @@ If GitHub Actions is down or you need to deploy immediately:
 .\deploy-aircrew.ps1
 ```
 
-## 📝 Security Notes
+##  Security Notes
 
 - The SSH private key is encrypted in GitHub Secrets
 - Only users with repository admin access can view/edit secrets
 - The deployment key has minimal permissions (only deploy access)
 - Consider using a non-root user for deployments (more secure)
 
-## 🎯 Next Steps
+##  Next Steps
 
 After initial setup is complete:
-1. ✅ Remove manual deployment scripts (optional)
-2. ✅ Add deployment notifications (Slack, Discord, email)
-3. ✅ Set up staging environment with separate workflow
-4. ✅ Add automated testing before deployment
+1.  Remove manual deployment scripts (optional)
+2.  Add deployment notifications (Slack, Discord, email)
+3.  Set up staging environment with separate workflow
+4.  Add automated testing before deployment

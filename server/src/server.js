@@ -4,6 +4,17 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
+
+// Structured logging
+import logger from "./lib/logger.js";
+import { httpLogger, errorLogger } from "./middleware/httpLogger.js";
+
+// API Documentation
+import { setupSwagger } from "./lib/swagger.js";
+
+// Monitoring modules (optional - enabled via ENABLE_MONITORING env var)
+import { setupHealthCheck } from "./monitoring/healthCheck.js";
+import { setupErrorTracking, errorHandlerMiddleware } from "./monitoring/errorTracker.js";
 import profileRouter from "./routes/profile.js";
 import authRouter from "./routes/auth.js";
 import studentsRouter from "./routes/students.js";
@@ -29,7 +40,12 @@ import videosRouter from "./routes/videos-simple.js";
 import boardMembersRouter from "./routes/boardMembers.js";
 import interviewsRouter from "./routes/interviews.js";
 import superAdminRouter from "./routes/superAdmin.js";
+import auditLogsRouter from "./routes/auditLogs.js";
+import ipWhitelistRouter from "./routes/ipWhitelist.js";
 
+// Audit logging middleware
+import { auditLogin } from "./middleware/auditMiddleware.js";
+import { ipWhitelistMiddleware } from "./middleware/ipWhitelist.js";
 
 dotenv.config();
 
@@ -63,7 +79,15 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" }, // Allow cross-origin access for media files
   })
 );
-app.use(morgan("dev"));
+
+// Structured HTTP logging (Winston)
+if (process.env.ENABLE_STRUCTURED_LOGGING === 'true') {
+  app.use(httpLogger);
+  logger.info('Structured HTTP logging enabled');
+} else {
+  // Fallback to morgan for simple logging
+  app.use(morgan("dev"));
+}
 
 // ─────────────────────────────────────────────────────────────
 // CORS (allow the Vite dev server(s) and handle preflight globally)
@@ -89,7 +113,17 @@ app.use((req, res, next) => {
 
 // ─────────────────────────────────────────────────────────────
 // Parsers
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "10mb" })); // Reasonable limit for most requests and uploads
+app.use(express.urlencoded({ limit: "10mb", extended: true })); // For form data
+
+// ─────────────────────────────────────────────────────────────
+// Timeout Configuration for Large File Uploads
+// Set request timeout to 5 minutes for large video uploads
+app.use((req, res, next) => {
+  req.socket.setTimeout(300000); // 5 minutes (300,000 ms)
+  res.setTimeout(300000);
+  next();
+});
 
 // ─────────────────────────────────────────────────────────────
 // Health check
@@ -119,6 +153,19 @@ app.use("/api/photos", photosRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/board-members", boardMembersRouter);
 app.use("/api/interviews", interviewsRouter);
+
+// Security routes (SUPER_ADMIN only)
+app.use("/api/audit-logs", auditLogsRouter);
+app.use("/api/ip-whitelist", ipWhitelistRouter);
+
+// IP Whitelist Protection for Admin Routes
+// Apply IP whitelist middleware to admin/super-admin routes
+if (process.env.ENABLE_IP_WHITELIST === 'true') {
+  logger.info('IP whitelist protection enabled for admin routes');
+  app.use("/api/super-admin", ipWhitelistMiddleware());
+  app.use("/api/users", ipWhitelistMiddleware({ allowedRoles: ['SUPER_ADMIN'] }));
+}
+
 app.use("/api/super-admin", superAdminRouter);
 
 
@@ -155,15 +202,44 @@ app.use("/manuals", express.static("../manuals", {
 
 app.use("/api/profile", profileRouter);
 
+// ─────────────────────────────────────────────────────────────
+// API Documentation (Swagger)
+// Enable with ENABLE_API_DOCS=true in .env
+if (process.env.ENABLE_API_DOCS === 'true') {
+  setupSwagger(app);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Monitoring Setup (optional)
+// Enable with ENABLE_MONITORING=true in .env
+if (process.env.ENABLE_MONITORING === 'true') {
+  console.log('\n Setting up monitoring...');
+  setupHealthCheck(app);
+  setupErrorTracking(app);
+}
+
 // 404
 app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
+
+// Error logging middleware
+if (process.env.ENABLE_STRUCTURED_LOGGING === 'true') {
+  app.use(errorLogger);
+}
+
+// Error handler middleware (should be last)
+if (process.env.ENABLE_MONITORING === 'true') {
+  app.use(errorHandlerMiddleware);
+}
 
 // ─────────────────────────────────────────────────────────────
 // Start
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
-    `🌐 CORS allowed origins: ${allowedOrigins.length ? allowedOrigins.join(", ") : FRONTEND_URL}`
-  );
+  logger.info(`Server running on port ${PORT}`, {
+    port: PORT,
+    environment: process.env.NODE_ENV || "development",
+    corsOrigins: allowedOrigins.length ? allowedOrigins : [FRONTEND_URL],
+    monitoring: process.env.ENABLE_MONITORING === 'true',
+    structuredLogging: process.env.ENABLE_STRUCTURED_LOGGING === 'true',
+    rateLimiting: process.env.ENABLE_RATE_LIMITING === 'true',
+  });
 });

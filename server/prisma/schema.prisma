@@ -5,6 +5,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Connection pool configuration for production performance
+  // Default pool size is 10, but can be increased based on workload
+  // Format: postgresql://USER:PASSWORD@HOST:PORT/DATABASE?connection_limit=20&pool_timeout=10
 }
 
 model Student {
@@ -611,4 +614,44 @@ enum DecisionType {
   REJECT
   ABSTAIN
   PENDING
+}
+
+// Audit Log Model for Security Tracking
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String   // User who performed the action
+  userEmail     String   // Email for easier tracking
+  userRole      String   // Role at time of action (ADMIN, SUPER_ADMIN, etc.)
+  action        String   // Action performed (CREATE, UPDATE, DELETE, LOGIN, etc.)
+  resourceType  String   // Type of resource (Student, Donor, Application, User, etc.)
+  resourceId    String?  // ID of the affected resource
+  ipAddress     String?  // IP address of the user
+  userAgent     String?  // Browser/client information
+  changes       Json?    // JSON object with before/after values for updates
+  metadata      Json?    // Additional context (request params, query, etc.)
+  status        String   @default("SUCCESS") // SUCCESS, FAILED, ERROR
+  errorMessage  String?  // Error details if status is FAILED/ERROR
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([userEmail])
+  @@index([action])
+  @@index([resourceType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// IP Whitelist Model for Admin Panel Security
+model IpWhitelist {
+  id          String   @id @default(cuid())
+  ipAddress   String   @unique // IP address (supports CIDR notation)
+  description String?  // Description/purpose of this IP
+  addedBy     String   // User ID who added this IP
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ipAddress])
+  @@index([isActive])
+  @@map("ip_whitelist")
 }

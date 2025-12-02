@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('📊 CHECKING CURRENT STUDENTS/APPLICANTS IN DATABASE\n');
+console.log(' CHECKING CURRENT STUDENTS/APPLICANTS IN DATABASE\n');
 
 try {
   await prisma.$connect();
   
   // Count all users by role
-  console.log('👥 USER COUNTS BY ROLE:');
+  console.log(' USER COUNTS BY ROLE:');
   console.log('='.repeat(50));
   
   const userCounts = await prisma.user.groupBy({
@@ -24,7 +24,7 @@ try {
   });
   
   // Show all student users
-  console.log('\n🎓 STUDENT USER ACCOUNTS:');
+  console.log('\n STUDENT USER ACCOUNTS:');
   console.log('='.repeat(50));
   
   const studentUsers = await prisma.user.findMany({
@@ -47,7 +47,7 @@ try {
   });
   
   // Show student profiles
-  console.log('📋 STUDENT PROFILES:');
+  console.log(' STUDENT PROFILES:');
   console.log('='.repeat(50));
   
   const studentProfiles = await prisma.student.findMany({
@@ -73,7 +73,7 @@ try {
   });
   
   // Show applications
-  console.log('📄 APPLICATION RECORDS:');
+  console.log(' APPLICATION RECORDS:');
   console.log('='.repeat(50));
   
   const applications = await prisma.application.findMany({
@@ -107,7 +107,7 @@ try {
   }
   
   // Summary counts
-  console.log('📈 SUMMARY:');
+  console.log(' SUMMARY:');
   console.log('='.repeat(50));
   
   const totalUsers = await prisma.user.count();
@@ -121,9 +121,9 @@ try {
   console.log(`Applications: ${totalApplications}`);
   
   await prisma.$disconnect();
-  console.log('\n✅ Student check completed');
+  console.log('\n Student check completed');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

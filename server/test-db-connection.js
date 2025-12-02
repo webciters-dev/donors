@@ -2,9 +2,9 @@ import prisma from './src/prismaClient.js';
 
 async function testDB() {
   try {
-    console.log('🔍 Testing database connection...');
+    console.log(' Testing database connection...');
     const result = await prisma.$queryRaw`SELECT 1 as test`;
-    console.log('✅ Database connected successfully:', result);
+    console.log(' Database connected successfully:', result);
     
     // Test if admin user exists
     const adminUser = await prisma.user.findUnique({
@@ -12,7 +12,7 @@ async function testDB() {
       select: { id: true, email: true, role: true, name: true }
     });
     
-    console.log('👤 Admin user:', adminUser);
+    console.log(' Admin user:', adminUser);
     
     // Test basic counts
     const counts = await Promise.all([
@@ -23,7 +23,7 @@ async function testDB() {
       prisma.sponsorship.count()
     ]);
     
-    console.log('📊 Record counts:');
+    console.log(' Record counts:');
     console.log('- Users:', counts[0]);
     console.log('- Students:', counts[1]);
     console.log('- Donors:', counts[2]);
@@ -31,7 +31,7 @@ async function testDB() {
     console.log('- Sponsorships:', counts[4]);
     
   } catch (error) {
-    console.error('❌ Database error:', error);
+    console.error(' Database error:', error);
   } finally {
     await prisma.$disconnect();
   }

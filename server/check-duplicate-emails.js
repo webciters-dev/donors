@@ -3,13 +3,13 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🔍 Checking for duplicate email addresses in the database...\n');
+console.log(' Checking for duplicate email addresses in the database...\n');
 
 try {
   await prisma.$connect();
   
   // Check for duplicate emails in users table
-  console.log('👥 USERS TABLE:');
+  console.log(' USERS TABLE:');
   console.log('='.repeat(50));
   
   const users = await prisma.user.findMany({
@@ -38,34 +38,34 @@ try {
   // Check specifically for test@webciters.com
   const testEmail = 'test@webciters.com';
   if (emailGroups[testEmail]) {
-    console.log(`🎯 FOUND: ${testEmail} appears ${emailGroups[testEmail].length} times:`);
+    console.log(` FOUND: ${testEmail} appears ${emailGroups[testEmail].length} times:`);
     emailGroups[testEmail].forEach((user, index) => {
       console.log(`${index + 1}. ID: ${user.id} | Role: ${user.role} | Created: ${user.createdAt.toISOString().split('T')[0]} | StudentId: ${user.studentId || 'null'} | DonorId: ${user.donorId || 'null'}`);
     });
     console.log('');
   } else {
-    console.log(`❌ ${testEmail} not found in database\n`);
+    console.log(` ${testEmail} not found in database\n`);
   }
   
   // Find all duplicate emails
   const duplicates = Object.entries(emailGroups).filter(([email, userList]) => userList.length > 1);
   
   if (duplicates.length > 0) {
-    console.log('⚠️  DUPLICATE EMAILS FOUND:');
+    console.log('️  DUPLICATE EMAILS FOUND:');
     console.log('='.repeat(50));
     duplicates.forEach(([email, userList]) => {
-      console.log(`📧 ${email} (${userList.length} accounts):`);
+      console.log(` ${email} (${userList.length} accounts):`);
       userList.forEach((user, index) => {
         console.log(`   ${index + 1}. ${user.role} | Created: ${user.createdAt.toISOString().split('T')[0]} | ID: ${user.id}`);
       });
       console.log('');
     });
   } else {
-    console.log('✅ No duplicate emails found in users table\n');
+    console.log(' No duplicate emails found in users table\n');
   }
   
   // Check students table for duplicates
-  console.log('🎓 STUDENTS TABLE:');
+  console.log(' STUDENTS TABLE:');
   console.log('='.repeat(50));
   
   const students = await prisma.student.findMany({
@@ -90,7 +90,7 @@ try {
   
   // Check for test@webciters.com in students
   if (studentEmailGroups[testEmail]) {
-    console.log(`🎯 FOUND: ${testEmail} in students table (${studentEmailGroups[testEmail].length} times):`);
+    console.log(` FOUND: ${testEmail} in students table (${studentEmailGroups[testEmail].length} times):`);
     studentEmailGroups[testEmail].forEach((student, index) => {
       console.log(`${index + 1}. ${student.name} | ID: ${student.id} | Created: ${student.createdAt.toISOString().split('T')[0]}`);
     });
@@ -100,23 +100,23 @@ try {
   const studentDuplicates = Object.entries(studentEmailGroups).filter(([email, studentList]) => studentList.length > 1);
   
   if (studentDuplicates.length > 0) {
-    console.log('⚠️  DUPLICATE EMAILS IN STUDENTS:');
+    console.log('️  DUPLICATE EMAILS IN STUDENTS:');
     console.log('='.repeat(50));
     studentDuplicates.forEach(([email, studentList]) => {
-      console.log(`📧 ${email} (${studentList.length} students):`);
+      console.log(` ${email} (${studentList.length} students):`);
       studentList.forEach((student, index) => {
         console.log(`   ${index + 1}. ${student.name} | Created: ${student.createdAt.toISOString().split('T')[0]}`);
       });
       console.log('');
     });
   } else {
-    console.log('✅ No duplicate emails found in students table\n');
+    console.log(' No duplicate emails found in students table\n');
   }
   
   await prisma.$disconnect();
-  console.log('🏁 Database check completed');
+  console.log(' Database check completed');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

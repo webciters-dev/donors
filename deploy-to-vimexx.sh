@@ -2,7 +2,7 @@
 #!/bin/bash
 set -e
 
-echo "🚀 Deploying AWAKE Connect to Vimexx VPS..."
+echo " Deploying AWAKE Connect to Vimexx VPS..."
 
 # Variables - CUSTOMIZE THESE
 VPS_USER="your_vps_username"  # Your Vimexx VPS username
@@ -10,7 +10,7 @@ DOMAIN="awake.webciters.dev"
 DB_PASSWORD="your_secure_db_password_here"  # Change this!
 
 # 1. Install Node.js (if not already installed)
-echo "📦 Installing Node.js..."
+echo " Installing Node.js..."
 curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
 sudo apt-get install -y nodejs
 
@@ -26,23 +26,23 @@ sudo mkdir -p /var/www/awake
 sudo chown $USER:$USER /var/www/awake
 
 # 4. Clone or upload your project
-echo "📥 Setting up application files..."
+echo " Setting up application files..."
 cd /var/www/awake
 
 # If you have git access (recommended)
 # git clone https://github.com/webciters/awake.git .
 # OR manually upload your project files to /var/www/awake
 
-echo "⚠️  Please upload your project files to /var/www/awake/"
+echo "️  Please upload your project files to /var/www/awake/"
 echo "   You can use SCP, SFTP, or your hosting panel file manager"
 
 # 5. Install dependencies (run after uploading files)
-echo "📦 Installing application dependencies..."
+echo " Installing application dependencies..."
 # npm install
 # cd server && npm install
 
 # 6. Create environment file
-echo "⚙️ Creating environment configuration..."
+echo "️ Creating environment configuration..."
 cat > /var/www/awake/server/.env.production << EOF
 # Database Configuration
 DATABASE_URL="postgresql://awake_user:${DB_PASSWORD}@localhost:5432/awake_production"
@@ -70,7 +70,7 @@ EMAIL_PASS=RoG*741#NoR
 EMAIL_FROM=AWAKE Connect <noreply@aircrew.nl>
 EOF
 
-echo "✅ Environment file created at /var/www/awake/server/.env.production"
+echo " Environment file created at /var/www/awake/server/.env.production"
 
 # 7. Create PM2 ecosystem file
 cat > /var/www/awake/ecosystem.config.js << EOF
@@ -100,9 +100,9 @@ EOF
 mkdir -p /var/www/awake/logs
 mkdir -p /var/www/awake/server/uploads
 
-echo "🎉 Basic setup completed!"
+echo " Basic setup completed!"
 echo ""
-echo "📋 NEXT STEPS:"
+echo " NEXT STEPS:"
 echo "1. Upload your project files to /var/www/awake/"
 echo "2. Run: cd /var/www/awake && npm install"
 echo "3. Run: cd /var/www/awake/server && npm install"  
@@ -111,4 +111,4 @@ echo "5. Build frontend: cd /var/www/awake && npm run build"
 echo "6. Start backend: pm2 start ecosystem.config.js"
 echo "7. Configure Nginx to serve frontend and proxy API calls"
 echo ""
-echo "🔗 Database URL: postgresql://awake_user:${DB_PASSWORD}@localhost:5432/awake_production"
+echo " Database URL: postgresql://awake_user:${DB_PASSWORD}@localhost:5432/awake_production"

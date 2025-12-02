@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🔍 DEBUGGING STUDENT API ENDPOINT\n');
+console.log(' DEBUGGING STUDENT API ENDPOINT\n');
 
 const testEmail = 'test+1@webciters.com'; // The "Another student" from screenshot
 
@@ -19,17 +19,17 @@ try {
   });
   
   if (!user) {
-    console.log('❌ User not found:', testEmail);
+    console.log(' User not found:', testEmail);
     process.exit(1);
   }
   
-  console.log('👤 User found:');
+  console.log(' User found:');
   console.log('   Email:', user.email);
   console.log('   Student ID:', user.studentId);
   console.log('   Has student profile:', !!user.student);
   
   if (user.student) {
-    console.log('\n📚 Student Profile:');
+    console.log('\n Student Profile:');
     console.log('   Name:', user.student.name);
     console.log('   Email:', user.student.email);
     console.log('   Country:', user.student.country);
@@ -41,23 +41,23 @@ try {
   }
   
   // Now test the actual API endpoint query
-  console.log('\n🔍 Testing /api/students/me endpoint query:');
+  console.log('\n Testing /api/students/me endpoint query:');
   
   const studentData = await prisma.student.findUnique({
     where: { id: user.studentId }
   });
   
   if (studentData) {
-    console.log('✅ Student data found via API query:');
+    console.log(' Student data found via API query:');
     console.log(JSON.stringify(studentData, null, 2));
   } else {
-    console.log('❌ Student data NOT found via API query');
+    console.log(' Student data NOT found via API query');
   }
   
   await prisma.$disconnect();
-  console.log('\n✅ Debug completed');
+  console.log('\n Debug completed');
   
 } catch (error) {
-  console.error('❌ Error:', error);
+  console.error(' Error:', error);
   process.exit(1);
 }

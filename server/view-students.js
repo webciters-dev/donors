@@ -2,7 +2,7 @@ import prisma from './src/prismaClient.js';
 
 async function viewStudentsTable() {
   try {
-    console.log('📊 Students Table Data\n');
+    console.log(' Students Table Data\n');
     console.log('=' .repeat(50));
     
     // Get all students with key information
@@ -29,37 +29,37 @@ async function viewStudentsTable() {
     });
     
     if (students.length === 0) {
-      console.log('❌ No students found in the database');
+      console.log(' No students found in the database');
       return;
     }
     
-    console.log(`✅ Found ${students.length} students:\n`);
+    console.log(` Found ${students.length} students:\n`);
     
     students.forEach((student, index) => {
       console.log(`${index + 1}. ${student.name}`);
-      console.log(`   📧 Email: ${student.email}`);
-      console.log(`   🎓 University: ${student.university}`);
-      console.log(`   📚 Field: ${student.field} (${student.program})`);
-      console.log(`   📊 GPA: ${student.gpa}/4.0`);
-      console.log(`   🌍 Location: ${student.city || 'N/A'}, ${student.country}`);
-      console.log(`   💰 Need: Applications show individual amounts`);
-      console.log(`   ✅ Sponsored: ${student.sponsored ? 'Yes' : 'No'}`);
-      console.log(`   📅 Phase: ${student.studentPhase}`);
-      console.log(`   🎯 Graduation: ${student.gradYear}`);
+      console.log(`    Email: ${student.email}`);
+      console.log(`    University: ${student.university}`);
+      console.log(`    Field: ${student.field} (${student.program})`);
+      console.log(`    GPA: ${student.gpa}/4.0`);
+      console.log(`    Location: ${student.city || 'N/A'}, ${student.country}`);
+      console.log(`    Need: Applications show individual amounts`);
+      console.log(`    Sponsored: ${student.sponsored ? 'Yes' : 'No'}`);
+      console.log(`    Phase: ${student.studentPhase}`);
+      console.log(`    Graduation: ${student.gradYear}`);
       
       if (student.applications.length > 0) {
         const latestApp = student.applications[0];
-        console.log(`   📝 Latest Application: ${latestApp.status} (${latestApp.amount ? `${latestApp.currency} ${latestApp.amount.toLocaleString()}` : 'No amount specified'})`);
+        console.log(`    Latest Application: ${latestApp.status} (${latestApp.amount ? `${latestApp.currency} ${latestApp.amount.toLocaleString()}` : 'No amount specified'})`);
       }
       
-      console.log(`   📨 Messages: ${student.messages.length}`);
-      console.log(`   📄 Documents: ${student.documents.length}`);
-      console.log(`   📅 Created: ${student.createdAt.toLocaleDateString()}`);
+      console.log(`    Messages: ${student.messages.length}`);
+      console.log(`    Documents: ${student.documents.length}`);
+      console.log(`    Created: ${student.createdAt.toLocaleDateString()}`);
       console.log('-'.repeat(40));
     });
     
     // Summary statistics
-    console.log('\n📈 Summary Statistics:');
+    console.log('\n Summary Statistics:');
     console.log('=' .repeat(30));
     console.log(`Total Students: ${students.length}`);
     console.log(`Sponsored: ${students.filter(s => s.sponsored).length}`);
@@ -75,7 +75,7 @@ async function viewStudentsTable() {
     console.log(`Average GPA: ${avgGPA.toFixed(2)}`);
     
   } catch (error) {
-    console.error('❌ Error viewing students table:', error);
+    console.error(' Error viewing students table:', error);
   } finally {
     await prisma.$disconnect();
   }

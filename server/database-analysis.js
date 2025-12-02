@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 async function fullDatabaseAnalysis() {
   const prisma = new PrismaClient();
   try {
-    console.log('🗄️  COMPLETE DATABASE ANALYSIS');
+    console.log('️  COMPLETE DATABASE ANALYSIS');
     console.log('================================\n');
 
     // 1. Check all tables for record counts
@@ -12,7 +12,7 @@ async function fullDatabaseAnalysis() {
     const donors = await prisma.donor.count();
     const applications = await prisma.application.count();
     
-    console.log('📊 TABLE RECORD COUNTS:');
+    console.log(' TABLE RECORD COUNTS:');
     console.log(`Users: ${users}`);
     console.log(`Students: ${students}`);
     console.log(`Donors: ${donors}`);
@@ -23,10 +23,10 @@ async function fullDatabaseAnalysis() {
       orderBy: { createdAt: 'asc' }
     });
     
-    console.log('👥 ALL USERS IN DATABASE:');
+    console.log(' ALL USERS IN DATABASE:');
     console.log('==========================');
     if (allUsers.length === 0) {
-      console.log('❌ No users found in database\n');
+      console.log(' No users found in database\n');
     } else {
       allUsers.forEach((user, i) => {
         console.log(`${i+1}. ID: ${user.id}`);
@@ -40,7 +40,7 @@ async function fullDatabaseAnalysis() {
     }
 
     // 3. Check for pattern matches
-    console.log('🔍 SEARCHING FOR PATTERNS:');
+    console.log(' SEARCHING FOR PATTERNS:');
     console.log('===========================');
     const testUsers = allUsers.filter(u => u.email.includes('test+'));
     console.log(`Users with "test+" pattern: ${testUsers.length}`);
@@ -58,12 +58,12 @@ async function fullDatabaseAnalysis() {
     recentUsers.forEach(u => console.log(`  - ${u.email} (${u.createdAt})`));
 
     // 5. Database connection info
-    console.log('\n🔧 DATABASE CONNECTION INFO:');
+    console.log('\n DATABASE CONNECTION INFO:');
     console.log('==============================');
     console.log('Connected to:', process.env.DATABASE_URL ? 'Environment variable DB' : 'Default/Local DB');
     
   } catch (error) {
-    console.error('❌ Error analyzing database:', error);
+    console.error(' Error analyzing database:', error);
   } finally {
     await prisma.$disconnect();
   }

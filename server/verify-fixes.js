@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function verifyFixes() {
-  console.log('🔍 Verifying University Mapping Fixes');
+  console.log(' Verifying University Mapping Fixes');
   console.log('====================================');
 
   // Check for Mehran universities
@@ -16,7 +16,7 @@ async function verifyFixes() {
     }
   });
 
-  console.log('\n🏛️ Mehran Universities:');
+  console.log('\n️ Mehran Universities:');
   mehranUnis.forEach((uni, index) => {
     console.log(`   ${index + 1}. ${uni.name} (ID: ${uni.id})`);
   });
@@ -30,7 +30,7 @@ async function verifyFixes() {
     }
   });
 
-  console.log('\n🚀 Space Technology Universities:');
+  console.log('\n Space Technology Universities:');
   spaceUnis.forEach((uni, index) => {
     console.log(`   ${index + 1}. ${uni.name} (ID: ${uni.id})`);
   });
@@ -44,13 +44,13 @@ async function verifyFixes() {
     }
   });
 
-  console.log('\n🔧 UET Universities:');
+  console.log('\n UET Universities:');
   uetUnis.forEach((uni, index) => {
     console.log(`   ${index + 1}. ${uni.name} (ID: ${uni.id})`);
   });
 
   // Check programs for each university
-  console.log('\n📊 Program counts for fixed universities:');
+  console.log('\n Program counts for fixed universities:');
   
   for (const uni of [...mehranUnis, ...spaceUnis]) {
     const programCount = await prisma.universityProgram.count({

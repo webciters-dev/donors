@@ -7,6 +7,7 @@ import StudentProfile from "@/pages/StudentProfile";
 // ADD THESE NEW IMPORTS
 import StudentRegister from "@/pages/StudentRegister";
 import DonorRegister from "@/pages/DonorRegister";
+import { ThankYou } from "@/pages/ThankYou";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -252,6 +253,14 @@ function Shell() {
               element={
                 <ProtectedRoute roles={["STUDENT"]}>
                   <StudentProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/thank-you"
+              element={
+                <ProtectedRoute roles={["STUDENT"]}>
+                  <ThankYou />
                 </ProtectedRoute>
               }
             />

@@ -14,12 +14,12 @@ async function resetSuperAdminPassword() {
       data: { passwordHash: hashedPassword }
     });
 
-    console.log('✅ Super Admin password reset successfully!');
+    console.log(' Super Admin password reset successfully!');
     console.log('Email:', updatedUser.email);
     console.log('Password: RoG*741#SuP');
     console.log('Role:', updatedUser.role);
   } catch (error) {
-    console.error('❌ Failed to reset password:', error.message);
+    console.error(' Failed to reset password:', error.message);
   } finally {
     await prisma.$disconnect();
   }

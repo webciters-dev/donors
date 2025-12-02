@@ -3,7 +3,7 @@ import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { optionalAuth } from "../middleware/auth.js";
 import { buildSnapshot } from "../lib/fx.js";
-import { sendApplicationConfirmationEmail, sendApplicationApprovedStudentEmail, sendApplicationRejectedStudentEmail } from "../lib/emailService.js";
+import { sendApplicationConfirmationEmail, sendApplicationApprovedStudentEmail, sendApplicationRejectedStudentEmail, sendApplicationSubmissionNotificationEmail } from "../lib/emailService.js";
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -64,7 +64,11 @@ router.get("/", optionalAuth, async (req, res) => {
               dateOfBirth: true,
               guardianName: true,
               guardianCnic: true,
+              guardian2Name: true,           // ADDED: Second guardian name
+              guardian2Cnic: true,           // ADDED: Second guardian CNIC
               phone: true,
+              guardianPhone1: true,          // ADDED: First guardian phone
+              guardianPhone2: true,
               address: true,
               personalIntroduction: true,
               // Enhanced details for donors
@@ -144,6 +148,54 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Currency is required" });
     }
 
+    // Check if application already exists for this student and term
+    const existingApp = await prisma.application.findFirst({
+      where: {
+        studentId: studentId,
+        term: String(term)
+      }
+    });
+
+    if (existingApp) {
+      console.log(` Application already exists for student ${studentId} term ${term}. Updating existing...`);
+      
+      const data = {
+        term: String(term),
+        notes: notes ?? null,
+        currency: currency,
+        amount: parseInt(amount, 10),
+        universityFee:
+          universityFee === undefined || universityFee === null || universityFee === ""
+            ? null
+            : parseInt(universityFee, 10),
+        livingExpenses:
+          livingExpenses === undefined || livingExpenses === null || livingExpenses === ""
+            ? null
+            : parseInt(livingExpenses, 10),
+        totalExpense:
+          totalExpense === undefined || totalExpense === null || totalExpense === ""
+            ? null
+            : parseInt(totalExpense, 10),
+        scholarshipAmount:
+          scholarshipAmount === undefined || scholarshipAmount === null || scholarshipAmount === ""
+            ? null
+            : parseInt(scholarshipAmount, 10),
+      };
+
+      const snap = await buildSnapshot(data.amount, data.currency);
+      
+      const updated = await prisma.application.update({
+        where: { id: existingApp.id },
+        data: { ...data, ...snap },
+        include: {
+          student: { select: { name: true, email: true, university: true, program: true } },
+        },
+      });
+
+      console.log(` Application ${existingApp.id} updated successfully`);
+      return res.status(200).json(updated);
+    }
+
     const data = {
       studentId,
       term: String(term),
@@ -195,7 +247,7 @@ router.post("/", async (req, res) => {
         }
       );
     } catch (emailError) {
-      console.error("❌ Failed to send application confirmation email:", emailError);
+      console.error(" Failed to send application confirmation email:", emailError);
       // Don't fail the request if email fails
     }
 
@@ -254,7 +306,7 @@ router.patch("/:id", async (req, res) => {
 
       // If force approve is used, log it for audit trail
       if (forceApprove && missingDocs.length > 0) {
-        console.log(`⚠️ FORCE APPROVE: Application ${id} approved despite missing documents: ${missingDocs.join(', ')}`);
+        console.log(`️ FORCE APPROVE: Application ${id} approved despite missing documents: ${missingDocs.join(', ')}`);
       }
     }
 
@@ -287,18 +339,18 @@ router.patch("/:id", async (req, res) => {
       include: { student: { select: { id: true, name: true, email: true, university: true, program: true } } },
     });
 
-    // 🎓 STUDENT PHASE TRANSITION: When application is approved, transition student to ACTIVE phase
+    //  STUDENT PHASE TRANSITION: When application is approved, transition student to ACTIVE phase
     if (status === "APPROVED" && updated.student?.id) {
       try {
         await prisma.student.update({
           where: { id: updated.student.id },
           data: { 
             studentPhase: 'ACTIVE',
-            // 🔥 FIX: Do NOT set sponsored=true on approval - only when donor actually sponsors
+            //  FIX: Do NOT set sponsored=true on approval - only when donor actually sponsors
             // sponsored field should remain false until actual sponsorship occurs
           }
         });
-        console.log(`🎓 Student ${updated.student.name} transitioned to ACTIVE phase (ready for marketplace)`);
+        console.log(` Student ${updated.student.name} transitioned to ACTIVE phase (ready for marketplace)`);
       } catch (phaseError) {
         // Log error but don't fail the application approval
         console.error('Phase transition error:', phaseError);
@@ -308,7 +360,39 @@ router.patch("/:id", async (req, res) => {
     // Send application status change emails (async, don't block response)
     if (status && updated.student) {
       try {
-        if (status === "APPROVED") {
+        if (status === "PENDING") {
+          //  Send confirmation to student when they submit for review
+          sendApplicationConfirmationEmail({
+            email: updated.student.email,
+            name: updated.student.name,
+            applicationId: updated.id,
+            term: updated.term,
+            amount: updated.amount,
+            currency: updated.currency,
+            university: updated.student.university,
+            program: updated.student.program
+          }).catch(emailError => {
+            console.error(' Failed to send submission confirmation email to student:', emailError);
+          });
+
+          //  Send notification to admin when student submits for review
+          // Get admin email from environment or use default
+          const adminEmail = process.env.ADMIN_EMAIL || 'admin@aircrew.nl';
+          if (adminEmail && adminEmail !== 'admin@aircrew.nl') {
+            sendApplicationSubmissionNotificationEmail({
+              adminEmail: adminEmail,
+              studentName: updated.student.name,
+              studentEmail: updated.student.email,
+              applicationId: updated.id,
+              university: updated.student.university,
+              program: updated.student.program,
+              amount: updated.amount,
+              currency: updated.currency
+            }).catch(emailError => {
+              console.error(' Failed to send admin notification email:', emailError);
+            });
+          }
+        } else if (status === "APPROVED") {
           sendApplicationApprovedStudentEmail({
             email: updated.student.email,
             studentName: updated.student.name,
@@ -394,7 +478,7 @@ router.patch("/:id/status", async (req, res) => {
 
       // If force approve is used, log it for audit trail
       if (forceApprove && missingDocs.length > 0) {
-        console.log(`⚠️ FORCE APPROVE: Application ${req.params.id} approved despite missing documents: ${missingDocs.join(', ')}`);
+        console.log(`️ FORCE APPROVE: Application ${req.params.id} approved despite missing documents: ${missingDocs.join(', ')}`);
       }
     }
 
@@ -420,7 +504,7 @@ router.patch("/:id/status", async (req, res) => {
     const statusMessages = {
       'PENDING': 'Your application is under initial review.',
       'PROCESSING': 'Your application is being processed by our team.',
-      'APPROVED': '🎉 Congratulations! Your application has been approved.',
+      'APPROVED': ' Congratulations! Your application has been approved.',
       'REJECTED': 'We regret to inform you that your application has been rejected.'
     };
 

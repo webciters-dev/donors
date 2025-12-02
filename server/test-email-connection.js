@@ -30,7 +30,7 @@ console.log('\n=== TESTING CONNECTION ===');
 try {
   // Test connection
   await transporter.verify();
-  console.log('✅ SMTP Connection successful!');
+  console.log(' SMTP Connection successful!');
   
   // Try sending a test email
   console.log('\n=== SENDING TEST EMAIL ===');
@@ -42,12 +42,12 @@ try {
     html: '<p>This is a test email to verify the email service is working.</p>'
   });
   
-  console.log('✅ Test email sent successfully!');
+  console.log(' Test email sent successfully!');
   console.log('Message ID:', info.messageId);
   console.log('Response:', info.response);
   
 } catch (error) {
-  console.log('❌ Email test failed:');
+  console.log(' Email test failed:');
   console.log('Error Code:', error.code);
   console.log('Error Message:', error.message);
   console.log('Full Error:', error);

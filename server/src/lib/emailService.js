@@ -245,6 +245,146 @@ export async function sendCaseWorkerAssignmentEmail({
   }
 }
 
+export async function sendStudentCaseWorkerAssignedEmail({
+  email,
+  studentName,
+  caseWorkerName,
+  applicationId,
+  message
+}) {
+  try {
+    const transporter = createTransporter();
+    const loginUrl = process.env.FRONTEND_URL || 'http://localhost:8080';
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@awakeconnect.org>',
+      to: email,
+      subject: ' Case Worker Assigned to Your Application - AWAKE Connect',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #059669; margin: 0; font-size: 28px;">AWAKE Connect</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
+            </div>
+            
+            <!-- Main Content -->
+            <div style="margin-bottom: 30px;">
+              <h2 style="color: #111827; margin-bottom: 15px;"> Case Worker Assigned to Your Application</h2>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                Dear ${studentName.split(' ')[0]},
+              </p>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                Great news! A dedicated case worker has been assigned to review your scholarship application. 
+                They will verify your documents and provide guidance throughout the process.
+              </p>
+              
+              <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #065f46; margin-top: 0;"> Your Case Worker</h3>
+                <div style="background-color: white; padding: 15px; border-radius: 6px; border-left: 4px solid #10b981;">
+                  <p style="margin: 8px 0;"><strong>Name:</strong> ${caseWorkerName}</p>
+                  <p style="margin: 8px 0;"><strong>Role:</strong> Application Reviewer</p>
+                  <p style="margin: 8px 0;"><strong>Application ID:</strong> ${applicationId.slice(-8)}</p>
+                </div>
+              </div>
+              
+              <div style="background-color: #dbeafe; border: 1px solid #3b82f6; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #1e40af; margin-top: 0;"> What to Expect</h3>
+                <ul style="color: #1e3a8a; margin: 10px 0; padding-left: 20px;">
+                  <li><strong>Document Verification:</strong> Your case worker will review all submitted documents</li>
+                  <li><strong>Possible Requests:</strong> You may be asked to upload additional documents if needed</li>
+                  <li><strong>Regular Updates:</strong> You'll receive messages if we need more information</li>
+                  <li><strong>Transparent Process:</strong> You'll be informed at each stage of review</li>
+                </ul>
+              </div>
+              
+              ${message ? `
+              <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #0369a1; margin-top: 0;"> Message from Case Worker</h3>
+                <p style="color: #374151; margin: 0; line-height: 1.6;">
+                  "${message}"
+                </p>
+              </div>
+              ` : ''}
+              
+              <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                <h3 style="color: #92400e; margin-top: 0;">⏱️ Next Steps</h3>
+                <ol style="color: #78350f; margin: 10px 0; padding-left: 20px;">
+                  <li>Log in to your AWAKE Connect account</li>
+                  <li>Review your application status</li>
+                  <li>Check messages for any document requests from your case worker</li>
+                  <li>Upload any additional documents if requested</li>
+                  <li>Respond promptly to keep your application moving forward</li>
+                </ol>
+              </div>
+              
+              <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
+                Your case worker is here to help you succeed. If you have questions about your application, 
+                please check the messages section in your dashboard or contact our support team.
+              </p>
+            </div>
+            
+            <!-- Action Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" 
+                 style="background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                View Application
+              </a>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                If you have any questions about your case worker or application, please contact our support team.<br>
+                <a href="mailto:support@awakeconnect.org" style="color: #2563eb;">support@awakeconnect.org</a>
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                AWAKE Connect - Empowering Students Through Education
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    
+    console.log(' Student Case Worker Assignment Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return {
+      success: true,
+      messageId: info.messageId
+    };
+    
+  } catch (error) {
+    console.error(' Failed to send student case worker assignment email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * RESERVED FOR FUTURE USE - Generic student notification email
+ * 
+ * Purpose: Send generic messages/notifications to students
+ * Usage: Can be used by messaging system or admin notifications
+ * 
+ * Parameters:
+ * - email: Student email
+ * - name: Student name
+ * - message: Custom message text
+ * - applicationId: Related application ID
+ * 
+ * Example use case: Admin sending important announcements to students
+ * 
+ * NOTE: Currently not called anywhere in the codebase (reserved for future features)
+ * Keep this function for future expansion of notification system
+ */
 export async function sendStudentNotificationEmail({
   email,
   name,
@@ -662,13 +802,13 @@ export async function sendBoardMemberWelcomeEmail({ email, name, title }) {
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Board Member Welcome Email sent successfully to:', email);
+    console.log(' Board Member Welcome Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send board member welcome email:', error);
+    console.error(' Failed to send board member welcome email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -964,7 +1104,7 @@ export async function sendInterviewScheduledStudentEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: '🎯 Interview Scheduled - AWAKE Connect Board Review',
+      subject: ' Interview Scheduled - AWAKE Connect Board Review',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -977,7 +1117,7 @@ export async function sendInterviewScheduledStudentEmail({
             
             <!-- Main Content -->
             <div style="margin-bottom: 30px;">
-              <h2 style="color: #111827; margin-bottom: 15px;">🎯 Interview Scheduled - Board Review</h2>
+              <h2 style="color: #111827; margin-bottom: 15px;"> Interview Scheduled - Board Review</h2>
               
               <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
                 Dear ${name},
@@ -989,16 +1129,16 @@ export async function sendInterviewScheduledStudentEmail({
               </p>
               
               <div style="background-color: #dbeafe; border: 2px solid #3b82f6; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #1e40af; margin-top: 0;">📅 Interview Details</h3>
+                <h3 style="color: #1e40af; margin-top: 0;"> Interview Details</h3>
                 <div style="color: #374151; margin: 10px 0;">
-                  <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${scheduledDate}</p>
+                  <p style="margin: 8px 0;"><strong> Date:</strong> ${scheduledDate}</p>
                   <p style="margin: 8px 0;"><strong>⏰ Time:</strong> ${scheduledTime}</p>
                   <p style="margin: 8px 0;"><strong>🆔 Interview ID:</strong> ${interviewId.slice(-8)}</p>
-                  <p style="margin: 8px 0;"><strong>📋 Application ID:</strong> ${applicationId.slice(-8)}</p>
+                  <p style="margin: 8px 0;"><strong> Application ID:</strong> ${applicationId.slice(-8)}</p>
                 </div>
                 ${meetingLink ? `
                 <div style="background-color: white; padding: 15px; border-radius: 4px; margin: 15px 0;">
-                  <p style="margin: 5px 0; color: #1e40af;"><strong>🔗 Meeting Link:</strong></p>
+                  <p style="margin: 5px 0; color: #1e40af;"><strong> Meeting Link:</strong></p>
                   <a href="${meetingLink}" style="color: #2563eb; word-break: break-all; font-family: monospace;">${meetingLink}</a>
                 </div>
                 ` : ''}
@@ -1006,7 +1146,7 @@ export async function sendInterviewScheduledStudentEmail({
               
               ${boardMembers && boardMembers.length > 0 ? `
               <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #0369a1; margin-top: 0;">👥 Interview Panel</h3>
+                <h3 style="color: #0369a1; margin-top: 0;"> Interview Panel</h3>
                 <p style="color: #374151; margin-bottom: 10px;">You will be interviewed by:</p>
                 <ul style="color: #374151; margin: 10px 0; padding-left: 20px;">
                   ${boardMembers.map(member => `<li style="margin: 5px 0;"><strong>${member.name}</strong> - ${member.title || 'Board Member'}</li>`).join('')}
@@ -1016,13 +1156,13 @@ export async function sendInterviewScheduledStudentEmail({
               
               ${notes ? `
               <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #92400e; margin-top: 0;">📝 Additional Notes</h3>
+                <h3 style="color: #92400e; margin-top: 0;"> Additional Notes</h3>
                 <p style="color: #374151; margin: 0;">${notes}</p>
               </div>
               ` : ''}
               
               <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #065f46; margin-top: 0;">💡 Interview Tips</h3>
+                <h3 style="color: #065f46; margin-top: 0;"> Interview Tips</h3>
                 <ul style="color: #374151; margin: 10px 0; padding-left: 20px;">
                   <li>Be ready 5-10 minutes before the scheduled time</li>
                   <li>Prepare to discuss your educational goals and aspirations</li>
@@ -1038,12 +1178,12 @@ export async function sendInterviewScheduledStudentEmail({
               ${meetingLink ? `
               <a href="${meetingLink}" 
                  style="background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                🎥 Join Meeting
+                 Join Meeting
               </a>
               ` : ''}
               <a href="${loginUrl}" 
                  style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                📊 View Application
+                 View Application
               </a>
             </div>
             
@@ -1064,13 +1204,13 @@ export async function sendInterviewScheduledStudentEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Interview Scheduled (Student) Email sent successfully to:', email);
+    console.log(' Interview Scheduled (Student) Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send interview scheduled (student) email:', error);
+    console.error(' Failed to send interview scheduled (student) email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1096,7 +1236,7 @@ export async function sendInterviewScheduledBoardMemberEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: '🎯 Board Interview Assignment - AWAKE Connect',
+      subject: ' Board Interview Assignment - AWAKE Connect',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -1109,7 +1249,7 @@ export async function sendInterviewScheduledBoardMemberEmail({
             
             <!-- Main Content -->
             <div style="margin-bottom: 30px;">
-              <h2 style="color: #111827; margin-bottom: 15px;">🎯 Board Interview Assignment</h2>
+              <h2 style="color: #111827; margin-bottom: 15px;"> Board Interview Assignment</h2>
               
               <p style="color: #374151; line-height: 1.6; margin-bottom: 15px;">
                 Dear ${name},
@@ -1121,18 +1261,18 @@ export async function sendInterviewScheduledBoardMemberEmail({
               </p>
               
               <div style="background-color: #dbeafe; border: 2px solid #3b82f6; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #1e40af; margin-top: 0;">📅 Interview Details</h3>
+                <h3 style="color: #1e40af; margin-top: 0;"> Interview Details</h3>
                 <div style="color: #374151; margin: 10px 0;">
-                  <p style="margin: 8px 0;"><strong>👤 Student:</strong> ${studentName}</p>
-                  <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${scheduledDate}</p>
+                  <p style="margin: 8px 0;"><strong> Student:</strong> ${studentName}</p>
+                  <p style="margin: 8px 0;"><strong> Date:</strong> ${scheduledDate}</p>
                   <p style="margin: 8px 0;"><strong>⏰ Time:</strong> ${scheduledTime}</p>
                   <p style="margin: 8px 0;"><strong>🆔 Interview ID:</strong> ${interviewId.slice(-8)}</p>
-                  <p style="margin: 8px 0;"><strong>📋 Application ID:</strong> ${applicationId.slice(-8)}</p>
-                  ${isChairperson ? '<p style="margin: 8px 0; color: #059669;"><strong>👑 Role: Chairperson</strong></p>' : ''}
+                  <p style="margin: 8px 0;"><strong> Application ID:</strong> ${applicationId.slice(-8)}</p>
+                  ${isChairperson ? '<p style="margin: 8px 0; color: #059669;"><strong> Role: Chairperson</strong></p>' : ''}
                 </div>
                 ${meetingLink ? `
                 <div style="background-color: white; padding: 15px; border-radius: 4px; margin: 15px 0;">
-                  <p style="margin: 5px 0; color: #1e40af;"><strong>🔗 Meeting Link:</strong></p>
+                  <p style="margin: 5px 0; color: #1e40af;"><strong> Meeting Link:</strong></p>
                   <a href="${meetingLink}" style="color: #2563eb; word-break: break-all; font-family: monospace;">${meetingLink}</a>
                 </div>
                 ` : ''}
@@ -1140,13 +1280,13 @@ export async function sendInterviewScheduledBoardMemberEmail({
               
               ${notes ? `
               <div style="background-color: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #92400e; margin-top: 0;">📝 Interview Notes</h3>
+                <h3 style="color: #92400e; margin-top: 0;"> Interview Notes</h3>
                 <p style="color: #374151; margin: 0;">${notes}</p>
               </div>
               ` : ''}
               
               <div style="background-color: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                <h3 style="color: #0369a1; margin-top: 0;">📋 Your Responsibilities</h3>
+                <h3 style="color: #0369a1; margin-top: 0;"> Your Responsibilities</h3>
                 <ul style="color: #374151; margin: 10px 0; padding-left: 20px;">
                   <li>Review the student's application beforehand</li>
                   <li>Attend the interview at the scheduled time</li>
@@ -1163,12 +1303,12 @@ export async function sendInterviewScheduledBoardMemberEmail({
               ${meetingLink ? `
               <a href="${meetingLink}" 
                  style="background-color: #059669; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                🎥 Join Interview
+                 Join Interview
               </a>
               ` : ''}
               <a href="${loginUrl}/admin" 
                  style="background-color: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                📊 Review Application
+                 Review Application
               </a>
             </div>
             
@@ -1189,13 +1329,13 @@ export async function sendInterviewScheduledBoardMemberEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Interview Scheduled (Board Member) Email sent successfully to:', email);
+    console.log(' Interview Scheduled (Board Member) Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send interview scheduled (board member) email:', error);
+    console.error(' Failed to send interview scheduled (board member) email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1229,20 +1369,20 @@ export async function sendAdminFieldReviewCompletedEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: `🔔 Field Review Completed - ${studentName} (${fielderRecommendation || 'Pending'})`,
+      subject: ` Field Review Completed - ${studentName} (${fielderRecommendation || 'Pending'})`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #111827; margin: 0; font-size: 28px;">🏠 Field Review Complete</h1>
+              <h1 style="color: #111827; margin: 0; font-size: 28px;"> Field Review Complete</h1>
               <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
             </div>
             
             <!-- Alert Section -->
             <div style="background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">📋 Review Ready for Admin Decision</h3>
+              <h3 style="color: #1e40af; margin-top: 0;"> Review Ready for Admin Decision</h3>
               <p style="color: #1e3a8a; margin: 5px 0;">
                 Case worker <strong>${caseWorkerName}</strong> has completed field verification for student <strong>${studentName}</strong>.
               </p>
@@ -1260,7 +1400,7 @@ export async function sendAdminFieldReviewCompletedEmail({
             
             <!-- Verification Results -->
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #0369a1; margin-top: 0;">📊 Verification Results</h3>
+              <h3 style="color: #0369a1; margin-top: 0;"> Verification Results</h3>
               
               ${fielderRecommendation ? `
               <div style="margin: 15px 0;">
@@ -1282,7 +1422,7 @@ export async function sendAdminFieldReviewCompletedEmail({
               
               ${adminNotesRequired ? `
               <div style="background-color: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 6px; margin: 15px 0;">
-                <div style="color: #92400e; font-weight: bold; margin-bottom: 5px;">⚠️ Admin Attention Required:</div>
+                <div style="color: #92400e; font-weight: bold; margin-bottom: 5px;">️ Admin Attention Required:</div>
                 <div style="color: #78350f;">${adminNotesRequired}</div>
               </div>
               ` : ''}
@@ -1290,7 +1430,7 @@ export async function sendAdminFieldReviewCompletedEmail({
             
             <!-- Action Required -->
             <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #dc2626; margin-top: 0;">🎯 Action Required</h3>
+              <h3 style="color: #dc2626; margin-top: 0;"> Action Required</h3>
               <p style="color: #991b1b; margin: 0;">
                 Please review the case worker's assessment and make a final decision on this application.
               </p>
@@ -1300,7 +1440,7 @@ export async function sendAdminFieldReviewCompletedEmail({
             <div style="text-align: center; margin: 30px 0;">
               <a href="${reviewUrl}" 
                  style="background-color: #059669; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
-                📋 Review Application Now
+                 Review Application Now
               </a>
             </div>
             
@@ -1333,13 +1473,13 @@ export async function sendAdminFieldReviewCompletedEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Admin Field Review Completed Email sent successfully to:', email);
+    console.log(' Admin Field Review Completed Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send admin field review completed email:', error);
+    console.error(' Failed to send admin field review completed email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1365,20 +1505,20 @@ export async function sendDonorPaymentConfirmationEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: `✅ Payment Confirmed - Supporting ${studentName} (${formattedAmount})`,
+      subject: ` Payment Confirmed - Supporting ${studentName} (${formattedAmount})`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #111827; margin: 0; font-size: 28px;">💝 Payment Confirmed</h1>
+              <h1 style="color: #111827; margin: 0; font-size: 28px;"> Payment Confirmed</h1>
               <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
             </div>
             
             <!-- Success Message -->
             <div style="background-color: #d1fae5; border-left: 4px solid #10b981; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #065f46; margin-top: 0;">🎉 Thank You for Your Generosity!</h3>
+              <h3 style="color: #065f46; margin-top: 0;"> Thank You for Your Generosity!</h3>
               <p style="color: #047857; margin: 5px 0;">
                 Your payment has been successfully processed. You are now officially supporting <strong>${studentName}</strong>'s educational journey!
               </p>
@@ -1386,7 +1526,7 @@ export async function sendDonorPaymentConfirmationEmail({
             
             <!-- Payment Details -->
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">💳 Payment Details</h3>
+              <h3 style="color: #374151; margin-top: 0;"> Payment Details</h3>
               <div style="border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden;">
                 <div style="background-color: #f3f4f6; padding: 10px 15px; border-bottom: 1px solid #e5e7eb;">
                   <strong>Transaction Information</strong>
@@ -1404,7 +1544,7 @@ export async function sendDonorPaymentConfirmationEmail({
             
             <!-- Impact Message -->
             <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #5b21b6; margin-top: 0;">📚 Your Impact</h3>
+              <h3 style="color: #5b21b6; margin-top: 0;"> Your Impact</h3>
               <p style="color: #6b21a8;">
                 Your generous contribution of <strong>${formattedAmount}</strong> will directly support ${studentName}'s education. 
                 This sponsorship helps cover tuition fees, books, and living expenses, making higher education accessible.
@@ -1416,7 +1556,7 @@ export async function sendDonorPaymentConfirmationEmail({
             
             <!-- Next Steps -->
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #92400e; margin-top: 0;">📋 What Happens Next</h3>
+              <h3 style="color: #92400e; margin-top: 0;"> What Happens Next</h3>
               <ol style="color: #78350f; margin: 10px 0; padding-left: 20px;">
                 <li>Your payment is being processed and verified</li>
                 <li>${studentName} will be notified about your sponsorship</li>
@@ -1430,11 +1570,11 @@ export async function sendDonorPaymentConfirmationEmail({
             <div style="text-align: center; margin: 30px 0;">
               <a href="${loginUrl}/donor" 
                  style="background-color: #059669; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                📊 View Dashboard
+                 View Dashboard
               </a>
               <a href="${loginUrl}/donor/students" 
                  style="background-color: #3b82f6; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px;">
-                👩‍🎓 View Student Profile
+                ‍ View Student Profile
               </a>
             </div>
             
@@ -1463,13 +1603,13 @@ export async function sendDonorPaymentConfirmationEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Donor Payment Confirmation Email sent successfully to:', email);
+    console.log(' Donor Payment Confirmation Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send donor payment confirmation email:', error);
+    console.error(' Failed to send donor payment confirmation email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1494,26 +1634,26 @@ export async function sendStudentSponsorshipNotificationEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: `🎉 Great News! You Have a New Sponsor - ${formattedAmount} Sponsorship`,
+      subject: ` Great News! You Have a New Sponsor - ${formattedAmount} Sponsorship`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #111827; margin: 0; font-size: 32px;">🎉 Congratulations!</h1>
+              <h1 style="color: #111827; margin: 0; font-size: 32px;"> Congratulations!</h1>
               <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
             </div>
             
             <!-- Celebration Banner -->
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
-              <h2 style="margin: 0; font-size: 24px;">🌟 You Have Been Sponsored! 🌟</h2>
+              <h2 style="margin: 0; font-size: 24px;"> You Have Been Sponsored! </h2>
               <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">Your educational journey just got the support it deserves</p>
             </div>
             
             <!-- Sponsor Information -->
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6;">
-              <h3 style="color: #1e40af; margin-top: 0;">💝 Sponsor Information</h3>
+              <h3 style="color: #1e40af; margin-top: 0;"> Sponsor Information</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px;">
                 <p style="margin: 8px 0;"><strong>Sponsor Name:</strong> ${donorName}</p>
                 <p style="margin: 8px 0;"><strong>Sponsorship Amount:</strong> <span style="color: #059669; font-size: 18px; font-weight: bold;">${formattedAmount}</span></p>
@@ -1525,7 +1665,7 @@ export async function sendStudentSponsorshipNotificationEmail({
             ${message ? `
             <!-- Personal Message -->
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #92400e; margin-top: 0;">💌 Message from Your Sponsor</h3>
+              <h3 style="color: #92400e; margin-top: 0;"> Message from Your Sponsor</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px; font-style: italic; color: #374151;">
                 "${message}"
               </div>
@@ -1534,7 +1674,7 @@ export async function sendStudentSponsorshipNotificationEmail({
             
             <!-- What This Means -->
             <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #065f46; margin-top: 0;">📚 What This Means for You</h3>
+              <h3 style="color: #065f46; margin-top: 0;"> What This Means for You</h3>
               <ul style="color: #047857; margin: 10px 0; padding-left: 20px;">
                 <li><strong>Financial Support:</strong> ${formattedAmount} towards your educational expenses</li>
                 <li><strong>Mentorship Opportunity:</strong> Connect directly with your sponsor for guidance</li>
@@ -1546,7 +1686,7 @@ export async function sendStudentSponsorshipNotificationEmail({
             
             <!-- Next Steps -->
             <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #5b21b6; margin-top: 0;">🚀 Your Next Steps</h3>
+              <h3 style="color: #5b21b6; margin-top: 0;"> Your Next Steps</h3>
               <ol style="color: #6b21a8; margin: 10px 0; padding-left: 20px;">
                 <li>Log in to your dashboard to see sponsor details</li>
                 <li>Send a thank you message to your sponsor</li>
@@ -1560,17 +1700,17 @@ export async function sendStudentSponsorshipNotificationEmail({
             <div style="text-align: center; margin: 30px 0;">
               <a href="${loginUrl}/student" 
                  style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                📊 View Dashboard
+                 View Dashboard
               </a>
               <a href="${loginUrl}/student/messages" 
                  style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                💬 Thank Your Sponsor
+                 Thank Your Sponsor
               </a>
             </div>
             
             <!-- Responsibilities -->
             <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #dc2626; margin-top: 0;">📋 Your Responsibilities</h3>
+              <h3 style="color: #dc2626; margin-top: 0;"> Your Responsibilities</h3>
               <ul style="color: #991b1b; margin: 10px 0; padding-left: 20px;">
                 <li>Maintain good academic standing</li>
                 <li>Provide regular progress updates</li>
@@ -1582,7 +1722,7 @@ export async function sendStudentSponsorshipNotificationEmail({
             
             <!-- Support Information -->
             <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <h4 style="color: #374151; margin-top: 0;">📞 Need Help?</h4>
+              <h4 style="color: #374151; margin-top: 0;"> Need Help?</h4>
               <p style="color: #4b5563; margin: 0; font-size: 14px;">
                 If you have any questions about your sponsorship or need assistance, please contact our support team:
                 <br><a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
@@ -1606,13 +1746,13 @@ export async function sendStudentSponsorshipNotificationEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Student Sponsorship Notification Email sent successfully to:', email);
+    console.log(' Student Sponsorship Notification Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send student sponsorship notification email:', error);
+    console.error(' Failed to send student sponsorship notification email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1637,26 +1777,26 @@ export async function sendApplicationApprovedStudentEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: `🎉 Application APPROVED! Ready for Sponsorship - ${formattedAmount}`,
+      subject: ` Application APPROVED! Ready for Sponsorship - ${formattedAmount}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #111827; margin: 0; font-size: 32px;">🎉 APPROVED!</h1>
+              <h1 style="color: #111827; margin: 0; font-size: 32px;"> APPROVED!</h1>
               <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
             </div>
             
             <!-- Success Banner -->
             <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 25px; border-radius: 10px; text-align: center; margin-bottom: 25px;">
-              <h2 style="margin: 0; font-size: 24px;">✅ Your Application Has Been Approved!</h2>
+              <h2 style="margin: 0; font-size: 24px;"> Your Application Has Been Approved!</h2>
               <p style="margin: 10px 0 0 0; opacity: 0.9; font-size: 16px;">You're now eligible for sponsorship matching</p>
             </div>
             
             <!-- Application Details -->
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6;">
-              <h3 style="color: #1e40af; margin-top: 0;">📋 Application Details</h3>
+              <h3 style="color: #1e40af; margin-top: 0;"> Application Details</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px;">
                 <p style="margin: 8px 0;"><strong>Student:</strong> ${studentName}</p>
                 <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
@@ -1669,7 +1809,7 @@ export async function sendApplicationApprovedStudentEmail({
             
             <!-- What Happens Next -->
             <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #065f46; margin-top: 0;">🚀 What Happens Next</h3>
+              <h3 style="color: #065f46; margin-top: 0;"> What Happens Next</h3>
               <ol style="color: #047857; margin: 10px 0; padding-left: 20px;">
                 <li><strong>Marketplace Activation:</strong> Your profile is now live for potential sponsors to view</li>
                 <li><strong>Sponsor Matching:</strong> Our system will match you with suitable sponsors</li>
@@ -1693,16 +1833,16 @@ export async function sendApplicationApprovedStudentEmail({
             
             <!-- Eligibility Status -->
             <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #5b21b6; margin-top: 0;">🎯 Your Status</h3>
+              <h3 style="color: #5b21b6; margin-top: 0;"> Your Status</h3>
               <div style="display: grid; gap: 10px;">
                 <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #10b981;">
-                  <strong style="color: #065f46;">✅ Application Status:</strong> <span style="color: #10b981;">APPROVED</span>
+                  <strong style="color: #065f46;"> Application Status:</strong> <span style="color: #10b981;">APPROVED</span>
                 </div>
                 <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #3b82f6;">
-                  <strong style="color: #1e40af;">🎯 Sponsorship Status:</strong> <span style="color: #3b82f6;">READY FOR MATCHING</span>
+                  <strong style="color: #1e40af;"> Sponsorship Status:</strong> <span style="color: #3b82f6;">READY FOR MATCHING</span>
                 </div>
                 <div style="background-color: white; padding: 10px; border-radius: 4px; border-left: 4px solid #f59e0b;">
-                  <strong style="color: #92400e;">📊 Profile Status:</strong> <span style="color: #f59e0b;">LIVE IN MARKETPLACE</span>
+                  <strong style="color: #92400e;"> Profile Status:</strong> <span style="color: #f59e0b;">LIVE IN MARKETPLACE</span>
                 </div>
               </div>
             </div>
@@ -1711,17 +1851,17 @@ export async function sendApplicationApprovedStudentEmail({
             <div style="text-align: center; margin: 30px 0;">
               <a href="${loginUrl}/student" 
                  style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                📊 View Dashboard
+                 View Dashboard
               </a>
               <a href="${loginUrl}/student/profile" 
                  style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                ✏️ Update Profile
+                ️ Update Profile
               </a>
             </div>
             
             <!-- Tips for Success -->
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0; border: 1px solid #e5e7eb;">
-              <h3 style="color: #374151; margin-top: 0;">💡 Tips for Success</h3>
+              <h3 style="color: #374151; margin-top: 0;"> Tips for Success</h3>
               <ul style="color: #4b5563; margin: 10px 0; padding-left: 20px; font-size: 14px;">
                 <li>Upload a professional profile photo if you haven't already</li>
                 <li>Write compelling personal and academic stories</li>
@@ -1749,13 +1889,13 @@ export async function sendApplicationApprovedStudentEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Application Approved Email sent successfully to:', email);
+    console.log(' Application Approved Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send application approved email:', error);
+    console.error(' Failed to send application approved email:', error);
     return { success: false, error: error.message };
   }
 }
@@ -1775,20 +1915,20 @@ export async function sendApplicationRejectedStudentEmail({
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
       to: email,
-      subject: `📋 Application Update - Further Review Required`,
+      subject: ` Application Update - Further Review Required`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
           <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #111827; margin: 0; font-size: 28px;">📋 Application Update</h1>
+              <h1 style="color: #111827; margin: 0; font-size: 28px;"> Application Update</h1>
               <p style="color: #6b7280; margin: 5px 0 0 0;">Student Sponsorship Platform</p>
             </div>
             
             <!-- Status Banner -->
             <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #92400e; margin-top: 0;">📝 Application Requires Further Review</h3>
+              <h3 style="color: #92400e; margin-top: 0;"> Application Requires Further Review</h3>
               <p style="color: #78350f; margin: 5px 0;">
                 Thank you for your application. After careful review, we need some additional information or improvements before we can proceed.
               </p>
@@ -1796,7 +1936,7 @@ export async function sendApplicationRejectedStudentEmail({
             
             <!-- Application Information -->
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">📄 Application Details</h3>
+              <h3 style="color: #374151; margin-top: 0;"> Application Details</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb;">
                 <p style="margin: 8px 0;"><strong>Student:</strong> ${studentName}</p>
                 <p style="margin: 8px 0;"><strong>Application ID:</strong> ${applicationId}</p>
@@ -1808,7 +1948,7 @@ export async function sendApplicationRejectedStudentEmail({
             ${rejectionReason ? `
             <!-- Review Comments -->
             <div style="background-color: #fef2f2; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ef4444;">
-              <h3 style="color: #dc2626; margin-top: 0;">📝 Review Comments</h3>
+              <h3 style="color: #dc2626; margin-top: 0;"> Review Comments</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px;">
                 <p style="color: #374151; margin: 0; line-height: 1.6;">${rejectionReason}</p>
               </div>
@@ -1818,7 +1958,7 @@ export async function sendApplicationRejectedStudentEmail({
             ${adminNotes ? `
             <!-- Additional Notes -->
             <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin-top: 0;">💬 Additional Notes</h3>
+              <h3 style="color: #1e40af; margin-top: 0;"> Additional Notes</h3>
               <div style="background-color: white; padding: 15px; border-radius: 6px; border: 1px solid #e5e7eb;">
                 <p style="color: #374151; margin: 0; line-height: 1.6;">${adminNotes}</p>
               </div>
@@ -1827,7 +1967,7 @@ export async function sendApplicationRejectedStudentEmail({
             
             <!-- What You Can Do -->
             <div style="background-color: #ecfdf5; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #065f46; margin-top: 0;">🚀 Next Steps</h3>
+              <h3 style="color: #065f46; margin-top: 0;"> Next Steps</h3>
               <ol style="color: #047857; margin: 10px 0; padding-left: 20px;">
                 <li><strong>Review Feedback:</strong> Carefully read all comments and suggestions above</li>
                 <li><strong>Address Issues:</strong> Make the necessary improvements to your application</li>
@@ -1839,7 +1979,7 @@ export async function sendApplicationRejectedStudentEmail({
             
             <!-- Encouragement -->
             <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #5b21b6; margin-top: 0;">💪 Don't Give Up!</h3>
+              <h3 style="color: #5b21b6; margin-top: 0;"> Don't Give Up!</h3>
               <p style="color: #6b21a8; line-height: 1.6;">
                 This is not a rejection, but an opportunity to strengthen your application. Many successful students 
                 have gone through this review process. Take this feedback as valuable guidance to improve your 
@@ -1853,7 +1993,7 @@ export async function sendApplicationRejectedStudentEmail({
             
             <!-- Common Issues -->
             <div style="background-color: #f3f4f6; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #374151; margin-top: 0;">📋 Common Areas for Improvement</h3>
+              <h3 style="color: #374151; margin-top: 0;"> Common Areas for Improvement</h3>
               <ul style="color: #4b5563; margin: 10px 0; padding-left: 20px; font-size: 14px;">
                 <li><strong>Documentation:</strong> Ensure all required documents are uploaded and clearly legible</li>
                 <li><strong>Academic Records:</strong> Provide complete and verified academic transcripts</li>
@@ -1868,17 +2008,17 @@ export async function sendApplicationRejectedStudentEmail({
             <div style="text-align: center; margin: 30px 0;">
               <a href="${loginUrl}/student/application" 
                  style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                📝 Improve Application
+                 Improve Application
               </a>
               <a href="${loginUrl}/student/documents" 
                  style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                📎 Upload Documents
+                 Upload Documents
               </a>
             </div>
             
             <!-- Support Information -->
             <div style="background-color: #dbeafe; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <h4 style="color: #1e40af; margin-top: 0;">📞 Need Help?</h4>
+              <h4 style="color: #1e40af; margin-top: 0;"> Need Help?</h4>
               <p style="color: #1e3a8a; margin: 0; font-size: 14px;">
                 If you need assistance understanding the feedback or improving your application, please don't hesitate to contact our support team:
                 <br><a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
@@ -1902,13 +2042,137 @@ export async function sendApplicationRejectedStudentEmail({
     };
     
     const info = await transporter.sendMail(mailOptions);
-    console.log('📧 Application Rejected Email sent successfully to:', email);
+    console.log(' Application Rejected Email sent successfully to:', email);
     console.log('Message ID:', info.messageId);
     
     return { success: true, messageId: info.messageId };
     
   } catch (error) {
-    console.error('❌ Failed to send application rejected email:', error);
+    console.error(' Failed to send application rejected email:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Send admin notification when student submits application for review (PENDING status)
+ */
+export async function sendApplicationSubmissionNotificationEmail({
+  adminEmail,
+  studentName,
+  studentEmail,
+  applicationId,
+  university,
+  program,
+  amount,
+  currency
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const adminPortalUrl = process.env.ADMIN_PORTAL_URL || process.env.FRONTEND_URL || 'http://localhost:8080';
+    const applicationDetailsUrl = `${adminPortalUrl}/admin/applications/${applicationId}`;
+    const formattedAmount = currency === 'PKR' ? 
+      `Rs ${amount.toLocaleString()}` : 
+      `$${amount.toLocaleString()}`;
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: adminEmail,
+      subject: ` New Application Submitted for Review - ${studentName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #059669; margin: 0; font-size: 28px;">AWAKE Connect</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Admin Notification Portal</p>
+            </div>
+            
+            <!-- Alert Banner -->
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
+              <h2 style="margin: 0; font-size: 20px;"> New Application Submission</h2>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">A student has submitted their application for review</p>
+            </div>
+            
+            <!-- Student Information -->
+            <div style="background-color: #f0f9ff; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #3b82f6;">
+              <h3 style="color: #1e40af; margin-top: 0;"> Student Information</h3>
+              <div style="background-color: white; padding: 15px; border-radius: 6px;">
+                <p style="margin: 8px 0;"><strong>Student Name:</strong> ${studentName}</p>
+                <p style="margin: 8px 0;"><strong>Student Email:</strong> <a href="mailto:${studentEmail}" style="color: #2563eb;">${studentEmail}</a></p>
+                <p style="margin: 8px 0;"><strong>University:</strong> ${university}</p>
+                <p style="margin: 8px 0;"><strong>Program:</strong> ${program}</p>
+                <p style="margin: 8px 0;"><strong>Funding Needed:</strong> <span style="color: #059669; font-weight: bold;">${formattedAmount}</span></p>
+                <p style="margin: 8px 0;"><strong>Application ID:</strong> <code style="background-color: #f3f4f6; padding: 2px 6px; border-radius: 3px;">${applicationId}</code></p>
+                <p style="margin: 8px 0;"><strong>Submission Date:</strong> ${new Date().toLocaleString()}</p>
+              </div>
+            </div>
+            
+            <!-- Required Actions -->
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #92400e; margin-top: 0;"> Next Steps</h3>
+              <ol style="color: #78350f; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Review Documents:</strong> Verify all submitted documents are complete and authentic</li>
+                <li><strong>Field Verification:</strong> Assign to a field officer for local verification if needed</li>
+                <li><strong>Profile Assessment:</strong> Evaluate student's profile completeness and eligibility</li>
+                <li><strong>Make Decision:</strong> Approve, request more info, or reject the application</li>
+                <li><strong>Notify Student:</strong> Send decision to the student via email</li>
+              </ol>
+            </div>
+            
+            <!-- Important Notes -->
+            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #5b21b6; margin-top: 0;"> Important Notes</h3>
+              <ul style="color: #4c1d95; margin: 10px 0; padding-left: 20px;">
+                <li>Check that all <strong>required documents</strong> have been uploaded</li>
+                <li>Verify the student's <strong>profile completeness</strong></li>
+                <li>Review any <strong>admin notes or requests</strong> previously made</li>
+                <li>Contact student if <strong>additional information is needed</strong></li>
+              </ul>
+            </div>
+            
+            <!-- Action Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${applicationDetailsUrl}" 
+                 style="background-color: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
+                 Review Application Now
+              </a>
+            </div>
+            
+            <!-- Application Queue -->
+            <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px; margin: 20px 0;">
+              <h4 style="color: #065f46; margin-top: 0;"> Admin Portal</h4>
+              <p style="color: #047857; margin: 0; font-size: 14px;">
+                View all submitted applications and manage the review process in your admin dashboard.
+                <br><a href="${adminPortalUrl}/admin/applications" style="color: #2563eb;">Go to Applications List</a>
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+              <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                This is an automated notification from AWAKE Connect.<br>
+                Please review this application promptly to maintain good service for students.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
+                <strong>AWAKE Connect</strong> - Student Sponsorship Platform
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log(' Application Submission Notification sent to admin:', adminEmail);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error(' Failed to send application submission notification:', error);
     return { success: false, error: error.message };
   }
 }

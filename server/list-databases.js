@@ -14,7 +14,7 @@ const client = new Client({
   database: 'postgres' // Connect to postgres db to list all databases
 });
 
-console.log('🔍 Listing all PostgreSQL databases...');
+console.log(' Listing all PostgreSQL databases...');
 
 try {
   await client.connect();
@@ -30,17 +30,17 @@ try {
     ORDER BY datname;
   `);
 
-  console.log('\n📊 Available databases:');
+  console.log('\n Available databases:');
   result.rows.forEach((db, index) => {
     console.log(`${index + 1}. ${db.database_name} (${db.size}) - ${db.active_connections} active connections`);
   });
 
   // Check current database from connection string
   const currentDb = url.pathname.slice(1); // Remove leading slash
-  console.log(`\n📍 Currently connected to: ${currentDb}`);
+  console.log(`\n Currently connected to: ${currentDb}`);
 
   await client.end();
 } catch (error) {
-  console.error('❌ Error listing databases:', error.message);
+  console.error(' Error listing databases:', error.message);
   process.exit(1);
 }

@@ -484,7 +484,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
       // Note: programStartDate and programEndDate removed - not in database schema yet
     } = req.body;
 
-    console.log('🔍 PATCH /students/:id - Debug request data:', {
+    console.log(' PATCH /students/:id - Debug request data:', {
       id,
       degreeLevel,
       degreeLevelType: typeof degreeLevel,
@@ -529,7 +529,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
       },
     });
 
-    console.log('🔍 PATCH result - Updated student:', {
+    console.log(' PATCH result - Updated student:', {
       id: updated.id,
       degreeLevel: updated.degreeLevel,
       field: updated.field,

@@ -95,7 +95,7 @@ Current migrations:
 1. **Permission denied**: Ensure your PostgreSQL user has necessary permissions
 2. **Database doesn't exist**: Create the database first with `createdb donors_dev`
 3. **Connection refused**: Check if PostgreSQL is running and connection string is correct
-4. **Migration issues**: Reset with `npx prisma migrate reset` (⚠️ destroys data)
+4. **Migration issues**: Reset with `npx prisma migrate reset` (️ destroys data)
 
 ### Useful Commands
 
@@ -109,6 +109,6 @@ cd server && npx prisma studio
 # Generate fresh client
 cd server && npx prisma generate
 
-# Reset database (⚠️ destroys all data)
+# Reset database (️ destroys all data)
 cd server && npx prisma migrate reset
 ```

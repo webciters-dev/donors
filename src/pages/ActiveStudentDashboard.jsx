@@ -44,7 +44,7 @@ const ActiveStudentDashboard = () => {
 
   const fetchActiveStudentData = async () => {
     if (!authHeader) {
-      console.error('❌ No auth header available');
+      console.error(' No auth header available');
       navigate('/login');
       return;
     }
@@ -215,7 +215,7 @@ const ActiveStudentDashboard = () => {
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                Welcome Back, {user?.name}! 🎓
+                Welcome Back, {user?.name}! 
               </h1>
               <p className="text-sm sm:text-base text-gray-700 mt-1 leading-relaxed">
                 {application.program} at {application.university} • <strong>APPROVED</strong>
@@ -308,28 +308,28 @@ const ActiveStudentDashboard = () => {
         <CardHeader className="pb-4 sm:pb-6">
           <CardTitle className="flex items-center text-green-800 text-base sm:text-lg">
             <Award className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            🎓 Active Student Tips
+             Active Student Tips
           </CardTitle>
         </CardHeader>
         <CardContent className="px-4 sm:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm text-green-700">
             <div className="space-y-3">
               <div className="flex items-start">
-                <span className="font-medium mr-2">📚</span>
+                <span className="font-medium mr-2"></span>
                 <span>Keep your donor updated on your academic progress</span>
               </div>
               <div className="flex items-start">
-                <span className="font-medium mr-2">💬</span>
+                <span className="font-medium mr-2"></span>
                 <span>Communicate regularly and proactively</span>
               </div>
             </div>
             <div className="space-y-3">
               <div className="flex items-start">
-                <span className="font-medium mr-2">🎯</span>
+                <span className="font-medium mr-2"></span>
                 <span>Share both challenges and achievements</span>
               </div>
               <div className="flex items-start">
-                <span className="font-medium mr-2">🙏</span>
+                <span className="font-medium mr-2"></span>
                 <span>Express gratitude for the support you receive</span>
               </div>
             </div>

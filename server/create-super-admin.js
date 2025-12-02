@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 
 async function createSuperAdmin() {
   try {
-    console.log("🔧 Creating first SUPER_ADMIN user...");
+    console.log(" Creating first SUPER_ADMIN user...");
     
     const email = "superadmin@awakeconnect.com"; // Change this to your email
     const password = "super123456"; // Change this to a secure password
@@ -21,7 +21,7 @@ async function createSuperAdmin() {
     });
     
     if (existingSuperAdmin) {
-      console.log("❌ A SUPER_ADMIN user already exists:");
+      console.log(" A SUPER_ADMIN user already exists:");
       console.log(`   Email: ${existingSuperAdmin.email}`);
       console.log(`   Name: ${existingSuperAdmin.name || "Not set"}`);
       console.log(`   Created: ${existingSuperAdmin.createdAt}`);
@@ -34,7 +34,7 @@ async function createSuperAdmin() {
     });
     
     if (existingUser) {
-      console.log(`❌ Email ${email} is already in use by user with role: ${existingUser.role}`);
+      console.log(` Email ${email} is already in use by user with role: ${existingUser.role}`);
       console.log("   Please use a different email address.");
       return;
     }
@@ -58,7 +58,7 @@ async function createSuperAdmin() {
       }
     });
     
-    console.log("✅ SUPER_ADMIN user created successfully!");
+    console.log(" SUPER_ADMIN user created successfully!");
     console.log(`   ID: ${superAdmin.id}`);
     console.log(`   Name: ${superAdmin.name}`);
     console.log(`   Email: ${superAdmin.email}`);
@@ -66,14 +66,14 @@ async function createSuperAdmin() {
     console.log(`   Password: ${password} (change this after first login)`);
     console.log(`   Created: ${superAdmin.createdAt}`);
     console.log("");
-    console.log("🔐 IMPORTANT SECURITY NOTES:");
+    console.log(" IMPORTANT SECURITY NOTES:");
     console.log("   1. Change the default password after first login");
     console.log("   2. Use this account to create regular admin users");
     console.log("   3. Only give SUPER_ADMIN access to trusted personnel");
     console.log("   4. All SUPER_ADMIN actions are logged for security");
     
   } catch (error) {
-    console.error("❌ Failed to create SUPER_ADMIN user:", error);
+    console.error(" Failed to create SUPER_ADMIN user:", error);
   } finally {
     await prisma.$disconnect();
   }

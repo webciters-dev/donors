@@ -95,10 +95,10 @@ const StudentVideo = ({
           poster={thumbnailUrl}
           style={{ maxHeight: '300px', objectFit: 'contain' }}
           onError={(e) => {
-            console.error('🎥 Video error:', e);
+            console.error(' Video error:', e);
           }}
           onLoadedMetadata={() => {
-            console.log('🎥 Video metadata loaded successfully');
+            console.log(' Video metadata loaded successfully');
           }}
         >
           <source src={videoUrl} type="video/mp4" />

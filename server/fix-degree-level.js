@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🔧 FIXING DEGREE LEVEL FOR STUDENT\n');
+console.log(' FIXING DEGREE LEVEL FOR STUDENT\n');
 
 const studentEmail = 'test+1@webciters.com';
 const correctDegreeLevel = "Bachelor's Degree"; // BS program = Bachelor's Degree
@@ -27,18 +27,18 @@ try {
     }
   });
   
-  console.log('✅ Student updated successfully:');
+  console.log(' Student updated successfully:');
   console.log('   Name:', updatedStudent.name);
   console.log('   University:', updatedStudent.university);
   console.log('   Field:', updatedStudent.field);
   console.log('   Program:', updatedStudent.program);
-  console.log('   🎯 Degree Level:', `"${updatedStudent.degreeLevel}"`);
+  console.log('    Degree Level:', `"${updatedStudent.degreeLevel}"`);
   console.log('   CGPA:', updatedStudent.gpa);
   
   await prisma.$disconnect();
-  console.log('\n✅ Fix completed - try logging in again!');
+  console.log('\n Fix completed - try logging in again!');
   
 } catch (error) {
-  console.error('❌ Error:', error);
+  console.error(' Error:', error);
   process.exit(1);
 }

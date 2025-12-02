@@ -207,7 +207,7 @@ router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (
     try {
       // 1. Send email to student
       if (completeInterview.student.email) {
-        console.log('📧 Sending interview notification email to student:', completeInterview.student.name);
+        console.log(' Sending interview notification email to student:', completeInterview.student.name);
         await sendInterviewScheduledStudentEmail({
           email: completeInterview.student.email,
           name: completeInterview.student.name,
@@ -218,12 +218,12 @@ router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (
           notes: completeInterview.notes,
           applicationId: completeInterview.applicationId
         });
-        console.log('✅ Student notification email sent successfully');
+        console.log(' Student notification email sent successfully');
       }
 
       // 2. Send emails to board members
       if (completeInterview.panelMembers && completeInterview.panelMembers.length > 0) {
-        console.log('📧 Sending interview assignment emails to', completeInterview.panelMembers.length, 'board members');
+        console.log(' Sending interview assignment emails to', completeInterview.panelMembers.length, 'board members');
         
         for (const panelMember of completeInterview.panelMembers) {
           if (panelMember.boardMember.email) {
@@ -239,15 +239,15 @@ router.post('/', requireAuth, onlyRoles('ADMIN'), requireBasicRecaptcha, async (
               applicationId: completeInterview.applicationId,
               isChairperson: panelMember.isChairperson
             });
-            console.log(`✅ Board member notification sent to: ${panelMember.boardMember.name}`);
+            console.log(` Board member notification sent to: ${panelMember.boardMember.name}`);
           }
         }
         
-        console.log('✅ All board member notification emails sent successfully');
+        console.log(' All board member notification emails sent successfully');
       }
       
     } catch (emailError) {
-      console.error('⚠️ Email notification failed (interview still created):', emailError);
+      console.error('️ Email notification failed (interview still created):', emailError);
       // Don't fail the interview creation if emails fail
     }
 

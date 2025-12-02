@@ -93,13 +93,13 @@ export default function VideoUploader({
       // Validate duration (30-120 seconds allowed)
       if (metadata.duration < 30) {
         toast.error("Video is too short. Please record at least 30 seconds.");
-        handleRemoveVideo();
+        handleRemoveVideo(false); // Don't call DELETE on error cleanup
         return;
       }
       
       if (metadata.duration > 120) {
         toast.error("Video is too long. Please keep it under 2 minutes (120 seconds).");
-        handleRemoveVideo();
+        handleRemoveVideo(false); // Don't call DELETE on error cleanup
         return;
       }
 
@@ -118,6 +118,9 @@ export default function VideoUploader({
       const token = localStorage.getItem('auth_token');
       
       const xhr = new XMLHttpRequest();
+      
+      // Set timeout to 5 minutes for large file uploads
+      xhr.timeout = 300000; // 5 minutes (300,000 ms)
       
       // Track upload progress
       xhr.upload.addEventListener('progress', (e) => {
@@ -146,7 +149,7 @@ export default function VideoUploader({
         } else {
           const errorResponse = JSON.parse(xhr.responseText);
           toast.error(errorResponse.error || "Failed to upload video");
-          handleRemoveVideo();
+          handleRemoveVideo(false); // Don't call DELETE on error cleanup
         }
       });
 
@@ -154,7 +157,14 @@ export default function VideoUploader({
       xhr.addEventListener('error', () => {
         setIsUploading(false);
         toast.error("Failed to upload video. Please try again.");
-        handleRemoveVideo();
+        handleRemoveVideo(false); // Don't call DELETE on error cleanup
+      });
+
+      // Handle upload timeout
+      xhr.addEventListener('timeout', () => {
+        setIsUploading(false);
+        toast.error("Upload timed out. The file is too large or your connection is too slow. Please try uploading a smaller video or use a faster connection.");
+        handleRemoveVideo(false); // Don't call DELETE on error cleanup
       });
 
       // Start upload
@@ -165,7 +175,7 @@ export default function VideoUploader({
     } catch (error) {
       console.error('Video processing error:', error);
       toast.error("Could not process video file. Please try another file.");
-      handleRemoveVideo();
+      handleRemoveVideo(false); // Don't call DELETE on error cleanup
       setIsUploading(false);
     }
   };
@@ -200,7 +210,7 @@ export default function VideoUploader({
   };
 
   // Remove video
-  const handleRemoveVideo = () => {
+  const handleRemoveVideo = (shouldCallDelete = true) => {
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -210,7 +220,10 @@ export default function VideoUploader({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    onVideoRemove();
+    // Only call onVideoRemove if this was an intentional deletion
+    if (shouldCallDelete) {
+      onVideoRemove();
+    }
   };
 
   // Determine what to show

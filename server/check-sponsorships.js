@@ -2,7 +2,7 @@ import prisma from './src/prismaClient.js';
 
 async function checkSponsorships() {
   try {
-    console.log('📊 Checking Sponsorship Records...\n');
+    console.log(' Checking Sponsorship Records...\n');
     
     const sponsorships = await prisma.sponsorship.findMany({
       include: {
@@ -23,11 +23,11 @@ async function checkSponsorships() {
     });
     
     if (sponsorships.length === 0) {
-      console.log('✅ No sponsorship records found - this matches the view-students output');
+      console.log(' No sponsorship records found - this matches the view-students output');
     }
     
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error(' Error:', error);
   } finally {
     await prisma.$disconnect();
   }

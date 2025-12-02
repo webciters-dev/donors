@@ -33,7 +33,7 @@ export const DonorDashboard = () => {
 
     async function load() {
       try {
-        console.log('🔍 Loading donor dashboard...', { 
+        console.log(' Loading donor dashboard...', { 
           token: !!token, 
           tokenLength: token?.length,
           user,
@@ -42,7 +42,7 @@ export const DonorDashboard = () => {
 
         // Check if we have a token
         if (!token) {
-          console.error('❌ No token available');
+          console.error(' No token available');
           toast.error("Please sign in to access your dashboard.");
           navigate("/login");
           return;
@@ -53,13 +53,13 @@ export const DonorDashboard = () => {
           headers: { ...authHeader },
         });
 
-        console.log('📡 API responses:', { 
+        console.log(' API responses:', { 
           sponsorshipsStatus: sponsorshipsResponse.status 
         });
 
         // Handle authentication failures
         if (sponsorshipsResponse.status === 401) {
-          console.error('🔒 Authentication failed - token expired or invalid');
+          console.error(' Authentication failed - token expired or invalid');
           toast.error("Your session expired. Please sign in again.");
           logout?.();
           navigate("/login");
@@ -68,7 +68,7 @@ export const DonorDashboard = () => {
 
         // Handle authorization failures (wrong role)
         if (sponsorshipsResponse.status === 403) {
-          console.error('🚫 Authorization failed - insufficient permissions');
+          console.error(' Authorization failed - insufficient permissions');
           const sponsorshipsError = await sponsorshipsResponse.text();
           console.error('Sponsorships error:', sponsorshipsError);
           toast.error("Access denied. Please contact support.");
@@ -83,13 +83,13 @@ export const DonorDashboard = () => {
 
         const sponsorshipsData = await sponsorshipsResponse.json();
         
-        console.log('✅ API data received:');
+        console.log(' API data received:');
         console.log('Sponsorships response:', JSON.stringify(sponsorshipsData, null, 2));
         
         if (!dead) {
           // Use same data structure as DonorPortal
           setSponsorships(Array.isArray(sponsorshipsData?.sponsorships) ? sponsorshipsData.sponsorships : []);
-          console.log('✅ Dashboard data loaded successfully');
+          console.log(' Dashboard data loaded successfully');
           console.log('Sponsorships set:', sponsorshipsData?.sponsorships);
         }
       } catch (e) {
@@ -204,10 +204,10 @@ export const DonorDashboard = () => {
               viewing payment history, and tracking student progress.
             </p>
             <div className="flex flex-wrap gap-2 text-xs text-green-600">
-              <span>✓ Browse Students</span>
-              <span>✓ My Students</span>
-              <span>✓ Payments</span>
-              <span>✓ Progress</span>
+              <span> Browse Students</span>
+              <span> My Students</span>
+              <span> Payments</span>
+              <span> Progress</span>
             </div>
           </div>
           <Button 

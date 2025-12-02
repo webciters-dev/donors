@@ -25,7 +25,20 @@ export const studentProfileAcademicSchema = z
       }, "Invalid date or age must be ≥ 13"),
     guardianName: z.string().min(1, "Guardian name is required"),
     guardianCnic: z.string().regex(CNIC_REGEX, "Guardian CNIC must be #####-#######-#"),
-    phone: z.string().refine((v) => digitsLenOk(v, 10, 15), "Enter a valid phone (10–15 digits)"),
+    guardian2Name: z.string().optional(),
+    guardian2Cnic: z
+      .string()
+      .optional()
+      .refine((v) => !v || CNIC_REGEX.test(v), "Second Guardian CNIC must be #####-#######-#"),
+    phone: z.string().optional().refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid phone (10–15 digits)"),
+    guardianPhone1: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid guardian phone (10–15 digits)"),
+    guardianPhone2: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid guardian phone (10–15 digits)"),
     address: z.string().min(1, "Address is required"),
     city: z.string().min(1, "City is required"),
     province: z.string().min(1, "Province is required"),
@@ -59,4 +72,17 @@ export const studentProfileAcademicSchema = z
     communityInvolvement: z.string().max(300).optional(),
     specificField: z.string().max(200).optional(),
   })
-  .required();
+  .required()
+  .refine(
+    (data) => {
+      // At least one phone number must be provided
+      const hasStudentPhone = data.phone && data.phone.trim();
+      const hasGuardianPhone1 = data.guardianPhone1 && data.guardianPhone1.trim();
+      const hasGuardianPhone2 = data.guardianPhone2 && data.guardianPhone2.trim();
+      return hasStudentPhone || hasGuardianPhone1 || hasGuardianPhone2;
+    },
+    {
+      message: "At least one phone number is required (Student, Guardian 1, or Guardian 2)",
+      path: ["phone"],
+    }
+  );

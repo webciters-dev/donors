@@ -23,7 +23,7 @@ export default function ForgotPassword() {
     try {
       setBusy(true);
 
-      // 🛡️ reCAPTCHA Protection - Get verification token
+      // ️ reCAPTCHA Protection - Get verification token
       let recaptchaToken = null;
       if (executeRecaptcha) {
         try {
@@ -42,7 +42,7 @@ export default function ForgotPassword() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           email,
-          // 🛡️ reCAPTCHA Protection
+          // ️ reCAPTCHA Protection
           recaptchaToken: recaptchaToken
         }),
       });
@@ -83,7 +83,7 @@ export default function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          {/* 🛡️ reCAPTCHA Protection Indicator */}
+          {/* ️ reCAPTCHA Protection Indicator */}
           {import.meta.env.VITE_DEVELOPMENT_MODE !== 'true' && (
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mt-2">
               <Shield className="h-3 w-3" />

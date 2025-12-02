@@ -16,8 +16,8 @@ router.get("/", requireAuth, async (req, res) => {
     const userRole = req.user.role;
     const includeAllMessages = req.query.includeAllMessages === 'true';
     
-    console.log("🔍 Conversations API called by user:", userId, "role:", userRole);
-    console.log("🔍 Include all messages:", includeAllMessages);
+    console.log(" Conversations API called by user:", userId, "role:", userRole);
+    console.log(" Include all messages:", includeAllMessages);
 
     // Build where clause - admin sees all conversations, others see only their own
     let whereClause = {};
@@ -78,9 +78,9 @@ router.get("/", requireAuth, async (req, res) => {
 
     res.json({ conversations });
   } catch (err) {
-    console.error("❌ Failed to fetch conversations:", err);
-    console.error("❌ Error details:", err.message);
-    console.error("❌ Stack trace:", err.stack);
+    console.error(" Failed to fetch conversations:", err);
+    console.error(" Error details:", err.message);
+    console.error(" Stack trace:", err.stack);
     res.status(500).json({ error: "Failed to fetch conversations", details: err.message });
   }
 });
@@ -162,7 +162,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 
     res.json({ conversation });
   } catch (err) {
-    console.error("❌ Failed to fetch conversation:", err);
+    console.error(" Failed to fetch conversation:", err);
     res.status(500).json({ error: "Failed to fetch conversation" });
   }
 });
@@ -264,7 +264,7 @@ router.post("/", requireAuth, requireBasicRecaptcha, async (req, res) => {
 
     res.status(201).json({ conversation });
   } catch (err) {
-    console.error("❌ Failed to create conversation:", err);
+    console.error(" Failed to create conversation:", err);
     res.status(500).json({ error: "Failed to create conversation" });
   }
 });
@@ -328,7 +328,7 @@ router.post("/:id/messages", requireAuth, requireBasicRecaptcha, async (req, res
 
     res.status(201).json({ message });
   } catch (err) {
-    console.error("❌ Failed to send message:", err);
+    console.error(" Failed to send message:", err);
     res.status(500).json({ error: "Failed to send message" });
   }
 });

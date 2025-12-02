@@ -4,12 +4,12 @@
 // Currency metadata with symbols, flags, and names
 // Currencies determined by university country selection
 export const CURRENCY_META = {
-  USD: { symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
-  GBP: { symbol: '£', flag: '🇬🇧', name: 'British Pound Sterling' },
-  EUR: { symbol: '€', flag: '🇪🇺', name: 'Euro' },
-  CAD: { symbol: 'C$', flag: '🇨🇦', name: 'Canadian Dollar' },
-  PKR: { symbol: 'Rs', flag: '🇵🇰', name: 'Pakistani Rupee' },
-  AUD: { symbol: 'A$', flag: '🇦🇺', name: 'Australian Dollar' }
+  USD: { symbol: '$', flag: '', name: 'US Dollar' },
+  GBP: { symbol: '£', flag: '', name: 'British Pound Sterling' },
+  EUR: { symbol: '€', flag: '', name: 'Euro' },
+  CAD: { symbol: 'C$', flag: '', name: 'Canadian Dollar' },
+  PKR: { symbol: 'Rs', flag: '', name: 'Pakistani Rupee' },
+  AUD: { symbol: 'A$', flag: '', name: 'Australian Dollar' }
 };
 
 // Determine currency based on university country selection
@@ -67,7 +67,7 @@ export const fmtAmount = (amount, currency = 'PKR') => {
 
 // Get currency flag emoji
 export const getCurrencyFlag = (currency) => {
-  return CURRENCY_META[currency]?.flag || '🇵🇰';
+  return CURRENCY_META[currency]?.flag || '';
 };
 
 // Get currency name

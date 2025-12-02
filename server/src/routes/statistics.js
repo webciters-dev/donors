@@ -98,7 +98,7 @@ router.get("/", async (req, res) => {
       totalActiveStudents
     };
 
-    console.log('📊 Statistics fetched:', statistics);
+    console.log(' Statistics fetched:', statistics);
     
     return res.json({
       success: true,

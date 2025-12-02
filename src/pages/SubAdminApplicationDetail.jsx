@@ -19,8 +19,8 @@ import StudentVideo from "@/components/StudentVideo";
 
 // Case Worker task types for display
 const TASK_TYPES = [
-  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "📄", color: "bg-blue-500", description: "Review and verify student documents" },
-  { value: "FIELD_VISIT", label: "Field Visit", icon: "🏠", color: "bg-green-500", description: "Conduct home visit and family interview" },
+  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "", color: "bg-blue-500", description: "Review and verify student documents" },
+  { value: "FIELD_VISIT", label: "Field Visit", icon: "", color: "bg-green-500", description: "Conduct home visit and family interview" },
   { value: "CNIC_VERIFICATION", label: "CNIC Verification", icon: "🆔", color: "bg-purple-500", description: "Verify CNIC and identity documents" },
 ];
 
@@ -209,7 +209,7 @@ export default function SubAdminApplicationDetail() {
             });
           }
         } catch (convError) {
-          console.error('🔍 CaseWorkerApplicationDetail: Failed to load conversations:', convError);
+          console.error(' CaseWorkerApplicationDetail: Failed to load conversations:', convError);
         }
         
         // Sort all messages newest first for better UX
@@ -280,11 +280,11 @@ export default function SubAdminApplicationDetail() {
         
         // Create summary of verification completed
         const summary = [
-          fieldVerification.homeVisitDate ? "✅ Home Visit" : "",
-          fieldVerification.identityVerified ? "✅ Identity Verified" : "",
-          fieldVerification.documentsVerified ? "✅ Documents Verified" : "",
-          fieldVerification.fielderRecommendation ? `✅ Recommended: ${fieldVerification.fielderRecommendation.replace('_', ' ')}` : "",
-          fieldVerification.verificationScore ? `📊 Score: ${fieldVerification.verificationScore}%` : ""
+          fieldVerification.homeVisitDate ? " Home Visit" : "",
+          fieldVerification.identityVerified ? " Identity Verified" : "",
+          fieldVerification.documentsVerified ? " Documents Verified" : "",
+          fieldVerification.fielderRecommendation ? ` Recommended: ${fieldVerification.fielderRecommendation.replace('_', ' ')}` : "",
+          fieldVerification.verificationScore ? ` Score: ${fieldVerification.verificationScore}%` : ""
         ].filter(Boolean).join(" • ");
 
         toast.success(`Field verification submitted! ${summary}`, {
@@ -301,7 +301,7 @@ export default function SubAdminApplicationDetail() {
             navigate("/sub-admin", { replace: true });
 
           } catch (navError) {
-            console.error("❌ Navigation failed:", navError);
+            console.error(" Navigation failed:", navError);
             // Fallback - use window location if navigate fails
             window.location.href = window.location.origin + window.location.pathname + "#/sub-admin";
           }
@@ -458,7 +458,9 @@ export default function SubAdminApplicationDetail() {
             Back
           </Button>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <h1 className="text-lg sm:text-2xl font-semibold">Field Verification</h1>
+            <h1 className="text-lg sm:text-2xl font-semibold">
+              {TASK_TYPES.find(t => t.value === review.taskType)?.label || 'Case Worker Verification'}
+            </h1>
             <Badge variant={review.status === "PENDING" ? "secondary" : review.status === "COMPLETED" ? "default" : "outline"}>
               {review.status}
             </Badge>
@@ -488,7 +490,7 @@ export default function SubAdminApplicationDetail() {
         <Card className={`p-4 sm:p-6 border-l-4 ${TASK_TYPES.find(t => t.value === review.taskType)?.color || 'bg-blue-500'} bg-gradient-to-r from-blue-50 to-indigo-50`}>
           <div className="flex items-center gap-4">
             <div className="text-4xl">
-              {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"}
+              {TASK_TYPES.find(t => t.value === review.taskType)?.icon || ""}
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-bold text-gray-900 mb-1">
@@ -509,7 +511,7 @@ export default function SubAdminApplicationDetail() {
       {!review.taskType && (
         <Card className="p-4 sm:p-6 border-l-4 bg-gray-500 bg-gradient-to-r from-gray-50 to-slate-50">
           <div className="flex items-center gap-4">
-            <div className="text-4xl">📋</div>
+            <div className="text-4xl"></div>
             <div className="flex-1">
               <h2 className="text-xl font-bold text-gray-900 mb-1">
                 Your Assignment: General Field Verification
@@ -609,8 +611,43 @@ export default function SubAdminApplicationDetail() {
             <div className="font-medium break-words">{student.address || 'Not provided'}</div>
           </div>
           <div>
-            <span className="text-slate-500">Guardian:</span>
-            <div className="font-medium break-words">{student.guardianName || 'Not provided'}</div>
+            <span className="text-slate-500">Date of Birth:</span>
+            <div className="font-medium break-words">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not provided'}</div>
+          </div>
+        </div>
+
+        {/* Guardian Information Section - Comprehensive */}
+        <div className="mt-6 pt-4 border-t">
+          <h4 className="font-medium text-sm mb-3 text-slate-700">Guardian Information</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs sm:text-sm">
+            <div>
+              <span className="text-slate-500">Guardian Name:</span>
+              <div className="font-medium break-words">{student.guardianName || 'Not provided'}</div>
+            </div>
+            <div>
+              <span className="text-slate-500">Guardian CNIC:</span>
+              <div className="font-medium break-words">{student.guardianCnic || 'Not provided'}</div>
+            </div>
+            <div>
+              <span className="text-slate-500">Guardian Phone 1:</span>
+              <div className="font-medium break-words">{student.guardianPhone1 || 'Not provided'}</div>
+            </div>
+            {student.guardian2Name && (
+              <>
+                <div>
+                  <span className="text-slate-500">Second Guardian Name:</span>
+                  <div className="font-medium break-words">{student.guardian2Name}</div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Second Guardian CNIC:</span>
+                  <div className="font-medium break-words">{student.guardian2Cnic || 'Not provided'}</div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Guardian Phone 2:</span>
+                  <div className="font-medium break-words">{student.guardianPhone2 || 'Not provided'}</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
         
@@ -720,7 +757,7 @@ export default function SubAdminApplicationDetail() {
         {/* Career Goals */}
         {student.careerGoals && (
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Career Goals & Aspirations</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.careerGoals}
             </div>
@@ -730,7 +767,7 @@ export default function SubAdminApplicationDetail() {
         {/* Academic Achievements */}
         {student.academicAchievements && (
           <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Academic Achievements</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.academicAchievements}
             </div>
@@ -740,7 +777,7 @@ export default function SubAdminApplicationDetail() {
         {/* Community Involvement */}
         {student.communityInvolvement && (
           <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Community Involvement</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.communityInvolvement}
             </div>
@@ -748,7 +785,8 @@ export default function SubAdminApplicationDetail() {
         )}
       </Card>
 
-      {/* Home Visit & Family Assessment */}
+      {/* Home Visit & Family Assessment - Only for FIELD_VISIT task */}
+      {(review.taskType === 'FIELD_VISIT' || !review.taskType) && (
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Home className="h-5 w-5 text-blue-600" />
@@ -799,8 +837,10 @@ export default function SubAdminApplicationDetail() {
           </div>
         </div>
       </Card>
+      )}
 
-      {/* Financial Verification */}
+      {/* Financial Verification - Only for FIELD_VISIT task */}
+      {(review.taskType === 'FIELD_VISIT' || !review.taskType) && (
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <DollarSign className="h-5 w-5 text-green-600" />
@@ -831,8 +871,10 @@ export default function SubAdminApplicationDetail() {
           </div>
         </div>
       </Card>
+      )}
 
-      {/* Educational Background Verification */}
+      {/* Educational Background Verification - Only for FIELD_VISIT task */}
+      {(review.taskType === 'FIELD_VISIT' || !review.taskType) && (
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <BookOpen className="h-5 w-5 text-purple-600" />
@@ -868,8 +910,10 @@ export default function SubAdminApplicationDetail() {
           </div>
         </div>
       </Card>
+      )}
 
-      {/* Character Assessment */}
+      {/* Character Assessment - Only for FIELD_VISIT task */}
+      {(review.taskType === 'FIELD_VISIT' || !review.taskType) && (
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-orange-600" />
@@ -906,8 +950,9 @@ export default function SubAdminApplicationDetail() {
           </div>
         </div>
       </Card>
+      )}
 
-      {/* Document Verification */}
+      {/* Document Verification - For all task types but especially CNIC_VERIFICATION */}
       <Card className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-4">
           <div className="flex items-center gap-2">
@@ -948,11 +993,11 @@ export default function SubAdminApplicationDetail() {
                           rel="noreferrer"
                           className="text-green-700 hover:text-green-900 hover:underline font-medium text-xs sm:text-sm truncate"
                         >
-                          📁 {doc.originalName || doc.type.replace('_', ' ')}
+                           {doc.originalName || doc.type.replace('_', ' ')}
                         </a>
                         {isNew && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 flex-shrink-0">
-                            ✨ New
+                             New
                           </span>
                         )}
                       </>
@@ -1034,7 +1079,7 @@ export default function SubAdminApplicationDetail() {
                   disabled={saving}
                   className="text-amber-700 border-amber-300 hover:bg-amber-50"
                 >
-                  📧 Send Document Request to Student
+                   Send Document Request to Student
                 </Button>
                 <p className="text-xs text-slate-500 mt-1">
                   This will notify the student via email and message about the required documents
@@ -1131,10 +1176,10 @@ export default function SubAdminApplicationDetail() {
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" size="sm">
-                          {msg.fromRole === 'donor' ? `💝 Donor${msg.senderName ? `: ${msg.senderName}` : ''}` :
-                           msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT' ? '👤 Student Reply' :
-                           msg.fromRole === 'student' ? '👤 Student' : 
-                           msg.fromRole === 'sub_admin' ? '🏢 Case Worker' : '👨‍💼 Admin'}
+                          {msg.fromRole === 'donor' ? ` Donor${msg.senderName ? `: ${msg.senderName}` : ''}` :
+                           msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT' ? ' Student Reply' :
+                           msg.fromRole === 'student' ? ' Student' : 
+                           msg.fromRole === 'sub_admin' ? ' Case Worker' : '‍ Admin'}
                         </Badge>
                         {(msg.fromRole === 'donor' || (msg.fromRole === 'student' && msg.conversationType === 'DONOR_STUDENT')) && (
                           <Badge variant="outline" size="sm" className="text-xs bg-yellow-50 text-yellow-700">
@@ -1143,7 +1188,7 @@ export default function SubAdminApplicationDetail() {
                         )}
                         {shouldHighlight && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            📄 New Upload
+                             New Upload
                           </span>
                         )}
                       </div>
@@ -1215,7 +1260,7 @@ export default function SubAdminApplicationDetail() {
         
         {!submitted && (
           <div className="mt-3 text-xs text-slate-500">
-            💡 Tip: You can save your progress as draft and continue later, or submit your complete field verification review.
+             Tip: You can save your progress as draft and continue later, or submit your complete field verification review.
           </div>
         )}
       </Card>

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/AuthContext";
+import { useUniversityAcademics } from '@/hooks/useUniversityAcademics';
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
@@ -69,6 +70,7 @@ export default function StudentProfile() {
   const navigate = useNavigate();
   const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
 
+  // Initialize form state FIRST (before any useEffect that uses it)
   const [form, setForm] = useState({
     cnic: "",
     dateOfBirth: "",
@@ -130,6 +132,38 @@ export default function StudentProfile() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [documents, setDocuments] = useState([]);
+
+  // University academics hook for dropdowns
+  const [selectedUniversityId, setSelectedUniversityId] = useState(null);
+  const {
+    degreeLevels,
+    fields: availableFields,
+    programs: availablePrograms,
+    loading: academicLoading,
+    error: academicError,
+    fetchFields,
+    fetchPrograms
+  } = useUniversityAcademics(selectedUniversityId);
+
+  // NOW we can use useEffect that references form
+  useEffect(() => {
+    async function fetchUniversityId() {
+      if (!form.university || form.university === "Other" || !form.country || form.country === "Other") {
+        setSelectedUniversityId(null);
+        return;
+      }
+      try {
+        const res = await fetch(`${API.baseURL}/api/universities/countries/${encodeURIComponent(form.country)}`);
+        if (!res.ok) throw new Error("Failed to fetch universities");
+        const data = await res.json();
+        const uni = (data.universities || []).find(u => u.name === form.university);
+        setSelectedUniversityId(uni ? uni.id : null);
+      } catch (e) {
+        setSelectedUniversityId(null);
+      }
+    }
+    fetchUniversityId();
+  }, [form.university, form.country]);
 
   // Load current student profile
   useEffect(() => {
@@ -252,6 +286,23 @@ export default function StudentProfile() {
     }
   }, [form.program, form.degreeLevel]);
 
+  // Auto-fetch fields and programs when form loads with existing data
+  // This ensures saved values show up in the dropdowns
+  useEffect(() => {
+    if (selectedUniversityId && form.degreeLevel && !loading) {
+      // Fetch fields for the saved degree level
+      fetchFields(form.degreeLevel);
+    }
+  }, [selectedUniversityId, form.degreeLevel, loading]);
+
+  // Auto-fetch programs when both degree level and field are set
+  useEffect(() => {
+    if (selectedUniversityId && form.degreeLevel && form.field && !loading && availableFields.length > 0) {
+      // Fetch programs for the saved degree level and field
+      fetchPrograms(form.degreeLevel, form.field);
+    }
+  }, [selectedUniversityId, form.degreeLevel, form.field, loading, availableFields]);
+
   // Zod-powered validation
   function validateField(name, value) {
     // Validate just the one field by parsing the whole object but with this field updated
@@ -346,11 +397,14 @@ export default function StudentProfile() {
   }, [form, documents]);
 
   if (loading) {
+    console.log(" StudentProfile: Loading...");
     return <Card className="p-6">Loading profile…</Card>;
   }
 
+  console.log(" StudentProfile: Rendering with form data:", { hasForm: !!form, hasDocuments: !!documents });
+
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0">
+    <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 min-h-screen">
       <h1 className="text-xl sm:text-2xl font-semibold">My Profile</h1>
 
       {/* Pakistan-only filter message */}
@@ -665,14 +719,14 @@ export default function StudentProfile() {
               ]).map((country) => (
                 <option key={country} value={country}>
                   {country === "" ? "Select Country" :
-                   country === "Pakistan" ? "🇵🇰 Pakistan" :
-                   country === "USA" ? "🇺🇸 United States" :
-                   country === "UK" ? "🇬🇧 United Kingdom" :
-                   country === "Canada" ? "🇨🇦 Canada" :
-                   country === "Germany" ? "🇩🇪 Germany" :
-                   country === "Australia" ? "🇦🇺 Australia" :
-                   country === "Turkey" ? "🇹🇷 Turkey" :
-                   country === "Other" ? "🌍 Other Country" :
+                   country === "Pakistan" ? " Pakistan" :
+                   country === "USA" ? " United States" :
+                   country === "UK" ? " United Kingdom" :
+                   country === "Canada" ? " Canada" :
+                   country === "Germany" ? " Germany" :
+                   country === "Australia" ? " Australia" :
+                   country === "Turkey" ? " Turkey" :
+                   country === "Other" ? " Other Country" :
                    country}
                 </option>
               ))}
@@ -708,12 +762,22 @@ export default function StudentProfile() {
           {/* Field of Study */}
           <div>
             <label className="block text-sm mb-1">Field of Study</label>
-            <Input
+            <select
               value={form.field}
-              onChange={(e) => setVal("field", e.target.value)}
-              placeholder="e.g., Computer Science, Business, Engineering"
-              className="rounded-2xl"
-            />
+              onChange={e => {
+                setVal("field", e.target.value);
+                setVal("program", "");
+                if (e.target.value && form.degreeLevel) fetchPrograms(form.degreeLevel, e.target.value);
+              }}
+              required
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
+              disabled={academicLoading.fields || !form.degreeLevel}
+            >
+              <option value="">{academicLoading.fields ? "Loading..." : "Select field of study"}</option>
+              {availableFields.map(field => (
+                <option key={field} value={field}>{field}</option>
+              ))}
+            </select>
             {errors.field && (
               <p className="text-xs text-rose-600 mt-1">{errors.field}</p>
             )}
@@ -744,23 +808,18 @@ export default function StudentProfile() {
           {/* Program */}
           <div>
             <label className="block text-sm mb-1">Program</label>
-            <Input
+            <select
               value={form.program}
-              onChange={(e) => {
-                const newProgram = e.target.value;
-                setVal("program", newProgram);
-                
-                // Auto-populate degree level if not already set
-                if (!form.degreeLevel && newProgram) {
-                  const derivedLevel = deriveDegreeLevel(newProgram);
-                  if (derivedLevel) {
-                    setVal("degreeLevel", derivedLevel);
-                  }
-                }
-              }}
-              className="rounded-2xl"
-              placeholder="e.g., PhD Physics, Bachelor of Computer Science, MBA"
-            />
+              onChange={e => setVal("program", e.target.value)}
+              required
+              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
+              disabled={academicLoading.programs || !form.field || !form.degreeLevel}
+            >
+              <option value="">{academicLoading.programs ? "Loading..." : "Select specific program"}</option>
+              {availablePrograms.map(program => (
+                <option key={program} value={program}>{program}</option>
+              ))}
+            </select>
             {errors.program && (
               <p className="text-xs text-rose-600 mt-1">{errors.program}</p>
             )}
@@ -858,7 +917,7 @@ export default function StudentProfile() {
                 ) : (
                   <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
                     <div className="text-center text-gray-500">
-                      <div className="text-2xl mb-1">📷</div>
+                      <div className="text-2xl mb-1"></div>
                       <div className="text-xs">No photo uploaded</div>
                     </div>
                   </div>

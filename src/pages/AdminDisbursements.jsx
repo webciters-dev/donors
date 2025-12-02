@@ -60,7 +60,7 @@ export default function AdminDisbursements() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">💸 Disbursements Management</h1>
+          <h1 className="text-2xl font-semibold text-slate-900"> Disbursements Management</h1>
           <p className="text-slate-600">Track funds disbursed to students</p>
         </div>
         <div className="flex gap-2">

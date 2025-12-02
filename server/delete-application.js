@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
       }
     });
     
-    console.log('✅ Application deleted successfully!');
+    console.log(' Application deleted successfully!');
     console.log('   ID:', result.id);
     console.log('   Status was:', result.status);
     console.log('   Term was:', result.term);
@@ -35,7 +35,7 @@ const prisma = new PrismaClient();
     });
     
   } catch (error) {
-    console.error('❌ Error deleting application:', error.message);
+    console.error(' Error deleting application:', error.message);
   } finally {
     await prisma.$disconnect();
   }

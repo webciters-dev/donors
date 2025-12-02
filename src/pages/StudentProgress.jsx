@@ -350,7 +350,7 @@ export default function StudentProgress() {
                   />
                   {files.transcript && (
                     <p className="text-xs text-green-600 mt-1">
-                      ✓ {files.transcript.name}
+                       {files.transcript.name}
                     </p>
                   )}
                 </div>
@@ -366,7 +366,7 @@ export default function StudentProgress() {
                   />
                   {files.certificates && (
                     <p className="text-xs text-green-600 mt-1">
-                      ✓ {files.certificates.name}
+                       {files.certificates.name}
                     </p>
                   )}
                 </div>
@@ -382,7 +382,7 @@ export default function StudentProgress() {
                   />
                   {files.projects && (
                     <p className="text-xs text-green-600 mt-1">
-                      ✓ {files.projects.name}
+                       {files.projects.name}
                     </p>
                   )}
                 </div>

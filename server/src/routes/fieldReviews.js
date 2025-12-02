@@ -2,7 +2,7 @@
 import express from "express";
 import { PrismaClient } from "@prisma/client";
 import { requireAuth, onlyRoles } from "../middleware/auth.js";
-import { sendFieldOfficerWelcomeEmail, sendMissingDocumentRequestEmail, sendAdminFieldReviewCompletedEmail } from "../lib/emailService.js";
+import { sendFieldOfficerWelcomeEmail, sendMissingDocumentRequestEmail, sendAdminFieldReviewCompletedEmail, sendCaseWorkerAssignmentEmail, sendStudentCaseWorkerAssignedEmail } from "../lib/emailService.js";
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -12,24 +12,85 @@ const router = express.Router();
 router.get("/", requireAuth, async (req, res) => {
   try {
     const role = req.user?.role;
-    const where = role === "SUB_ADMIN"
-      ? { officerUserId: req.user.id }
+    const userId = req.user?.id;
+    const userEmail = req.user?.email;
+    
+    console.log(' GET /api/field-reviews');
+    console.log('   User ID:', userId);
+    console.log('   User Email:', userEmail);
+    console.log('   User Role:', role);
+    
+    // Support both SUB_ADMIN and CASE_WORKER terminology for backward compatibility
+    const where = (role === "SUB_ADMIN" || role === "CASE_WORKER")
+      ? { officerUserId: userId }
       : {};
+    
+    console.log('   WHERE clause:', JSON.stringify(where));
 
     const reviews = await prisma.fieldReview.findMany({
       where,
       orderBy: { createdAt: "desc" },
       include: {
         application: {
-          include: {
-            student: true
+          select: {
+            id: true,
+            studentId: true,
+            term: true,
+            status: true,
+            submittedAt: true,
+            amount: true,
+            currency: true,
+            student: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                guardianName: true,
+                guardianPhone1: true,
+                guardianPhone2: true,
+                guardian2Name: true,
+                guardian2Cnic: true,
+                cnic: true,
+                address: true,
+                city: true,
+                province: true,
+                country: true,
+                dateOfBirth: true,
+                gender: true,
+                degreeLevel: true,
+                university: true,
+                program: true,
+                gpa: true,
+                photoUrl: true,
+                photoThumbnailUrl: true,
+                introVideoUrl: true,
+                introVideoThumbnailUrl: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            }
+          }
+        },
+        officer: {
+          select: {
+            id: true,
+            name: true,
+            email: true
           }
         }
       }
     });
+    
+    console.log('   Found reviews:', reviews.length);
+    
     res.json({ reviews });
   } catch (e) {
-    console.error("GET /field-reviews failed:", e);
+    console.error(" GET /field-reviews FAILED!");
+    console.error("   Error type:", e.constructor.name);
+    console.error("   Error message:", e.message);
+    console.error("   Full error:", e);
+    console.error("   Stack:", e.stack);
     res.status(500).json({ error: "Failed to load reviews" });
   }
 });
@@ -90,35 +151,28 @@ router.post("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res
       },
     });
 
-    // Send welcome email to case worker (async, don't block response)
+    // Send assignment notification emails (async, don't block response)
     if (caseWorker.email) {
-      // Generate temporary password if case worker doesn't have one set
-      let tempPassword = null;
-      const existingUser = await prisma.user.findUnique({ 
-        where: { id: officerUserId },
-        select: { passwordHash: true }
-      });
-      
-      if (!existingUser.passwordHash) {
-        // Generate temporary password
-        tempPassword = `CaseWorker${Math.random().toString(36).slice(-6)}!`;
-        const hashedPassword = await bcrypt.hash(tempPassword, 10);
-        await prisma.user.update({
-          where: { id: officerUserId },
-          data: { passwordHash: hashedPassword }
-        });
-      }
-
-      // Send email notification with task-specific details
-      const taskDescription = taskType ? ` for ${taskType.replace('_', ' ').toLowerCase()}` : '';
-      sendFieldOfficerWelcomeEmail({
+      // Send case worker assignment email (to case worker) - notifies of new assignment
+      sendCaseWorkerAssignmentEmail({
         email: caseWorker.email,
-        name: caseWorker.name || 'Case Worker',
-        password: tempPassword || 'Use your existing password',
+        caseWorkerName: caseWorker.name || 'Case Worker',
+        studentName: application.student.name,
         applicationId: applicationId,
-        studentName: `${application.student.name}${taskDescription}`
+        studentEmail: application.student.email
       }).catch(emailError => {
-        console.error('Failed to send case worker email:', emailError);
+        console.error('Failed to send case worker assignment email:', emailError);
+        // Don't fail the request if email fails
+      });
+
+      // Send student notification email (to student) - notify them of case worker assignment
+      sendStudentCaseWorkerAssignedEmail({
+        email: application.student.email,
+        studentName: application.student.name,
+        caseWorkerName: caseWorker.name || 'Case Worker',
+        applicationId: applicationId
+      }).catch(emailError => {
+        console.error('Failed to send student case worker assignment email:', emailError);
         // Don't fail the request if email fails
       });
     }
@@ -131,7 +185,7 @@ router.post("/", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), async (req, res
 });
 
 // Update review (case worker sets status/notes/recommendation)
-router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
+router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "CASE_WORKER", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -258,7 +312,7 @@ router.patch("/:id", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN", "SUPER_ADMIN")
 });
 
 // Request missing info (case worker) — email placeholder and message log
-router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
+router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "CASE_WORKER", "ADMIN", "SUPER_ADMIN"), async (req, res) => {
   try {
     const { id } = req.params;
     const { items = [], note = "" } = req.body || {};
@@ -268,6 +322,15 @@ router.post("/:id/request-missing", requireAuth, onlyRoles("SUB_ADMIN", "ADMIN",
     // Fetch student email
     const student = await prisma.student.findUnique({ where: { id: review.studentId } });
     if (!student) return res.status(404).json({ error: "Student not found" });
+
+    // Update field review with the requested documents
+    // This marks that documents have been requested and enables email notification on upload
+    await prisma.fieldReview.update({
+      where: { id },
+      data: {
+        additionalDocumentsRequested: items,
+      },
+    });
 
     // Send missing document request email (async, don't block response)
     sendMissingDocumentRequestEmail({
@@ -325,7 +388,7 @@ router.patch("/:id/reassign", requireAuth, onlyRoles("ADMIN", "SUPER_ADMIN"), as
       select: { id: true, email: true, name: true, role: true }
     });
 
-    if (!newFieldOfficer || newFieldOfficer.role !== 'SUB_ADMIN') {
+    if (!newFieldOfficer || (newFieldOfficer.role !== 'SUB_ADMIN' && newFieldOfficer.role !== 'CASE_WORKER')) {
       return res.status(404).json({ error: "Valid case worker not found" });
     }
 

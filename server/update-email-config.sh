@@ -7,7 +7,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${GREEN}📧 Updating AWAKE Connect Email Configuration${NC}"
+echo -e "${GREEN} Updating AWAKE Connect Email Configuration${NC}"
 
 # Backup existing .env
 cp server/.env server/.env.backup
@@ -33,11 +33,11 @@ EMAIL_RATE_LIMIT=5
 EMAIL_RATE_WINDOW=60000
 EOF
 
-echo -e "${GREEN}✅ Email configuration updated${NC}"
-echo -e "${YELLOW}📝 New configuration:${NC}"
+echo -e "${GREEN} Email configuration updated${NC}"
+echo -e "${YELLOW} New configuration:${NC}"
 echo -e "Host: mail.aircrew.nl"
 echo -e "Port: 587 (STARTTLS) / 465 (SSL/TLS)"
 echo -e "User: noreply@aircrew.nl"
 echo -e "From: AWAKE Connect <noreply@aircrew.nl>"
 
-echo -e "\n${YELLOW}🔄 Restart your Node.js server after DNS propagation${NC}"
+echo -e "\n${YELLOW} Restart your Node.js server after DNS propagation${NC}"

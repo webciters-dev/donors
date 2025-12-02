@@ -61,14 +61,14 @@ router.get("/check", requireAuth, async (req, res) => {
       }
     });
 
-    console.log(`🔍 Sponsorship check: Donor ${user.donorId} -> Student ${studentId}: ${sponsorship ? 'HAS' : 'NO'} sponsorship`);
+    console.log(` Sponsorship check: Donor ${user.donorId} -> Student ${studentId}: ${sponsorship ? 'HAS' : 'NO'} sponsorship`);
 
     res.json({ 
       hasSponsorship: !!sponsorship,
       sponsorshipId: sponsorship?.id || null
     });
   } catch (error) {
-    console.error("❌ Failed to check sponsorship:", error);
+    console.error(" Failed to check sponsorship:", error);
     res.status(500).json({ error: "Failed to check sponsorship status" });
   }
 });
@@ -216,7 +216,7 @@ router.post("/", requireAuth, async (req, res) => {
       },
     });
 
-    // 🎯 MARK STUDENT AS SPONSORED: Set sponsored=true when sponsorship is created
+    //  MARK STUDENT AS SPONSORED: Set sponsored=true when sponsorship is created
     await prisma.student.update({
       where: { id: studentId },
       data: { sponsored: true }
@@ -224,7 +224,7 @@ router.post("/", requireAuth, async (req, res) => {
 
     // Log payment preferences for now (can be stored in separate table or added to schema later)
     console.log(`Sponsorship created with payment preferences: frequency=${paymentFrequency}, method=${paymentMethod}`);
-    console.log(`🎉 Student ${created.student.name} is now sponsored by ${created.donor.name}`);
+    console.log(` Student ${created.student.name} is now sponsored by ${created.donor.name}`);
 
     res.status(201).json(created);
   } catch (e) {

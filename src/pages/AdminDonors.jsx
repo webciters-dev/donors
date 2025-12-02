@@ -61,7 +61,7 @@ export default function AdminDonors() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">💼 Donors Management</h1>
+          <h1 className="text-2xl font-semibold text-slate-900"> Donors Management</h1>
           <p className="text-slate-600">View and manage all registered donors</p>
         </div>
         <Button onClick={() => navigate(-1)} variant="outline" className="rounded-2xl">

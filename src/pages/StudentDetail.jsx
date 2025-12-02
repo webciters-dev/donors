@@ -48,7 +48,7 @@ export const StudentDetail = ({ id, goBack }) => {
     return `${meta.symbol} ${Number(n || 0).toLocaleString(meta.locale, { maximumFractionDigits: 0 })}`;
   };
 
-  const flag = (cur) => (cur === 'PKR' ? '🇵🇰' : cur === 'USD' ? '🇺🇸' : cur === 'GBP' ? '🇬🇧' : '');
+  const flag = (cur) => (cur === 'PKR' ? '' : cur === 'USD' ? '' : cur === 'GBP' ? '' : '');
 
   // UK university detection (matching Marketplace.jsx logic)
   const detectUKUniversity = (university) => {
@@ -194,7 +194,7 @@ export const StudentDetail = ({ id, goBack }) => {
               <span className="font-medium">{student.name}</span>
             </div>
             {/* Show different information based on user role */}
-            {user?.role === "ADMIN" || user?.role === "SUB_ADMIN" ? (
+            {user?.role === "ADMIN" || user?.role === "SUB_ADMIN" ? ( // SUB_ADMIN role is used internally for case workers
               <>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Email</span>
@@ -314,7 +314,7 @@ export const StudentDetail = ({ id, goBack }) => {
         {/* Career Goals */}
         {student.careerGoals && (
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🎯 Career Goals & Aspirations</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Career Goals & Aspirations</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.careerGoals}
             </div>
@@ -324,7 +324,7 @@ export const StudentDetail = ({ id, goBack }) => {
         {/* Academic Achievements */}
         {student.academicAchievements && (
           <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🏆 Academic Achievements</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Academic Achievements</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.academicAchievements}
             </div>
@@ -334,7 +334,7 @@ export const StudentDetail = ({ id, goBack }) => {
         {/* Community Involvement */}
         {student.communityInvolvement && (
           <div className="mt-4">
-            <h4 className="text-sm font-medium text-slate-700 mb-2">🤝 Community Involvement</h4>
+            <h4 className="text-sm font-medium text-slate-700 mb-2"> Community Involvement</h4>
             <div className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded whitespace-pre-wrap">
               {student.communityInvolvement}
             </div>
@@ -426,7 +426,7 @@ export const StudentDetail = ({ id, goBack }) => {
         <div className="mt-4">
           {student.sponsored ? (
             <div className="text-center py-4">
-              <Badge variant="default" className="mb-2">✓ Sponsored</Badge>
+              <Badge variant="default" className="mb-2"> Sponsored</Badge>
               <p className="text-sm text-slate-600">This student has been fully sponsored.</p>
             </div>
           ) : (

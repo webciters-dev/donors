@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('📊 COMPLETE DATABASE STATUS CHECK\n');
+console.log(' COMPLETE DATABASE STATUS CHECK\n');
 
 try {
   await prisma.$connect();
@@ -23,26 +23,26 @@ try {
     sponsorships: await prisma.sponsorship.count()
   };
   
-  console.log('👥 USER ACCOUNTS:');
+  console.log(' USER ACCOUNTS:');
   console.log(`   Total Users: ${counts.totalUsers}`);
   console.log(`   ├── Admin Users: ${counts.adminUsers}`);
   console.log(`   ├── Case Workers (SUB_ADMIN): ${counts.subAdminUsers}`);
   console.log(`   ├── Student Users: ${counts.studentUsers}`);
   console.log(`   └── Donor Users: ${counts.donorUsers}`);
   
-  console.log('\n📋 DATA RECORDS:');
+  console.log('\n DATA RECORDS:');
   console.log(`   Student Profiles: ${counts.students}`);
   console.log(`   Applications: ${counts.applications}`);
   console.log(`   Donors: ${counts.donors}`);
   console.log(`   Board Members: ${counts.boardMembers}`);
   console.log(`   Sponsorships: ${counts.sponsorships}`);
   
-  console.log('\n🏫 INFRASTRUCTURE:');
+  console.log('\n INFRASTRUCTURE:');
   console.log(`   Universities: ${counts.universities}`);
   
   // Show board members details
   if (counts.boardMembers > 0) {
-    console.log('\n👔 BOARD MEMBERS DETAILS:');
+    console.log('\n BOARD MEMBERS DETAILS:');
     const boardMembers = await prisma.boardMember.findMany({
       select: {
         id: true,
@@ -63,9 +63,9 @@ try {
   }
   
   await prisma.$disconnect();
-  console.log('✅ Complete database check completed');
+  console.log(' Complete database check completed');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

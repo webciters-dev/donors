@@ -2,7 +2,7 @@
 
 This directory contains all database-related utilities and documentation for the Donors Management System.
 
-## 🚀 Quick Start for New Developers
+##  Quick Start for New Developers
 
 **Option 1: Automated Setup (Recommended)**
 ```bash
@@ -22,7 +22,7 @@ npx prisma migrate deploy
 npm run seed
 ```
 
-## 📁 Files Overview
+##  Files Overview
 
 | File | Description | Platform |
 |------|-------------|----------|
@@ -35,7 +35,7 @@ npm run seed
 | `README.md` | Detailed setup instructions | All |
 | `SCRIPTS_USAGE.md` | npm scripts usage guide | All |
 
-## 🛠️ Database Operations
+## ️ Database Operations
 
 ### Export Database (Create Backup)
 ```bash
@@ -90,7 +90,7 @@ npm run db:reset:win    # Windows
 npm run db:fresh        # Reset + seed data
 ```
 
-## 📊 Database Schema
+##  Database Schema
 
 The database includes the following main entities:
 
@@ -103,7 +103,7 @@ The database includes the following main entities:
 - **Progress Reports** - Student progress tracking
 - **Users** - Authentication and role management
 
-## 🔧 Development Workflow
+##  Development Workflow
 
 ### For New Team Members:
 1. Clone the repository
@@ -121,7 +121,7 @@ The database includes the following main entities:
 2. Test migration with fresh database: `npm run db:fresh`
 3. Export and commit updated schema: `npm run db:export`
 
-## 🌐 Cross-Platform Compatibility
+##  Cross-Platform Compatibility
 
 The scripts support multiple platforms:
 
@@ -129,7 +129,7 @@ The scripts support multiple platforms:
 - **Windows**: Use `.bat` scripts or PowerShell `.ps1`
 - **Cross-platform**: Use npm scripts from `server/` directory
 
-## 🔍 Troubleshooting
+##  Troubleshooting
 
 ### Common Issues:
 
@@ -172,14 +172,14 @@ cd server && npx prisma migrate reset
 cd server && npx prisma generate
 ```
 
-## 📚 Additional Resources
+##  Additional Resources
 
 - [Prisma Documentation](https://www.prisma.io/docs/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Project Main README](../README.md)
 - [Server Documentation](../server/README.md)
 
-## 🤝 Contributing
+##  Contributing
 
 When making database changes:
 

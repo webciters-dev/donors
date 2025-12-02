@@ -33,7 +33,7 @@ export default function FieldOfficerDashboard() {
   // Auth recovery mechanism
   useEffect(() => {
     if (user && user.role === "SUB_ADMIN" && !token) {
-      console.error("❌ User appears logged in but no token found - corrupted auth state");
+      console.error(" User appears logged in but no token found - corrupted auth state");
       toast.error("Authentication issue detected. Please log in again.");
       setTimeout(() => {
         navigate("/login");
@@ -164,13 +164,13 @@ export default function FieldOfficerDashboard() {
   const completedReviews = reviews.filter(r => r.status === "COMPLETED");
 
   if (user?.role !== "SUB_ADMIN") {
-    return <Card className="p-6">Sub Admins only.</Card>;
+    return <Card className="p-6">Case Workers only.</Card>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Sub Admin Dashboard</h1>
+        <h1 className="text-2xl font-semibold">Case Worker Dashboard</h1>
         <div className="flex gap-2">
           {(!token || !user) && (
             <Button 
@@ -251,7 +251,7 @@ export default function FieldOfficerDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="secondary">
-                          📚 {review.student?.name || 'Student'}
+                           {review.student?.name || 'Student'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           CNIC: {review.student?.cnic || 'Not provided'}
@@ -310,7 +310,7 @@ export default function FieldOfficerDashboard() {
                     {review.student?.program} · {review.student?.university}
                   </div>
                   <div className="text-sm text-slate-600">
-                    👤 {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
+                     {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button 
@@ -389,8 +389,8 @@ export default function FieldOfficerDashboard() {
                         </div>
                         
                         <div className={`text-xs mb-2 ${isAdminDecided ? 'text-slate-700' : 'text-green-700'}`}>
-                          ✅ Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
-                          📅 Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
+                           Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
+                           Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
                         </div>
                         
                         {review.recommendationReason && (
@@ -425,7 +425,7 @@ export default function FieldOfficerDashboard() {
                             onClick={() => reopenReview(review.id)}
                             disabled={loading}
                           >
-                            ✏️ Edit Review
+                            ️ Edit Review
                           </Button>
                         ) : (
                           <Badge variant="outline" className="text-xs justify-center">
@@ -438,8 +438,8 @@ export default function FieldOfficerDashboard() {
                                  applicationStatus === 'REJECTED' ? 'destructive' : 'secondary'}
                           className="text-xs justify-center"
                         >
-                          {applicationStatus === 'APPROVED' ? '✅ Approved' :
-                           applicationStatus === 'REJECTED' ? '❌ Rejected' :
+                          {applicationStatus === 'APPROVED' ? ' Approved' :
+                           applicationStatus === 'REJECTED' ? ' Rejected' :
                            '⏳ Pending Admin'}
                         </Badge>
                       </div>
@@ -502,7 +502,7 @@ function ReviewModal({
         setLoadingDocs(true);
         
         if (!authHeader?.Authorization) {
-          console.error("❌ No auth header available for documents API call");
+          console.error(" No auth header available for documents API call");
           toast.error("Authentication required for documents. Please log in again.");
           return;
         }
@@ -569,7 +569,7 @@ function ReviewModal({
       <Card className="p-4 bg-slate-50">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-slate-900">📄 Student Documents</h4>
+            <h4 className="font-medium text-slate-900"> Student Documents</h4>
             <div className="text-sm text-slate-600">
               {docs.length} uploaded • {REQUIRED_DOCS.filter(d => docs.some(doc => doc.type === d)).length}/{REQUIRED_DOCS.length} required
             </div>
@@ -607,7 +607,7 @@ function ReviewModal({
                           rel="noreferrer"
                           className="text-green-700 hover:text-green-900 hover:underline font-medium"
                         >
-                          📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                           {uploaded.originalName || docType.replaceAll("_", " ")}
                         </a>
                       ) : (
                         <span className="font-medium text-red-600">{docType.replaceAll("_", " ")} - Missing</span>
@@ -638,7 +638,7 @@ function ReviewModal({
                             rel="noreferrer"
                             className="text-blue-700 hover:text-blue-900 hover:underline font-medium"
                           >
-                            📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                             {uploaded.originalName || docType.replaceAll("_", " ")}
                           </a>
                         </div>
                       </div>
@@ -670,7 +670,7 @@ function ReviewModal({
                             rel="noreferrer"
                             className="text-gray-700 hover:text-gray-900 hover:underline font-medium"
                           >
-                            📁 {d.originalName || d.type.replaceAll("_", " ")}
+                             {d.originalName || d.type.replaceAll("_", " ")}
                           </a>
                         </div>
                       </div>

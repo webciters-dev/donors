@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 async function createBackup() {
   try {
-    console.log('💾 Creating database backup...');
+    console.log(' Creating database backup...');
     
     // Get current counts
     const counts = {
@@ -16,14 +16,14 @@ async function createBackup() {
       programs: await prisma.universityProgram.count()
     };
     
-    console.log('📊 Current database state:');
+    console.log(' Current database state:');
     console.log(`   Universities: ${counts.universities}`);
     console.log(`   Degree Levels: ${counts.degreeLevels}`);
     console.log(`   Fields: ${counts.fields}`);
     console.log(`   Programs: ${counts.programs}`);
     
     // Export current data
-    console.log('📁 Exporting university data...');
+    console.log(' Exporting university data...');
     const backup = {
       timestamp: new Date().toISOString(),
       counts: counts,
@@ -39,12 +39,12 @@ async function createBackup() {
     const backupFile = `backup-universities-${new Date().toISOString().slice(0, 10)}-${Date.now()}.json`;
     fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
     
-    console.log(`✅ Backup created: ${backupFile}`);
-    console.log(`📦 Backup contains ${backup.universities.length} universities with all related data`);
+    console.log(` Backup created: ${backupFile}`);
+    console.log(` Backup contains ${backup.universities.length} universities with all related data`);
     
     return backupFile;
   } catch (error) {
-    console.error('❌ Backup failed:', error.message);
+    console.error(' Backup failed:', error.message);
     throw error;
   } finally {
     await prisma.$disconnect();

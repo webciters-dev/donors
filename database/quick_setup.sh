@@ -12,21 +12,21 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${BLUE}🚀 Quick Database Setup for Donors Management System${NC}"
+echo -e "${BLUE} Quick Database Setup for Donors Management System${NC}"
 echo "========================================================="
 
 # Check if we're in the right directory
 if [ ! -f "README.md" ] || [ ! -d "../server" ]; then
-    echo -e "${RED}❌ Please run this script from the database directory${NC}"
+    echo -e "${RED} Please run this script from the database directory${NC}"
     exit 1
 fi
 
 # Function to check PostgreSQL installation
 check_postgresql() {
-    echo -e "${YELLOW}🔍 Checking PostgreSQL installation...${NC}"
+    echo -e "${YELLOW} Checking PostgreSQL installation...${NC}"
     
     if ! command -v psql &> /dev/null; then
-        echo -e "${RED}❌ PostgreSQL is not installed or not in PATH${NC}"
+        echo -e "${RED} PostgreSQL is not installed or not in PATH${NC}"
         echo "Please install PostgreSQL first:"
         echo "  • Ubuntu/Debian: sudo apt install postgresql postgresql-contrib"
         echo "  • CentOS/RHEL: sudo yum install postgresql postgresql-server"
@@ -35,38 +35,38 @@ check_postgresql() {
         exit 1
     fi
     
-    echo -e "${GREEN}✅ PostgreSQL found${NC}"
+    echo -e "${GREEN} PostgreSQL found${NC}"
 }
 
 # Function to check Node.js and npm
 check_nodejs() {
-    echo -e "${YELLOW}🔍 Checking Node.js installation...${NC}"
+    echo -e "${YELLOW} Checking Node.js installation...${NC}"
     
     if ! command -v node &> /dev/null; then
-        echo -e "${RED}❌ Node.js is not installed${NC}"
+        echo -e "${RED} Node.js is not installed${NC}"
         echo "Please install Node.js from https://nodejs.org/"
         exit 1
     fi
     
     if ! command -v npm &> /dev/null; then
-        echo -e "${RED}❌ npm is not installed${NC}"
+        echo -e "${RED} npm is not installed${NC}"
         echo "Please install npm (usually comes with Node.js)"
         exit 1
     fi
     
-    echo -e "${GREEN}✅ Node.js and npm found${NC}"
+    echo -e "${GREEN} Node.js and npm found${NC}"
 }
 
 # Function to setup database
 setup_database() {
-    echo -e "${YELLOW}🏗️  Setting up database...${NC}"
+    echo -e "${YELLOW}️  Setting up database...${NC}"
     
     DB_NAME="donors_dev"
     DB_USER="${DB_USER:-postgres}"
     
     # Check if database exists
     if psql -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"; then
-        echo -e "${YELLOW}⚠️  Database '$DB_NAME' already exists${NC}"
+        echo -e "${YELLOW}️  Database '$DB_NAME' already exists${NC}"
         read -p "Do you want to recreate it? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -77,44 +77,44 @@ setup_database() {
         fi
     fi
     
-    echo -e "${BLUE}🏗️  Creating database '$DB_NAME'...${NC}"
+    echo -e "${BLUE}️  Creating database '$DB_NAME'...${NC}"
     createdb "$DB_NAME"
-    echo -e "${GREEN}✅ Database created${NC}"
+    echo -e "${GREEN} Database created${NC}"
 }
 
 # Function to setup server dependencies
 setup_server() {
-    echo -e "${YELLOW}📦 Setting up server dependencies...${NC}"
+    echo -e "${YELLOW} Setting up server dependencies...${NC}"
     
     if [ -d "../server" ]; then
         cd ../server
         
         if [ ! -f "package.json" ]; then
-            echo -e "${RED}❌ No package.json found in server directory${NC}"
+            echo -e "${RED} No package.json found in server directory${NC}"
             exit 1
         fi
         
-        echo -e "${BLUE}📥 Installing dependencies...${NC}"
+        echo -e "${BLUE} Installing dependencies...${NC}"
         npm install
         
-        echo -e "${BLUE}🔧 Running Prisma setup...${NC}"
+        echo -e "${BLUE} Running Prisma setup...${NC}"
         npx prisma generate
         npx prisma migrate deploy
         
-        echo -e "${BLUE}🌱 Seeding database...${NC}"
+        echo -e "${BLUE} Seeding database...${NC}"
         npm run seed
         
         cd ../database
-        echo -e "${GREEN}✅ Server setup complete${NC}"
+        echo -e "${GREEN} Server setup complete${NC}"
     else
-        echo -e "${RED}❌ Server directory not found${NC}"
+        echo -e "${RED} Server directory not found${NC}"
         exit 1
     fi
 }
 
 # Function to create environment file
 create_env_file() {
-    echo -e "${YELLOW}📄 Setting up environment file...${NC}"
+    echo -e "${YELLOW} Setting up environment file...${NC}"
     
     ENV_FILE="../server/.env"
     
@@ -138,22 +138,22 @@ NODE_ENV=development
 FRONTEND_URL="http://localhost:8080"
 EOF
     
-    echo -e "${GREEN}✅ Environment file created at $ENV_FILE${NC}"
-    echo -e "${YELLOW}⚠️  Please update the DATABASE_URL with your actual PostgreSQL credentials${NC}"
+    echo -e "${GREEN} Environment file created at $ENV_FILE${NC}"
+    echo -e "${YELLOW}️  Please update the DATABASE_URL with your actual PostgreSQL credentials${NC}"
 }
 
 # Function to show next steps
 show_next_steps() {
     echo ""
-    echo -e "${GREEN}🎉 Database setup completed successfully!${NC}"
+    echo -e "${GREEN} Database setup completed successfully!${NC}"
     echo ""
     echo "Next steps:"
-    echo "  1. 📝 Update server/.env with your PostgreSQL credentials"
-    echo "  2. 🚀 Start the backend server:"
+    echo "  1.  Update server/.env with your PostgreSQL credentials"
+    echo "  2.  Start the backend server:"
     echo "     cd server && npm run dev"
-    echo "  3. 🌐 Start the frontend (in another terminal):"
+    echo "  3.  Start the frontend (in another terminal):"
     echo "     npm run dev"
-    echo "  4. 🔍 Test the setup by visiting http://localhost:8080"
+    echo "  4.  Test the setup by visiting http://localhost:8080"
     echo ""
     echo "Database management commands:"
     echo "  • Export database: ./export_database.sh"

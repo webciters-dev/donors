@@ -110,10 +110,10 @@ export default function StudentDashboard() {
                 });
               } else {
                 const errorText = await convRes.text();
-                console.error('🔍 StudentDashboard: Conversations API error:', convRes.status, errorText);
+                console.error(' StudentDashboard: Conversations API error:', convRes.status, errorText);
               }
             } catch (convError) {
-              console.error('🔍 StudentDashboard: Failed to load conversations:', convError);
+              console.error(' StudentDashboard: Failed to load conversations:', convError);
             }
             
             // Sort all messages by date (newest first for better UX)
@@ -207,10 +207,10 @@ export default function StudentDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant={msg.fromRole === 'admin' ? 'default' : msg.fromRole === 'donor' ? 'outline' : 'secondary'}>
-                          {msg.fromRole === 'admin' ? '👨‍💼 Admin' : 
-                           msg.fromRole === 'sub_admin' ? '🏢 Sub Admin' : 
-                           msg.fromRole === 'donor' ? `💝 Donor${msg.senderName ? `: ${msg.senderName}` : ''}` : 
-                           '👤 You'}
+                          {msg.fromRole === 'admin' ? '‍ Admin' : 
+                           msg.fromRole === 'sub_admin' ? ' Case Worker' : 
+                           msg.fromRole === 'donor' ? ` Donor${msg.senderName ? `: ${msg.senderName}` : ''}` : 
+                           ' You'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           {new Date(msg.createdAt).toLocaleDateString()}
@@ -279,7 +279,7 @@ export default function StudentDashboard() {
 
                 {application.status === 'APPROVED' && (
                   <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
-                    <div className="text-emerald-800 font-medium">🎉 Congratulations!</div>
+                    <div className="text-emerald-800 font-medium"> Congratulations!</div>
                     <div className="text-emerald-700 text-sm">
                       Your application has been approved. You'll now appear in the marketplace for donor sponsorship.
                     </div>
@@ -475,7 +475,7 @@ export default function StudentDashboard() {
                     {msg.fromRole === 'student' ? 'You' : 
                      msg.fromRole === 'admin' ? 'Admin' : 
                      msg.fromRole === 'donor' ? `Donor${msg.senderName ? ` (${msg.senderName})` : ''}` : 
-                     'Sub Admin'}
+                     'Case Worker'}
                   </div>
                   <div className="text-slate-700">{msg.text}</div>
                   <div className="text-xs text-slate-500 mt-1">

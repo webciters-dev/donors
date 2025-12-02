@@ -6,6 +6,14 @@ import crypto from "crypto";
 import prisma from "../prismaClient.js";
 import { sendStudentWelcomeEmail, sendDonorWelcomeEmail, sendPasswordResetEmail } from "../lib/emailService.js";
 import { requireStrictRecaptcha, requireMediumRecaptcha } from "../middleware/recaptcha.js";
+import { authRateLimiter, passwordResetRateLimiter } from "../middleware/rateLimiter.js";
+import { 
+  validateRegistration, 
+  validateLogin, 
+  validatePasswordReset, 
+  validatePasswordResetConfirm,
+  handleValidationErrors 
+} from "../middleware/validators.js";
 
 const router = express.Router();
 
@@ -20,7 +28,7 @@ function signToken(payload) {
    GENERIC REGISTER (optional)
    body: { email, password, role: "ADMIN" | "DONOR" | "STUDENT" }
 ========================= */
-router.post("/register", async (req, res) => {
+router.post("/register", authRateLimiter, validateRegistration, handleValidationErrors, async (req, res) => {
   try {
     const { email, password, role = "STUDENT" } = req.body;
     if (!email || !password) {
@@ -52,7 +60,7 @@ router.post("/register", async (req, res) => {
    LOGIN
    body: { email, password }
 ========================= */
-router.post("/login", async (req, res) => {
+router.post("/login", authRateLimiter, validateLogin, handleValidationErrors, async (req, res) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
@@ -273,7 +281,7 @@ router.post("/register-donor", requireStrictRecaptcha, async (req, res) => {
    body: { email }
    (In production you'd email the token. Here we return it for testing.)
 ========================= */
-router.post("/request-password-reset", requireMediumRecaptcha, async (req, res) => {
+router.post("/request-password-reset", passwordResetRateLimiter, requireMediumRecaptcha, validatePasswordReset, handleValidationErrors, async (req, res) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: "email required" });
@@ -315,7 +323,7 @@ router.post("/request-password-reset", requireMediumRecaptcha, async (req, res) 
    PASSWORD RESET — confirm
    body: { token, password }
 ========================= */
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetConfirm, handleValidationErrors, async (req, res) => {
   try {
     const { token, password } = req.body || {};
     

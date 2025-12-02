@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function analyzeUniversities() {
   try {
-    console.log('🔍 Analyzing Current University Data');
+    console.log(' Analyzing Current University Data');
     console.log('===================================');
     
     // Get all universities
@@ -22,11 +22,11 @@ async function analyzeUniversities() {
       }
     });
     
-    console.log(`📊 Total Universities: ${universities.length}`);
+    console.log(` Total Universities: ${universities.length}`);
     console.log('');
     
     // Look for potential duplicates (universities with similar names)
-    console.log('🔍 Checking for potential duplicates...');
+    console.log(' Checking for potential duplicates...');
     const potentialDuplicates = [];
     
     for (let i = 0; i < universities.length; i++) {
@@ -48,18 +48,18 @@ async function analyzeUniversities() {
     }
     
     if (potentialDuplicates.length > 0) {
-      console.log(`⚠️ Found ${potentialDuplicates.length} potential duplicate(s):`);
+      console.log(`️ Found ${potentialDuplicates.length} potential duplicate(s):`);
       potentialDuplicates.forEach((dup, index) => {
         console.log(`\n${index + 1}. Potential duplicates:`);
         console.log(`   "${dup.uni1.name}" (${dup.uni1._count.programs} programs)`);
         console.log(`   "${dup.uni2.name}" (${dup.uni2._count.programs} programs)`);
       });
     } else {
-      console.log('✅ No obvious duplicates found');
+      console.log(' No obvious duplicates found');
     }
     
     // Show Pakistani universities
-    console.log('\n🇵🇰 Pakistani Universities:');
+    console.log('\n Pakistani Universities:');
     const pakistaniUnis = universities.filter(u => u.country === 'Pakistan');
     console.log(`   Found: ${pakistaniUnis.length} Pakistani universities`);
     
@@ -74,7 +74,7 @@ async function analyzeUniversities() {
     }
     
     // Show sample of all countries
-    console.log('\n🌍 Universities by Country:');
+    console.log('\n Universities by Country:');
     const countryCounts = {};
     universities.forEach(uni => {
       countryCounts[uni.country] = (countryCounts[uni.country] || 0) + 1;
@@ -87,7 +87,7 @@ async function analyzeUniversities() {
       });
 
   } catch (error) {
-    console.error('❌ Analysis failed:', error.message);
+    console.error(' Analysis failed:', error.message);
   } finally {
     await prisma.$disconnect();
   }

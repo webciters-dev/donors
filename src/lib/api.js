@@ -42,7 +42,7 @@ export async function apiFetch(path, { method = "GET", body, token, headers = {}
     
     return res.text();
   } catch (error) {
-    console.error(`🚨 API Error for ${path}:`, error);
+    console.error(` API Error for ${path}:`, error);
     throw error;
   }
 }

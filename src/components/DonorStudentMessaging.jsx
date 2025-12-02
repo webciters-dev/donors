@@ -83,7 +83,7 @@ const DonorStudentMessaging = ({ student, user, token }) => {
       }
 
       try {
-        console.log('🔍 DonorStudentMessaging: Checking sponsorship status for donor:', user.id, 'student:', student.id);
+        console.log(' DonorStudentMessaging: Checking sponsorship status for donor:', user.id, 'student:', student.id);
         
         // Check if this donor has sponsored this specific student
         const response = await fetch(`${API}/api/sponsorships/check?studentId=${student.id}`, {
@@ -94,14 +94,14 @@ const DonorStudentMessaging = ({ student, user, token }) => {
 
         if (response.ok) {
           const data = await response.json();
-          console.log('🔍 DonorStudentMessaging: Sponsorship check result:', data);
+          console.log(' DonorStudentMessaging: Sponsorship check result:', data);
           setHasSponsorship(data.hasSponsorship === true);
         } else {
-          console.warn('🔍 DonorStudentMessaging: Sponsorship check failed, defaulting to false');
+          console.warn(' DonorStudentMessaging: Sponsorship check failed, defaulting to false');
           setHasSponsorship(false);
         }
       } catch (error) {
-        console.error('🔍 DonorStudentMessaging: Error checking sponsorship:', error);
+        console.error(' DonorStudentMessaging: Error checking sponsorship:', error);
         setHasSponsorship(false);
       } finally {
         setCheckingSponsorship(false);

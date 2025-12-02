@@ -30,11 +30,11 @@ router.get("/", async (req, res) => {
           }
         });
 
-        console.log('🔍 Messages API: Found', messages.length, 'old messages');
+        console.log(' Messages API: Found', messages.length, 'old messages');
         res.json({ messages });
         return;
       } catch (adminError) {
-        console.error('❌ Admin messages query failed:', adminError);
+        console.error(' Admin messages query failed:', adminError);
         res.status(500).json({ error: "Failed to fetch admin messages", details: adminError.message });
         return;
       }
@@ -62,7 +62,7 @@ const messages = await prisma.message.findMany({
 
     res.json({ messages });
   } catch (err) {
-    console.error("❌ Failed to fetch messages:", err);
+    console.error(" Failed to fetch messages:", err);
     res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
@@ -96,7 +96,7 @@ router.post("/", requireBasicRecaptcha, async (req, res) => {
 
     res.status(201).json(msg);
   } catch (err) {
-    console.error("❌ Failed to create message:", err);
+    console.error(" Failed to create message:", err);
     res.status(500).json({ error: "Failed to create message" });
   }
 });

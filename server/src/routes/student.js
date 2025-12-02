@@ -118,7 +118,7 @@ router.post('/progress-reports', requireAuth, upload.array('files', 5), async (r
       return newReport;
     });
     
-    console.log(`📝 Progress report submitted by ${student.name}: ${title}`);
+    console.log(` Progress report submitted by ${student.name}: ${title}`);
     res.status(201).json(report);
     
   } catch (error) {

@@ -18,12 +18,12 @@ async function updateSuperAdmin() {
       }
     });
 
-    console.log('✅ Super Admin updated successfully!');
+    console.log(' Super Admin updated successfully!');
     console.log('Email:', updatedUser.email);
     console.log('Password: RoG*741#SuP');
     console.log('Role:', updatedUser.role);
   } catch (error) {
-    console.error('❌ Failed to update Super Admin:', error.message);
+    console.error(' Failed to update Super Admin:', error.message);
   } finally {
     await prisma.$disconnect();
   }

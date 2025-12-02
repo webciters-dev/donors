@@ -110,7 +110,7 @@ export default function UniversitySelector({
               {uni.name}
             </option>
           ))}
-          <option value="Other">🏫 Other University (not listed)</option>
+          <option value="Other"> Other University (not listed)</option>
         </datalist>
         
         {/* Error state */}

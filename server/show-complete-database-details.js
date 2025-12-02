@@ -3,14 +3,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🎉 COMPLETE DATABASE ANALYSIS: donors_db');
+console.log(' COMPLETE DATABASE ANALYSIS: donors_db');
 console.log('='.repeat(60));
 
 try {
   await prisma.$connect();
   
   // Users breakdown
-  console.log('\n👥 USERS (5 total):');
+  console.log('\n USERS (5 total):');
   const users = await prisma.user.findMany({
     select: {
       email: true,
@@ -25,7 +25,7 @@ try {
   });
 
   // Universities
-  console.log('\n🏫 UNIVERSITIES (205 total):');
+  console.log('\n UNIVERSITIES (205 total):');
   const universityCount = await prisma.university.count();
   const pakistaniCount = await prisma.university.count({
     where: { country: 'Pakistan' }
@@ -41,7 +41,7 @@ try {
     orderBy: { name: 'asc' }
   });
   
-  console.log('\n🇵🇰 PAKISTANI UNIVERSITIES:');
+  console.log('\n PAKISTANI UNIVERSITIES:');
   pakistaniUniversities.slice(0, 15).forEach((uni, index) => {
     console.log(`${index + 1}. ${uni.name} ${uni.isOfficial ? '(Official)' : '(Custom)'}`);
   });
@@ -51,7 +51,7 @@ try {
   }
 
   // Board Members
-  console.log('\n👔 BOARD MEMBERS:');
+  console.log('\n BOARD MEMBERS:');
   const boardMembers = await prisma.boardMember.findMany({
     select: {
       name: true,
@@ -77,7 +77,7 @@ try {
   const fieldCount = await prisma.universityField.count();
   const programCount = await prisma.universityProgram.count();
   
-  console.log('\n📚 ACADEMIC DATA:');
+  console.log('\n ACADEMIC DATA:');
   console.log(`Degree Levels: ${degreeLevelCount}`);
   console.log(`Academic Fields: ${fieldCount}`);
   console.log(`Programs: ${programCount}`);
@@ -92,7 +92,7 @@ try {
       take: 5
     });
     
-    console.log('\n🎓 Sample Degree Levels:');
+    console.log('\n Sample Degree Levels:');
     sampleLevels.forEach((level, index) => {
       console.log(`${index + 1}. ${level.degreeLevel} at ${level.university.name}`);
     });
@@ -100,14 +100,14 @@ try {
 
   await prisma.$disconnect();
   
-  console.log('\n🎯 CONCLUSION:');
-  console.log('✅ This IS the complete database you were looking for!');
-  console.log('✅ 1 Admin + 4 Case Workers = 5 users');
-  console.log('✅ 28 Pakistani universities (part of 205 total)');
-  console.log('✅ 3 Board Members configured');
-  console.log('✅ Complete academic structure with degrees/fields/programs');
+  console.log('\n CONCLUSION:');
+  console.log(' This IS the complete database you were looking for!');
+  console.log(' 1 Admin + 4 Case Workers = 5 users');
+  console.log(' 28 Pakistani universities (part of 205 total)');
+  console.log(' 3 Board Members configured');
+  console.log(' Complete academic structure with degrees/fields/programs');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

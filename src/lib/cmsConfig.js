@@ -15,17 +15,17 @@ export const CMS_CONTENT_DEFAULTS = {
     wholeStudent: {
       title: "Whole-Student Sponsorships",
       description: "Sponsor complete educational journeys, not just tuition. Cover living expenses, books, and resources.",
-      icon: "🎓"
+      icon: ""
     },
     interestFree: {
       title: "Interest-Free Repayments", 
       description: "Students repay without interest, following Islamic principles and making education accessible.",
-      icon: "📈"
+      icon: ""
     },
     builtForTrust: {
       title: "Built for Trust",
       description: "Rigorous verification, regular updates, and transparent tracking of every donation dollar.",
-      icon: "📋"
+      icon: ""
     }
   },
 
@@ -52,27 +52,27 @@ export const CMS_CONTENT_DEFAULTS = {
       transparent: {
         title: "Transparent & Secure",
         description: "501(c)(3) with bank-level security and fully auditable records",
-        icon: "🔒"
+        icon: ""
       },
       wholestudent: {
         title: "Whole-Student Support", 
         description: "Sponsor tuition, hostel, and essentials—see progress every term",
-        icon: "👥"
+        icon: ""
       },
       tracking: {
         title: "Outcomes You Can Track",
         description: "Students upload results & certificates, donors view a living timeline", 
-        icon: "📊"
+        icon: ""
       },
       marketplace: {
         title: "Marketplace of Hope",
         description: "Only admin-approved applications appear for sponsorship",
-        icon: "🏪"
+        icon: ""
       },
       questions: {
         title: "Questions?",
         description: "Reach us at support@awake.org - Akhuwat USA",
-        icon: "💬"
+        icon: ""
       }
     }
   },

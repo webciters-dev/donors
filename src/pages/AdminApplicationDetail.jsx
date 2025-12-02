@@ -14,9 +14,9 @@ import StudentVideo from "@/components/StudentVideo";
 
 // Case Worker task types
 const TASK_TYPES = [
-  { value: "", label: "Complete Verification (All Tasks)", icon: "🎯", description: "Full verification including documents, field visit, and CNIC" },
-  { value: "DOCUMENT_REVIEW", label: "Document Review Only", icon: "📄", description: "Review and verify submitted documents" },
-  { value: "FIELD_VISIT", label: "Field Visit Only", icon: "🏠", description: "Conduct home visit and interview" },
+  { value: "", label: "Complete Verification (All Tasks)", icon: "", description: "Full verification including documents, field visit, and CNIC" },
+  { value: "DOCUMENT_REVIEW", label: "Document Review Only", icon: "", description: "Review and verify submitted documents" },
+  { value: "FIELD_VISIT", label: "Field Visit Only", icon: "", description: "Conduct home visit and interview" },
   { value: "CNIC_VERIFICATION", label: "CNIC Verification Only", icon: "🆔", description: "Verify identity documents" },
 ];
 
@@ -295,7 +295,7 @@ export default function AdminApplicationDetail() {
               <div className="text-sm text-slate-600">
                 {app.student?.photoUrl ? (
                   <div>
-                    <div>✅ Photo uploaded</div>
+                    <div> Photo uploaded</div>
                     <div className="text-xs opacity-75">Profile picture available</div>
                   </div>
                 ) : (
@@ -317,7 +317,7 @@ export default function AdminApplicationDetail() {
               <div className="text-sm text-slate-600">
                 {app.student?.introVideoUrl ? (
                   <div>
-                    <div>✅ Video uploaded</div>
+                    <div> Video uploaded</div>
                     <div className="text-xs opacity-75">Click to play video</div>
                   </div>
                 ) : (
@@ -623,7 +623,7 @@ export default function AdminApplicationDetail() {
       <Card className="p-6 bg-blue-50 border-2 border-blue-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-blue-800 flex items-center gap-2">
-            🔧⚙️ Admin Decision Panel
+            ️ Admin Decision Panel
           </h3>
           <Badge variant="outline" className="text-blue-700 border-blue-300">
             Current Status: {app.status}
@@ -679,7 +679,7 @@ export default function AdminApplicationDetail() {
                     }));
                   }}
                 >
-                  ✅ Approve
+                   Approve
                 </Button>
                 
                 <Button 
@@ -692,7 +692,7 @@ export default function AdminApplicationDetail() {
                     }));
                   }}
                 >
-                  ❌ Reject
+                   Reject
                 </Button>
                 
                 <Button 
@@ -706,7 +706,7 @@ export default function AdminApplicationDetail() {
                     }));
                   }}
                 >
-                  🔍 Mark Under Review
+                   Mark Under Review
                 </Button>
               </div>
             </div>
@@ -732,7 +732,7 @@ export default function AdminApplicationDetail() {
                       // Handle document validation error for approval
                       if (errorData.requiresOverride && errorData.missingDocuments) {
                         const proceed = window.confirm(
-                          `⚠️ Missing Required Documents:\n\n` +
+                          `️ Missing Required Documents:\n\n` +
                           `${errorData.missingDocuments.join(', ')}\n\n` +
                           `This application cannot be approved until all required documents are uploaded.\n\n` +
                           `Click OK to approve anyway (Force Approve)\n` +
@@ -753,7 +753,7 @@ export default function AdminApplicationDetail() {
                           
                           if (!forceRes.ok) throw new Error("Failed to force approve application");
                           
-                          toast.success("✅ Application force approved despite missing documents!");
+                          toast.success(" Application force approved despite missing documents!");
                         } else {
                           // Reset status to previous value
                           setApp(prev => ({
@@ -761,7 +761,7 @@ export default function AdminApplicationDetail() {
                             _status: prev.status,
                             _notes: prev.notes
                           }));
-                          toast.info("⚠️ Save cancelled - waiting for required documents to be uploaded");
+                          toast.info("️ Save cancelled - waiting for required documents to be uploaded");
                           return;
                         }
                       } else {
@@ -793,7 +793,7 @@ export default function AdminApplicationDetail() {
         {reviews.length > 0 && reviews[0].status === "COMPLETED" && (
           <div className="mt-4 pt-4 border-t border-blue-300">
             <div className="text-sm font-medium text-blue-800 mb-2">
-              📊 Case Worker Recommendation Summary:
+               Case Worker Recommendation Summary:
             </div>
             <div className="bg-white rounded p-3 border border-blue-200">
               <div className="flex items-center gap-2 text-sm">
@@ -818,7 +818,7 @@ export default function AdminApplicationDetail() {
               </div>
               {reviews[0].adminNotesRequired && (
                 <div className="mt-2 text-sm text-amber-700 bg-amber-100 p-2 rounded border border-amber-300">
-                  <strong>⚠️ Attention Required:</strong> {reviews[0].adminNotesRequired}
+                  <strong>️ Attention Required:</strong> {reviews[0].adminNotesRequired}
                 </div>
               )}
             </div>
@@ -836,9 +836,9 @@ export default function AdminApplicationDetail() {
             const missingRequired = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
             
             if (missingRequired.length === 0) {
-              return <Badge className="bg-green-100 text-green-800 text-xs">✅ All Required</Badge>;
+              return <Badge className="bg-green-100 text-green-800 text-xs"> All Required</Badge>;
             } else {
-              return <Badge className="bg-red-100 text-red-800 text-xs">⚠️ Missing {missingRequired.length}</Badge>;
+              return <Badge className="bg-red-100 text-red-800 text-xs">️ Missing {missingRequired.length}</Badge>;
             }
           })()}
         </div>
@@ -857,7 +857,7 @@ export default function AdminApplicationDetail() {
                     rel="noreferrer"
                     className="text-green-700 hover:text-green-900 hover:underline font-medium"
                   >
-                    ✅ {doc.originalName || doc.type.replaceAll("_", " ")}
+                     {doc.originalName || doc.type.replaceAll("_", " ")}
                   </a>
                 </div>
               </div>
@@ -896,7 +896,7 @@ export default function AdminApplicationDetail() {
                   {/* Show assigned case worker name */}
                   {r.officerUserId && (
                     <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                      👤 {officers.find(o => o.id === r.officerUserId)?.name || officers.find(o => o.id === r.officerUserId)?.email || 'Unknown Case Worker'}
+                       {officers.find(o => o.id === r.officerUserId)?.name || officers.find(o => o.id === r.officerUserId)?.email || 'Unknown Case Worker'}
                     </Badge>
                   )}
                   <Badge variant={r.status === "COMPLETED" ? "default" : r.status === "IN_PROGRESS" ? "secondary" : "outline"}>
@@ -927,7 +927,7 @@ export default function AdminApplicationDetail() {
               {r.status === "COMPLETED" && (
                 <div className="bg-white rounded-lg p-4 mb-3 border">
                   <h4 className="font-medium text-slate-800 mb-3 flex items-center gap-2">
-                    🏠 Field Verification Report
+                     Field Verification Report
                   </h4>
                   
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -943,10 +943,10 @@ export default function AdminApplicationDetail() {
                       <div className="space-y-1">
                         <span className="font-medium text-slate-600">Verification Status:</span>
                         <div className="flex flex-wrap gap-1">
-                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Identity</Badge>}
-                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Documents</Badge>}
-                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Income</Badge>}
-                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs">✅ Education</Badge>}
+                          {r.identityVerified && <Badge className="bg-green-100 text-green-800 text-xs"> Identity</Badge>}
+                          {r.documentsVerified && <Badge className="bg-green-100 text-green-800 text-xs"> Documents</Badge>}
+                          {r.familyIncomeVerified && <Badge className="bg-green-100 text-green-800 text-xs"> Income</Badge>}
+                          {r.educationVerified && <Badge className="bg-green-100 text-green-800 text-xs"> Education</Badge>}
                         </div>
                       </div>
                       
@@ -974,7 +974,7 @@ export default function AdminApplicationDetail() {
                           <div className="flex flex-wrap gap-1 mt-1">
                             {r.riskFactors.map((risk, idx) => (
                               <Badge key={idx} variant="destructive" className="text-xs">
-                                ⚠️ {risk}
+                                ️ {risk}
                               </Badge>
                             ))}
                           </div>
@@ -996,28 +996,28 @@ export default function AdminApplicationDetail() {
                   <div className="grid md:grid-cols-2 gap-4 mt-4 text-xs">
                     {r.homeVisitNotes && (
                       <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
-                        <div className="font-medium text-blue-800 mb-1">🏠 Home Visit Notes:</div>
+                        <div className="font-medium text-blue-800 mb-1"> Home Visit Notes:</div>
                         <div className="text-blue-700">{r.homeVisitNotes}</div>
                       </div>
                     )}
                     
                     {r.familyInterviewNotes && (
                       <div className="bg-purple-50 p-3 rounded border-l-4 border-purple-400">
-                        <div className="font-medium text-purple-800 mb-1">👥 Family Interview:</div>
+                        <div className="font-medium text-purple-800 mb-1"> Family Interview:</div>
                         <div className="text-purple-700">{r.familyInterviewNotes}</div>
                       </div>
                     )}
                     
                     {r.financialVerificationNotes && (
                       <div className="bg-green-50 p-3 rounded border-l-4 border-green-400">
-                        <div className="font-medium text-green-800 mb-1">💰 Financial Verification:</div>
+                        <div className="font-medium text-green-800 mb-1"> Financial Verification:</div>
                         <div className="text-green-700">{r.financialVerificationNotes}</div>
                       </div>
                     )}
                     
                     {r.characterAssessment && (
                       <div className="bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
-                        <div className="font-medium text-yellow-800 mb-1">🎭 Character Assessment:</div>
+                        <div className="font-medium text-yellow-800 mb-1"> Character Assessment:</div>
                         <div className="text-yellow-700">{r.characterAssessment}</div>
                       </div>
                     )}
@@ -1028,14 +1028,14 @@ export default function AdminApplicationDetail() {
                     <div className="mt-4 pt-3 border-t border-slate-200">
                       {r.recommendationReason && (
                         <div className="bg-slate-100 p-3 rounded mb-2">
-                          <div className="font-medium text-slate-800 text-sm mb-1">📝 Recommendation Reason:</div>
+                          <div className="font-medium text-slate-800 text-sm mb-1"> Recommendation Reason:</div>
                           <div className="text-slate-700 text-sm">{r.recommendationReason}</div>
                         </div>
                       )}
                       
                       {r.adminNotesRequired && (
                         <div className="bg-amber-100 p-3 rounded border border-amber-300">
-                          <div className="font-medium text-amber-800 text-sm mb-1">⚠️ Requires Admin Attention:</div>
+                          <div className="font-medium text-amber-800 text-sm mb-1">️ Requires Admin Attention:</div>
                           <div className="text-amber-700 text-sm font-medium">{r.adminNotesRequired}</div>
                         </div>
                       )}
@@ -1127,10 +1127,10 @@ export default function AdminApplicationDetail() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge variant={isDonorMessage ? "default" : isStudentReply ? "secondary" : "outline"}>
-                          {isDonorMessage ? `💰 Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
-                           isStudentReply ? '🎓 Student Reply' : 
-                           m.fromRole === 'admin' ? '🔧 Admin' : 
-                           '👨‍💼 Case Worker'}
+                          {isDonorMessage ? ` Donor${m.senderName ? `: ${m.senderName}` : ''}` : 
+                           isStudentReply ? ' Student Reply' : 
+                           m.fromRole === 'admin' ? ' Admin' : 
+                           '‍ Case Worker'}
                         </Badge>
                         {(isDonorMessage || isStudentReply) && (
                           <Badge variant="outline" className="text-xs bg-yellow-50 text-yellow-700">

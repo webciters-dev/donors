@@ -46,6 +46,10 @@ export const ApplicationForm = () => {
   const location = useLocation();
   const { login, user, token } = useAuth();
   
+  // Refs for scroll-to-top on step transitions
+  const step2ContainerRef = useRef(null);
+  const step3ContainerRef = useRef(null);
+  
   // Read step from URL parameter or default to 1
   const getInitialStep = () => {
     const searchParams = new URLSearchParams(location.search);
@@ -74,7 +78,7 @@ export const ApplicationForm = () => {
     const searchParams = new URLSearchParams(location.search);
     const urlStep = parseInt(searchParams.get('step'));
     
-    console.log('🎯 URL useEffect triggered:', {
+    console.log(' URL useEffect triggered:', {
       locationSearch: location.search,
       urlStep,
       hasUser: !!user,
@@ -83,7 +87,7 @@ export const ApplicationForm = () => {
     });
     
     if (user && (urlStep === 1 || urlStep === 2 || urlStep === 3)) {
-      console.log('✅ Setting step and loading data for step:', urlStep);
+      console.log(' Setting step and loading data for step:', urlStep);
       setStep(urlStep);
       setIsRegistered(true);
       setStudentId(user.studentId);
@@ -91,7 +95,7 @@ export const ApplicationForm = () => {
       // Load existing student data when returning to any step
       loadExistingStudentData();
     } else if (user && !urlStep) {
-      console.log('✅ User present but no URL step - loading data');
+      console.log(' User present but no URL step - loading data');
       // User accessing /apply without step parameter - also load data
       setIsRegistered(true);
       setStudentId(user.studentId);
@@ -103,7 +107,7 @@ export const ApplicationForm = () => {
 
   // Load existing student data to populate form
   const loadExistingStudentData = useCallback(async () => {
-    console.log('🔍 loadExistingStudentData called with:', {
+    console.log(' loadExistingStudentData called with:', {
       hasUser: !!user,
       studentId: user?.studentId,
       hasToken: !!token,
@@ -112,7 +116,7 @@ export const ApplicationForm = () => {
     });
     
     if (!user?.studentId || !token) {
-      console.log('❌ Skipping data load - missing user.studentId or token');
+      console.log(' Skipping data load - missing user.studentId or token');
       return;
     }
     
@@ -123,23 +127,23 @@ export const ApplicationForm = () => {
     
     try {
       setLoadingStudentData(true);
-      console.log('📡 Starting API call to load existing student data...');
+      console.log(' Starting API call to load existing student data...');
       const response = await fetch(`${API.baseURL}/api/students/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       
-      console.log('📡 API Response status:', response.status);
+      console.log(' API Response status:', response.status);
       
       if (response.ok) {
         const responseData = await response.json();
-        console.log('📚 Loaded response data:', responseData);
+        console.log(' Loaded response data:', responseData);
         
         // Handle both direct student data and nested {student: ...} response
         const studentData = responseData.student || responseData;
-        console.log('📚 Extracted student data:', studentData);
-        console.log('🎯 Degree Level specific debug:', {
+        console.log(' Extracted student data:', studentData);
+        console.log(' Degree Level specific debug:', {
           degreeLevel: studentData.degreeLevel,
           degreeLevelType: typeof studentData.degreeLevel,
           isEmptyString: studentData.degreeLevel === '',
@@ -156,7 +160,7 @@ export const ApplicationForm = () => {
           }
         });
         
-        console.log('🔄 Current form state BEFORE update:', {
+        console.log(' Current form state BEFORE update:', {
           country: form.country,
           university: form.university,
           degreeLevel: form.degreeLevel,
@@ -201,7 +205,7 @@ export const ApplicationForm = () => {
             endYear
           };
           
-          console.log('🔄 NEW form state AFTER update:', {
+          console.log(' NEW form state AFTER update:', {
             country: newFormData.country,
             university: newFormData.university,
             degreeLevel: newFormData.degreeLevel,
@@ -213,9 +217,9 @@ export const ApplicationForm = () => {
           return newFormData;
         });
         
-        console.log('✅ Form state updated successfully');
+        console.log(' Form state updated successfully');
         
-        // 🎯 Auto-detect appropriate step based on data completeness (only if no URL step specified)
+        //  Auto-detect appropriate step based on data completeness (only if no URL step specified)
         const urlParams = new URLSearchParams(window.location.search);
         const hasUrlStep = urlParams.has('step');
         
@@ -250,7 +254,7 @@ export const ApplicationForm = () => {
             appropriateStep = 1; // Missing basic info, start at step 1
           }
           
-          console.log('🎯 Auto-detected step based on data:', {
+          console.log(' Auto-detected step based on data:', {
             hasBasicInfo,
             hasEducationInfo,
             appropriateStep,
@@ -262,12 +266,12 @@ export const ApplicationForm = () => {
           }
         }
       } else {
-        console.error('❌ API call failed with status:', response.status);
+        console.error(' API call failed with status:', response.status);
         const errorText = await response.text();
-        console.error('❌ Error response:', errorText);
+        console.error(' Error response:', errorText);
       }
     } catch (error) {
-      console.error('❌ Failed to load student data:', error);
+      console.error(' Failed to load student data:', error);
     } finally {
       setLoadingStudentData(false);
     }
@@ -275,7 +279,7 @@ export const ApplicationForm = () => {
 
   // Additional effect to ensure data loading when step changes
   useEffect(() => {
-    console.log('🔄 Step useEffect triggered:', {
+    console.log(' Step useEffect triggered:', {
       step,
       hasUser: !!user,
       hasStudentId: !!user?.studentId,
@@ -284,7 +288,7 @@ export const ApplicationForm = () => {
     });
     
     if (user && user.studentId && token && (step === 1 || step === 2 || step === 3)) {
-      console.log(`✅ All conditions met - loading data for step ${step}`);
+      console.log(` All conditions met - loading data for step ${step}`);
       loadExistingStudentData();
     } else {
       console.log('⏭️ Conditions not met for step data loading');
@@ -299,6 +303,21 @@ export const ApplicationForm = () => {
       window.history.replaceState(null, '', newUrl);
     }
   }, [step, user, location.pathname]);
+
+  // Scroll to top when step changes (more reliable than setTimeout in handlers)
+  useEffect(() => {
+    if (step === 2 && step2ContainerRef.current) {
+      // Use requestAnimationFrame for better timing and smooth scroll
+      requestAnimationFrame(() => {
+        step2ContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    } else if (step === 3 && step3ContainerRef.current) {
+      // Use requestAnimationFrame for better timing and smooth scroll
+      requestAnimationFrame(() => {
+        step3ContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, [step]);
 
   const [form, setForm] = useState(() => {
 
@@ -386,7 +405,7 @@ export const ApplicationForm = () => {
     try {
       setLoading(true);
 
-      // 🛡️ reCAPTCHA Protection - Get verification token (v3)
+      // ️ reCAPTCHA Protection - Get verification token (v3)
       let recaptchaToken = null;
       if (executeRecaptcha) {
         try {
@@ -424,7 +443,7 @@ export const ApplicationForm = () => {
           currency: "PKR",
           amount: 0,
           field: "",
-          // 🛡️ reCAPTCHA Protection
+          // ️ reCAPTCHA Protection
           recaptchaToken: recaptchaToken
         }),
       });
@@ -461,7 +480,7 @@ export const ApplicationForm = () => {
 
       setIsRegistered(true);
       
-      // Move to Step 2
+      // Move to Step 2 (scroll will be handled by useEffect)
       setStep(2);
 
     } catch (err) {
@@ -560,7 +579,7 @@ export const ApplicationForm = () => {
 
   // Handle university change
   const handleUniversityChange = (university, customUniversity, universityId) => {
-    console.log('🏛️ University change debug:', {
+    console.log('️ University change debug:', {
       university,
       customUniversity,
       universityId,
@@ -582,7 +601,7 @@ export const ApplicationForm = () => {
 
   // Handler for degree level change - resets dependent fields
   const handleDegreeLevelChange = (degreeLevel) => {
-    console.log('🎓 Degree level change debug:', {
+    console.log(' Degree level change debug:', {
       degreeLevel,
       selectedUniversityId,
       degreeLevelsAvailable: degreeLevels
@@ -685,7 +704,7 @@ export const ApplicationForm = () => {
   async function handleSubmit(e) {
     e.preventDefault();
 
-    console.log("🔍 Form submission started with form data:", form);
+    console.log(" Form submission started with form data:", form);
 
     // Validation
     if (!form.university || !form.degreeLevel || !form.field || !form.program || !form.country || !form.gpa) {
@@ -736,7 +755,7 @@ export const ApplicationForm = () => {
     // Ensure we have a valid studentId - use the student record ID, not user ID
     const currentStudentId = user?.studentId || studentId;
     if (!currentStudentId) {
-      console.error("❌ No studentId found:", { 
+      console.error(" No studentId found:", { 
         "user?.studentId": user?.studentId, 
         "studentId": studentId,
         "user": user 
@@ -766,7 +785,7 @@ export const ApplicationForm = () => {
       const programStartDate = (form.startMonth && form.startYear) ? `${form.startMonth}/${form.startYear}` : null;
       const programEndDate = (form.endMonth && form.endYear) ? `${form.endMonth}/${form.endYear}` : null;
       
-      console.log('🔍 Step 3 submission debug:', {
+      console.log(' Step 3 submission debug:', {
         startMonth: form.startMonth,
         startYear: form.startYear,
         endMonth: form.endMonth,
@@ -800,11 +819,11 @@ export const ApplicationForm = () => {
         try {
           studentError = await studentRes.json();
         } catch (parseError) {
-          console.error("❌ Failed to parse student update error:", parseError);
+          console.error(" Failed to parse student update error:", parseError);
           throw new Error(`Student update failed: HTTP ${studentRes.status}`);
         }
         
-        console.error("❌ Student update failed:", {
+        console.error(" Student update failed:", {
           status: studentRes.status,
           statusText: studentRes.statusText,
           error: studentError,
@@ -833,7 +852,7 @@ export const ApplicationForm = () => {
         amount: requiredAmountNum
       };
       
-      console.log("🔍 Application payload:", applicationPayload);
+      console.log(" Application payload:", applicationPayload);
 
       const appRes = await fetch(API.url('/api/applications'), {
         method: "POST",
@@ -846,11 +865,11 @@ export const ApplicationForm = () => {
         try {
           errorData = await appRes.json();
         } catch (parseError) {
-          console.error("❌ Failed to parse error response:", parseError);
+          console.error(" Failed to parse error response:", parseError);
           throw new Error(`HTTP ${appRes.status}: ${appRes.statusText}`);
         }
         
-        console.error("❌ Application submission error:", {
+        console.error(" Application submission error:", {
           status: appRes.status,
           statusText: appRes.statusText,
           error: errorData,
@@ -860,7 +879,7 @@ export const ApplicationForm = () => {
         throw new Error(errorData.error || errorData.message || `Server error: ${appRes.status}`);
       }
 
-      toast.success("🎉 Application submitted successfully!");
+      toast.success(" Application submitted successfully!");
       
       // Small delay to ensure application is created before navigation
       setTimeout(() => {
@@ -1020,7 +1039,7 @@ export const ApplicationForm = () => {
               />
             </div>
 
-            {/* 🛡️ reCAPTCHA Protection - Invisible v3 */}
+            {/* ️ reCAPTCHA Protection - Invisible v3 */}
             <RecaptchaProtection 
               version="v3"
               onError={(error) => {
@@ -1054,7 +1073,7 @@ export const ApplicationForm = () => {
 
         {/* STEP 2 — education basics */}
         {step === 2 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div ref={step2ContainerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Country Selection - Searchable Input */}
             <div className="sm:col-span-2">
               <Input
@@ -1079,19 +1098,19 @@ export const ApplicationForm = () => {
                     // Show full country list when filter disabled
                     return (
                       <>
-                        <option value="Pakistan">🇵🇰 Pakistan</option>
-                        <option value="USA">🇺🇸 United States</option>
-                        <option value="Canada">🇨🇦 Canada</option>
-                        <option value="UK">🇬🇧 United Kingdom</option>
-                        <option value="Germany">🇩🇪 Germany</option>
-                        <option value="France">🇫🇷 France</option>
-                        <option value="Italy">🇮🇹 Italy</option>
-                        <option value="Spain">🇪🇸 Spain</option>
-                        <option value="Netherlands">🇳🇱 Netherlands</option>
-                        <option value="Belgium">🇧🇪 Belgium</option>
-                        <option value="Austria">🇦🇹 Austria</option>
-                        <option value="Australia">🇦🇺 Australia</option>
-                        <option value="Other">🌍 Other Country</option>
+                        <option value="Pakistan"> Pakistan</option>
+                        <option value="USA"> United States</option>
+                        <option value="Canada"> Canada</option>
+                        <option value="UK"> United Kingdom</option>
+                        <option value="Germany"> Germany</option>
+                        <option value="France"> France</option>
+                        <option value="Italy"> Italy</option>
+                        <option value="Spain"> Spain</option>
+                        <option value="Netherlands"> Netherlands</option>
+                        <option value="Belgium"> Belgium</option>
+                        <option value="Austria"> Austria</option>
+                        <option value="Australia"> Australia</option>
+                        <option value="Other"> Other Country</option>
                       </>
                     );
                   }
@@ -1099,7 +1118,7 @@ export const ApplicationForm = () => {
               </datalist>
               {form.country && (
                 <p className="text-xs text-green-600 mt-1">
-                  ✓ Currency auto-selected: {form.currency}
+                   Currency auto-selected: {form.currency}
                 </p>
               )}
             </div>
@@ -1316,7 +1335,7 @@ export const ApplicationForm = () => {
                       programEndDate: form.endMonth && form.endYear ? `${form.endMonth}/${form.endYear}` : null
                     };
                     
-                    console.log('💾 Step 2 save debug - current form state:', {
+                    console.log(' Step 2 save debug - current form state:', {
                       degreeLevel: form.degreeLevel,
                       degreeLevelType: typeof form.degreeLevel,
                       isEmpty: form.degreeLevel === '',
@@ -1341,7 +1360,7 @@ export const ApplicationForm = () => {
                       throw new Error("Failed to save education details");
                     }
                     
-                    // ✅ Update local form state with saved data to ensure Step 3 displays correctly
+                    //  Update local form state with saved data to ensure Step 3 displays correctly
                     setForm(prevForm => ({
                       ...prevForm,
                       country: step2Payload.country,
@@ -1357,7 +1376,7 @@ export const ApplicationForm = () => {
                       endYear: form.endYear
                     }));
                     
-                    console.log('✅ Step 2 data saved and form state updated:', step2Payload);
+                    console.log(' Step 2 data saved and form state updated:', step2Payload);
                     
                     // Create a basic application record to mark Step 3 as "reached"
                     try {
@@ -1374,16 +1393,17 @@ export const ApplicationForm = () => {
                       });
                       
                       if (basicAppRes.ok) {
-                        console.log("✅ Basic application created to mark Step 3 reached");
+                        console.log(" Basic application created to mark Step 3 reached");
                       }
                     } catch (appError) {
-                      console.warn("⚠️ Could not create basic application:", appError);
+                      console.warn("️ Could not create basic application:", appError);
                       // Don't block progression if this fails
                     }
                     
                     toast.success("Education details saved successfully!");
                     
                     // Navigate to Step 3 (Financial Details)
+                    // Scroll will be handled by useEffect
                     setStep(3);
                     
                   } catch (error) {
@@ -1418,7 +1438,7 @@ export const ApplicationForm = () => {
 
         {/* STEP 3 — currency + amount + review + submit */}
         {step === 3 && (
-          <div>
+          <div ref={step3ContainerRef}>
 
             <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
             {/* Currency Display (Read-Only) */}
@@ -1426,12 +1446,12 @@ export const ApplicationForm = () => {
               <label className="text-xs sm:text-sm font-medium text-gray-700">Currency</label>
               <div className="w-full sm:w-1/2 rounded-2xl border px-3 py-2 text-sm min-h-[44px] bg-gray-50 flex items-center">
                 <span className="font-medium text-gray-800">
-                  {form.currency === 'PKR' && '🇵🇰 '}
-                  {form.currency === 'USD' && '🇺🇸 '}
-                  {form.currency === 'EUR' && '🇪🇺 '}
-                  {form.currency === 'GBP' && '🇬🇧 '}
-                  {form.currency === 'CAD' && '🇨🇦 '}
-                  {form.currency === 'AUD' && '🇦🇺 '}
+                  {form.currency === 'PKR' && ' '}
+                  {form.currency === 'USD' && ' '}
+                  {form.currency === 'EUR' && ' '}
+                  {form.currency === 'GBP' && ' '}
+                  {form.currency === 'CAD' && ' '}
+                  {form.currency === 'AUD' && ' '}
                   {form.currency} - {
                     form.currency === 'PKR' ? 'Pakistani Rupee' :
                     form.currency === 'USD' ? 'US Dollar' :
@@ -1445,7 +1465,7 @@ export const ApplicationForm = () => {
               </div>
               {form.country && (
                 <p className="text-xs text-green-600">
-                  ✓ Auto-selected based on {form.country}
+                   Auto-selected based on {form.country}
                 </p>
               )}
             </div>
@@ -1510,7 +1530,7 @@ export const ApplicationForm = () => {
                   </div>
                 </div>
                 <p className="text-xs text-blue-600">
-                  ✓ University Fee + Books/Living = {form.currency} {Number(form.universityFee || 0) + Number(form.livingExpenses || 0)}
+                   University Fee + Books/Living = {form.currency} {Number(form.universityFee || 0) + Number(form.livingExpenses || 0)}
                 </p>
               </div>
 
@@ -1552,7 +1572,7 @@ export const ApplicationForm = () => {
                   </div>
                 </div>
                 <p className="text-xs text-green-600">
-                  ✓ This amount is automatically calculated: Total Expense - Scholarship
+                   This amount is automatically calculated: Total Expense - Scholarship
                 </p>
               </div>
 

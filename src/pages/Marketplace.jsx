@@ -60,7 +60,7 @@ function StudentCard({ student, onSponsored }) {
   
   // Debug logging for amount display issues
   if (displayAmount === 0) {
-    console.log(`🔍 Amount is 0 for ${student.name}:`, {
+    console.log(` Amount is 0 for ${student.name}:`, {
       'student.application.amount': student?.application?.amount,
       'student.amount': student?.amount,
       'student.application': student?.application,
@@ -186,7 +186,7 @@ export const Marketplace = () => {
           const data = await res.json();
           const students = Array.isArray(data?.students) ? data.students : [];
           
-          console.log("🔍 Marketplace API Response:", { totalStudents: students.length, students });
+          console.log(" Marketplace API Response:", { totalStudents: students.length, students });
           
           if (students.length > 0) {
             // Transform API student data to marketplace format
@@ -210,7 +210,7 @@ export const Marketplace = () => {
               application: student.application,
             }));
 
-            console.log("🔍 Marketplace Transformed Students:", { 
+            console.log(" Marketplace Transformed Students:", { 
               totalTransformed: transformedStudents.length, 
               sample: transformedStudents.slice(0, 2).map(s => ({
                 name: s.name,
@@ -260,7 +260,7 @@ export const Marketplace = () => {
   const filtered = useMemo(() => {
     const t = q.toLowerCase();
 
-    console.log("🔍 Marketplace Filtering Debug:", {
+    console.log(" Marketplace Filtering Debug:", {
       totalStudents: students.length,
       studentsData: students.map(s => ({
         name: s.name,
@@ -271,7 +271,7 @@ export const Marketplace = () => {
     });
 
     const approvedStudents = students.filter((s) => s.isApproved);
-    console.log("🔍 After approval filter:", approvedStudents.length);
+    console.log(" After approval filter:", approvedStudents.length);
 
     const unsponsoredStudents = approvedStudents.filter((s) => {
       // Hide sponsored students - ONE STUDENT = ONE DONOR FULL SPONSORSHIP
@@ -280,19 +280,19 @@ export const Marketplace = () => {
       const shouldShow = !isSponsored;
       
       if (!shouldShow) {
-        console.log("🔍 Filtering out sponsored student:", s.name, {
+        console.log(" Filtering out sponsored student:", s.name, {
           sponsored: s.sponsored,
           reason: "Student already has a sponsor (ONE STUDENT = ONE DONOR)"
         });
       } else {
-        console.log("🔍 Showing available student:", s.name, {
+        console.log(" Showing available student:", s.name, {
           sponsored: s.sponsored
         });
       }
       
       return shouldShow; // Only show unsponsored students
     });
-    console.log("🔍 After sponsorship filter:", unsponsoredStudents.length);
+    console.log(" After sponsorship filter:", unsponsoredStudents.length);
 
     return unsponsoredStudents
       .filter((s) => {

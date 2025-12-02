@@ -59,7 +59,7 @@ export const AdminHub = ({ go }) => {
         const messagesRes = await fetch(`${API.baseURL}/api/messages?admin=true`, { headers: authHeader });
         if (messagesRes.ok) {
           const messagesData = await messagesRes.json();
-          console.log('🔍 AdminHub: Old messages loaded:', messagesData.messages?.length || 0);
+          console.log(' AdminHub: Old messages loaded:', messagesData.messages?.length || 0);
           // Transform old messages to match the expected format
           const oldMessages = (messagesData.messages || []).map(msg => ({
             id: msg.id,
@@ -71,27 +71,27 @@ export const AdminHub = ({ go }) => {
           }));
           allMessages = oldMessages;
         } else {
-          console.error('🔍 AdminHub: Failed to load old messages:', messagesRes.status, await messagesRes.text());
+          console.error(' AdminHub: Failed to load old messages:', messagesRes.status, await messagesRes.text());
         }
         
         // Load conversation messages
         try {
-          console.log('🔍 AdminHub: Loading conversations...');
+          console.log(' AdminHub: Loading conversations...');
           const convRes = await fetch(`${API.baseURL}/api/conversations?includeAllMessages=true`, { headers: authHeader });
-          console.log('🔍 AdminHub: Conversations response status:', convRes.status);
+          console.log(' AdminHub: Conversations response status:', convRes.status);
           
           if (convRes.ok) {
             const convData = await convRes.json();
-            console.log('🔍 AdminHub: Conversations data:', convData);
+            console.log(' AdminHub: Conversations data:', convData);
             const conversations = convData.conversations || [];
-            console.log(`🔍 AdminHub: Found ${conversations.length} conversations`);
+            console.log(` AdminHub: Found ${conversations.length} conversations`);
             
             // Extract messages from conversations and convert to old format
             conversations.forEach(conv => {
-              console.log('🔍 AdminHub: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
+              console.log(' AdminHub: Processing conversation:', conv.id, 'Messages:', conv.messages?.length);
               if (conv.messages) {
                 conv.messages.forEach(msg => {
-                  console.log('🔍 AdminHub: Adding message from conversation:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
+                  console.log(' AdminHub: Adding message from conversation:', msg.id, msg.senderRole, msg.text?.substring(0, 50));
                   
                   // Get proper sender name based on role
                   let senderName = 'Unknown';
@@ -118,10 +118,10 @@ export const AdminHub = ({ go }) => {
             });
           } else {
             const errorText = await convRes.text();
-            console.error('🔍 AdminHub: Conversations API error:', convRes.status, errorText);
+            console.error(' AdminHub: Conversations API error:', convRes.status, errorText);
           }
         } catch (convError) {
-          console.error('🔍 AdminHub: Failed to load conversations:', convError);
+          console.error(' AdminHub: Failed to load conversations:', convError);
         }
         
         // Store all messages for Communications tab
@@ -288,11 +288,11 @@ export const AdminHub = ({ go }) => {
       // Clean up
       URL.revokeObjectURL(url);
       
-      toast.success("Sub admins data exported successfully!");
+      toast.success("Case workers data exported successfully!");
       
     } catch (error) {
       console.error('Sub-admins export failed:', error);
-      toast.error("Failed to export sub admins data. Please try again.");
+      toast.error("Failed to export case workers data. Please try again.");
     }
   };
 
@@ -308,7 +308,7 @@ export const AdminHub = ({ go }) => {
           >
             Applications
           </Button>
-          {/* NEW: manage sub admins */}
+          {/* NEW: manage case workers */}
           <Button
             variant="secondary"
             onClick={() => navigate("/admin/officers")}
@@ -350,7 +350,7 @@ export const AdminHub = ({ go }) => {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                         <Badge variant={msg.fromRole === 'donor' ? 'default' : 'secondary'} className="text-xs self-start">
-                          {msg.fromRole === 'donor' ? '💝' : '👤'} {msg.fromRole === 'donor' ? 'Donor' : 'Student'}: {msg.senderName || 'Unknown'}
+                          {msg.fromRole === 'donor' ? '' : ''} {msg.fromRole === 'donor' ? 'Donor' : 'Student'}: {msg.senderName || 'Unknown'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           {new Date(msg.createdAt).toLocaleDateString()}
@@ -416,7 +416,7 @@ export const AdminHub = ({ go }) => {
           <div className="text-base sm:text-lg font-semibold text-blue-600">
             {loading ? '...' : applications.filter(app => app.fieldReviews?.some(r => r.status === 'COMPLETED')).length}
           </div>
-          <div className="text-xs text-slate-600">Verified by Sub Admin</div>
+          <div className="text-xs text-slate-600">Verified by Case Worker</div>
         </Card>
         <Card className="p-3 text-center">
           <div className="text-base sm:text-lg font-semibold text-teal-600">
@@ -446,7 +446,7 @@ export const AdminHub = ({ go }) => {
         <TabsContent value="approved" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-base sm:text-lg font-semibold text-emerald-800">
-              ✅ Approved Students Ready for Sponsorship
+               Approved Students Ready for Sponsorship
             </h3>
             <Badge variant="default" className="bg-emerald-600 self-start sm:self-auto">
               {applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length} Ready
@@ -480,7 +480,7 @@ export const AdminHub = ({ go }) => {
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
                         <p className="text-xs text-emerald-600 mt-1">
-                          ✓ Field verification completed by Sub Admin
+                           Field verification completed by Case Worker
                         </p>
                       )}
                     </div>
@@ -498,7 +498,7 @@ export const AdminHub = ({ go }) => {
                         size="sm"
                         className="rounded-2xl bg-emerald-600 hover:bg-emerald-700"
                       >
-                        🤝 Find Sponsor
+                         Find Sponsor
                       </Button>
                     </div>
                   </div>
@@ -511,7 +511,7 @@ export const AdminHub = ({ go }) => {
         <TabsContent value="sponsored" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-purple-800">
-              🎉 Sponsored Students
+               Sponsored Students
             </h3>
             <Badge variant="default" className="bg-purple-600">
               {applications.filter(app => app.student?.sponsored === true).length} Sponsored
@@ -545,11 +545,11 @@ export const AdminHub = ({ go }) => {
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
                         <p className="text-xs text-purple-600 mt-1">
-                          ✓ Field verification completed by Sub Admin
+                           Field verification completed by Case Worker
                         </p>
                       )}
                       <p className="text-xs text-purple-600 mt-1 font-medium">
-                        ✨ Education fully sponsored by donor
+                         Education fully sponsored by donor
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -568,7 +568,7 @@ export const AdminHub = ({ go }) => {
                         className="rounded-2xl border-purple-300 text-purple-700"
                         disabled
                       >
-                        ✓ Sponsored
+                         Sponsored
                       </Button>
                     </div>
                   </div>
@@ -581,7 +581,7 @@ export const AdminHub = ({ go }) => {
         <TabsContent value="communications" className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-blue-800">
-              💬 Communications Center
+               Communications Center
             </h3>
             <Badge variant="default" className="bg-blue-600">
               {filteredMessages.length} {messageFilter === 'all' ? 'Recent' : messageFilter.charAt(0).toUpperCase() + messageFilter.slice(1)}
@@ -605,7 +605,7 @@ export const AdminHub = ({ go }) => {
               <div className="text-2xl font-bold text-orange-600">
                 {allMessages.filter(msg => msg.fromRole === 'sub_admin').length}
               </div>
-              <div className="text-sm text-slate-600">Sub Admin Messages</div>
+              <div className="text-sm text-slate-600">Case Worker Messages</div>
             </Card>
             <Card className="p-4 text-center">
               <div className="text-2xl font-bold text-red-600">
@@ -651,7 +651,7 @@ export const AdminHub = ({ go }) => {
               className="rounded-2xl"
               onClick={() => setMessageFilter('sub_admin')}
             >
-              Sub Admins
+              Case Workers
             </Button>
             <Button 
               variant={messageFilter === 'unread' ? 'default' : 'outline'} 
@@ -694,7 +694,7 @@ export const AdminHub = ({ go }) => {
                         `}>
                           {message.fromRole === 'student' ? 'Student' :
                            message.fromRole === 'donor' ? 'Donor' :
-                           message.fromRole === 'sub_admin' ? 'Sub Admin' :
+                           message.fromRole === 'sub_admin' ? 'Case Worker' :
                            message.fromRole}
                         </Badge>
                         <span className="text-xs text-slate-500">
@@ -808,7 +808,7 @@ export const AdminHub = ({ go }) => {
         
         <TabsContent value="interviews" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">📅 Interview Management</h3>
+            <h3 className="text-lg font-semibold text-gray-800"> Interview Management</h3>
             <Badge variant="outline" className="bg-purple-50 text-purple-700">
               Admin Only
             </Badge>
@@ -819,7 +819,7 @@ export const AdminHub = ({ go }) => {
         
         <TabsContent value="settings" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">⚙️ Admin Settings</h3>
+            <h3 className="text-lg font-semibold text-gray-800">️ Admin Settings</h3>
             <Badge variant="outline" className="bg-blue-50 text-blue-700">
               Admin Only
             </Badge>

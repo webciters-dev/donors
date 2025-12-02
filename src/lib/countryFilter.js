@@ -34,7 +34,7 @@ export const filterCountryList = (countries) => {
   // Filter to show only Pakistan-related entries
   return countries.filter(country => 
     country.toLowerCase().includes('pakistan') || 
-    country.toLowerCase().includes('🇵🇰') ||
+    country.toLowerCase().includes('') ||
     country === ""  // Keep empty option for "Select Country"
   );
 };
@@ -47,7 +47,7 @@ export const getPakistanOnlyDatalist = () => {
 
   return [
     { value: "", label: "Select Country" },
-    { value: "Pakistan", label: "🇵🇰 Pakistan" }
+    { value: "Pakistan", label: " Pakistan" }
   ];
 };
 
@@ -70,7 +70,7 @@ export const getFilterMessage = () => {
   return {
     message: "Currently accepting applications for Pakistani Educational Institutions only",
     description: "International expansion coming soon when Sponsorships will be offered for Educational Institutions abroad as well.",
-    icon: "🇵🇰"
+    icon: ""
   };
 };
 
@@ -83,7 +83,7 @@ export const getDonorFilterMessage = () => {
   return {
     message: "History will remember your part in helping Students who would make Pakistan great again",
     description: "Your contribution today shapes the leaders, innovators, and builders of tomorrow's Pakistan.",
-    icon: "🇵🇰"
+    icon: ""
   };
 };
 

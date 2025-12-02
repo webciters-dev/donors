@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 async function showRemainingUsers() {
   try {
-    console.log('👥 Remaining user accounts after cleanup:\n');
+    console.log(' Remaining user accounts after cleanup:\n');
     
     const users = await prisma.user.findMany({
       select: {
@@ -24,7 +24,7 @@ async function showRemainingUsers() {
     });
 
     if (users.length === 0) {
-      console.log('❌ No users found! You may need to create an admin account.');
+      console.log(' No users found! You may need to create an admin account.');
     } else {
       users.forEach((user, index) => {
         console.log(`${index + 1}. ${user.role}`);
@@ -38,30 +38,30 @@ async function showRemainingUsers() {
     console.log(`Total: ${users.length} user(s)\n`);
     
     // Show next steps
-    console.log('🚀 CLEAN SLATE WORKFLOW:');
+    console.log(' CLEAN SLATE WORKFLOW:');
     console.log('');
-    console.log('1. 👨‍🎓 STUDENTS:');
+    console.log('1. ‍ STUDENTS:');
     console.log('   → Register at /apply');
     console.log('   → Fill out application form');
     console.log('   → Upload required documents');
     console.log('');
-    console.log('2. 🏛️ ADMINS:');
+    console.log('2. ️ ADMINS:');
     console.log('   → Review applications at /admin');
     console.log('   → Assign field officers');
     console.log('   → Approve qualified students');
     console.log('');
-    console.log('3. 🤲 DONORS:');
+    console.log('3.  DONORS:');
     console.log('   → Register donor accounts');
     console.log('   → Browse approved students at /marketplace or /donor/portal');
     console.log('   → Sponsor students through payment flow');
     console.log('');
-    console.log('4. 👮‍♀️ FIELD OFFICERS:');
+    console.log('4. ‍️ FIELD OFFICERS:');
     console.log('   → Review assigned applications');
     console.log('   → Provide recommendations');
     console.log('');
 
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error(' Error:', error);
   } finally {
     await prisma.$disconnect();
   }

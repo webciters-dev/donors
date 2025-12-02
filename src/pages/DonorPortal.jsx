@@ -248,7 +248,7 @@ export default function DonorPortal() {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                <span className="text-xs sm:text-sm font-bold text-green-800 uppercase tracking-wide">✅ Fully Paid</span>
+                <span className="text-xs sm:text-sm font-bold text-green-800 uppercase tracking-wide"> Fully Paid</span>
               </div>
                 <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">
                   {fmtAmountDual(totalPaid, sponsorships[0]?.student?.application?.currency || 'USD')}
@@ -300,7 +300,7 @@ export default function DonorPortal() {
             <div className="space-y-2">
               <div className="font-medium text-emerald-800">Complete Sponsorship Status</div>
               <div className="text-sm text-emerald-700">
-                <strong>✅ YOU HAVE SUCCESSFULLY SPONSORED THE COMPLETE EDUCATION FOR {fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')} DOLLARS</strong>
+                <strong> YOU HAVE SUCCESSFULLY SPONSORED THE COMPLETE EDUCATION FOR {fmtAmount(totalPledged, sponsorships[0]?.student?.application?.currency || 'USD')} DOLLARS</strong>
               </div>
               <div className="text-sm text-emerald-700">
                 <strong>Your sponsorship covers the complete education program. No additional payments required.</strong>
@@ -457,7 +457,7 @@ export default function DonorPortal() {
                         View Progress
                       </Button>
                       <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-xs w-full justify-center py-2">
-                        ✅ Complete Education Sponsored
+                         Complete Education Sponsored
                       </Badge>
                     </div>
                   </Card>
@@ -523,7 +523,7 @@ export default function DonorPortal() {
                             <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
                             <span className="font-medium text-emerald-800">Year 1 Payment</span>
                             <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-xs">
-                              ✓ PAID
+                               PAID
                             </Badge>
                           </div>
                           <div className="text-2xl font-bold text-emerald-700">{fmtAmount(paidSoFar, sponsorship.student?.application?.currency || 'USD')}</div>
@@ -538,7 +538,7 @@ export default function DonorPortal() {
                             <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
                             <span className="font-medium text-emerald-800">Complete Education</span>
                             <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-xs">
-                              ✓ FULLY SPONSORED
+                               FULLY SPONSORED
                             </Badge>
                           </div>
                           <div className="text-2xl font-bold text-emerald-700">{fmtAmountDual(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>
@@ -581,7 +581,7 @@ export default function DonorPortal() {
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-medium text-emerald-800">Complete Education</span>
                       <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-xs">
-                        ✓ FULLY SPONSORED
+                         FULLY SPONSORED
                       </Badge>
                     </div>
                     <div className="text-2xl font-bold text-emerald-700">{fmtAmount(totalPledgedForStudent, sponsorship.student?.application?.currency || 'USD')}</div>

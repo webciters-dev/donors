@@ -13,8 +13,8 @@ import { fmtAmount } from "@/lib/currency";
 
 // Case Worker task types for display
 const TASK_TYPES = [
-  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "📄" },
-  { value: "FIELD_VISIT", label: "Field Visit", icon: "🏠" },
+  { value: "DOCUMENT_REVIEW", label: "Document Review", icon: "" },
+  { value: "FIELD_VISIT", label: "Field Visit", icon: "" },
   { value: "CNIC_VERIFICATION", label: "CNIC Verification", icon: "🆔" },
 ];
 
@@ -25,11 +25,23 @@ export default function SubAdminDashboard() {
 
   // Token validation (simplified)
   const isTokenValid = useMemo(() => {
-    if (!token) return false;
+    if (!token) {
+      console.log(' Token validation: No token');
+      return false;
+    }
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp > Date.now() / 1000;
-    } catch {
+      const isValid = payload.exp > Date.now() / 1000;
+      console.log(' Token validation:', {
+        hasToken: true,
+        role: payload.role,
+        email: payload.email,
+        expTime: new Date(payload.exp * 1000).toISOString(),
+        isExpired: !isValid
+      });
+      return isValid;
+    } catch (err) {
+      console.log(' Token validation: Error -', err.message);
       return false;
     }
   }, [token]);
@@ -40,7 +52,7 @@ export default function SubAdminDashboard() {
   // Auth recovery mechanism
   useEffect(() => {
     if (user && user.role === "SUB_ADMIN" && !token) {
-      console.error("❌ User appears logged in but no token found - corrupted auth state");
+      console.error(" User appears logged in but no token found - corrupted auth state");
       toast.error("Authentication issue detected. Please log in again.");
       setTimeout(() => {
         navigate("/login");
@@ -62,14 +74,29 @@ export default function SubAdminDashboard() {
 
     try {
       setLoading(true);
+      console.log(' SubAdminDashboard: loadReviews() called');
+      console.log('   Token valid:', isTokenValid);
+      console.log('   AuthHeader:', authHeader ? 'Present' : 'Missing');
+      console.log('   API URL:', `${API.baseURL}/api/field-reviews`);
+      
       const res = await fetch(`${API.baseURL}/api/field-reviews`, { headers: authHeader });
       
+      console.log('   Response status:', res.status);
+      console.log('   Response ok:', res.ok);
+      
       if (!res.ok) {
+        const errorText = await res.text();
+        console.log('   Error response:', errorText);
         throw new Error(`Failed to load reviews: ${res.status}`);
       }
       
       const data = await res.json();
+      console.log('   Response data:', data);
+      console.log('   data.reviews:', data?.reviews);
+      
       const reviewsList = Array.isArray(data?.reviews) ? data.reviews : [];
+      console.log('   Reviews to set:', reviewsList.length);
+      
       setReviews(reviewsList);
     } catch (e) {
       console.error('LoadReviews error:', e);
@@ -80,8 +107,12 @@ export default function SubAdminDashboard() {
   }
 
   useEffect(() => {
+    console.log(' SubAdminDashboard: useEffect triggered, isTokenValid:', isTokenValid);
     if (isTokenValid) {
+      console.log(' SubAdminDashboard: Calling loadReviews()');
       loadReviews();
+    } else {
+      console.log(' SubAdminDashboard: Token not valid, skipping loadReviews()');
     }
   }, [isTokenValid]);
 
@@ -260,7 +291,7 @@ export default function SubAdminDashboard() {
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                         <Badge variant="secondary" className="self-start">
-                          📚 {review.student?.name || 'Student'}
+                           {review.student?.name || 'Student'}
                         </Badge>
                         <span className="text-xs text-slate-500">
                           CNIC: {review.student?.cnic || 'Not provided'}
@@ -314,12 +345,12 @@ export default function SubAdminDashboard() {
                       <div className="text-sm sm:text-base font-medium">{review.student?.name}</div>
                       {review.taskType && (
                         <Badge variant="secondary" className="text-xs bg-green-50 border-green-200 text-green-700">
-                          {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
+                          {TASK_TYPES.find(t => t.value === review.taskType)?.icon || ""} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
                         </Badge>
                       )}
                       {!review.taskType && (
                         <Badge variant="default" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                          🎯 Complete Verification
+                           Complete Verification
                         </Badge>
                       )}
                     </div>
@@ -331,7 +362,7 @@ export default function SubAdminDashboard() {
                     {review.student?.program} · {review.student?.university}
                   </div>
                   <div className="text-xs sm:text-sm text-slate-600">
-                    👤 {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
+                     {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <Button 
@@ -395,12 +426,12 @@ export default function SubAdminDashboard() {
                           <div className="flex flex-wrap gap-2">
                             {review.taskType && (
                               <Badge variant="secondary" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                                {TASK_TYPES.find(t => t.value === review.taskType)?.icon || "📋"} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
+                                {TASK_TYPES.find(t => t.value === review.taskType)?.icon || ""} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
                               </Badge>
                             )}
                             {!review.taskType && (
                               <Badge variant="default" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
-                                🎯 Complete Verification
+                                 Complete Verification
                               </Badge>
                             )}
                             <Badge 
@@ -424,8 +455,8 @@ export default function SubAdminDashboard() {
                         </div>
                         
                         <div className={`text-xs mb-2 ${isAdminDecided ? 'text-slate-700' : 'text-green-700'}`}>
-                          ✅ Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
-                          📅 Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
+                           Completed: {new Date(review.updatedAt).toLocaleDateString()} • 
+                           Home Visit: {review.homeVisitDate ? new Date(review.homeVisitDate).toLocaleDateString() : 'Not recorded'}
                         </div>
                         
                         {review.recommendationReason && (
@@ -460,7 +491,7 @@ export default function SubAdminDashboard() {
                             onClick={() => reopenReview(review.id)}
                             disabled={loading}
                           >
-                            ✏️ Edit Review
+                            ️ Edit Review
                           </Button>
                         ) : (
                           <Badge variant="outline" className="text-xs justify-center w-full sm:w-auto">
@@ -473,8 +504,8 @@ export default function SubAdminDashboard() {
                                  applicationStatus === 'REJECTED' ? 'destructive' : 'secondary'}
                           className="text-xs justify-center w-full sm:w-auto"
                         >
-                          {applicationStatus === 'APPROVED' ? '✅ Approved' :
-                           applicationStatus === 'REJECTED' ? '❌ Rejected' :
+                          {applicationStatus === 'APPROVED' ? ' Approved' :
+                           applicationStatus === 'REJECTED' ? ' Rejected' :
                            '⏳ Pending Admin'}
                         </Badge>
                       </div>
@@ -537,7 +568,7 @@ function ReviewModal({
         setLoadingDocs(true);
         
         if (!authHeader?.Authorization) {
-          console.error("❌ No auth header available for documents API call");
+          console.error(" No auth header available for documents API call");
           toast.error("Authentication required for documents. Please log in again.");
           return;
         }
@@ -604,7 +635,7 @@ function ReviewModal({
       <Card className="p-3 sm:p-4 bg-slate-50">
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h4 className="text-sm sm:text-base font-medium text-slate-900">📄 Student Documents</h4>
+            <h4 className="text-sm sm:text-base font-medium text-slate-900"> Student Documents</h4>
             <div className="text-xs sm:text-sm text-slate-600">
               {docs.length} uploaded • {REQUIRED_DOCS.filter(d => docs.some(doc => doc.type === d)).length}/{REQUIRED_DOCS.length} required
             </div>
@@ -642,7 +673,7 @@ function ReviewModal({
                           rel="noreferrer"
                           className="text-green-700 hover:text-green-900 hover:underline font-medium truncate"
                         >
-                          📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                           {uploaded.originalName || docType.replaceAll("_", " ")}
                         </a>
                       ) : (
                         <span className="font-medium text-red-600 truncate">{docType.replaceAll("_", " ")} - Missing</span>
@@ -673,7 +704,7 @@ function ReviewModal({
                             rel="noreferrer"
                             className="text-blue-700 hover:text-blue-900 hover:underline font-medium truncate"
                           >
-                            📁 {uploaded.originalName || docType.replaceAll("_", " ")}
+                             {uploaded.originalName || docType.replaceAll("_", " ")}
                           </a>
                         </div>
                       </div>
@@ -705,7 +736,7 @@ function ReviewModal({
                             rel="noreferrer"
                             className="text-gray-700 hover:text-gray-900 hover:underline font-medium truncate"
                           >
-                            📁 {d.originalName || d.type.replaceAll("_", " ")}
+                             {d.originalName || d.type.replaceAll("_", " ")}
                           </a>
                         </div>
                       </div>

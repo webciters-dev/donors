@@ -107,7 +107,7 @@ export default function AdminMessageThread() {
           <Badge variant="outline">
             {conversation.participantRole === 'student' ? 'Student' :
              conversation.participantRole === 'donor' ? 'Donor' :
-             conversation.participantRole === 'sub_admin' ? 'Sub Admin' :
+             conversation.participantRole === 'sub_admin' ? 'Case Worker' :
              'Unknown'}
           </Badge>
         )}
@@ -142,7 +142,7 @@ export default function AdminMessageThread() {
                   {message.senderRole === 'ADMIN' ? 'Admin' : 
                    message.senderRole === 'STUDENT' ? 'Student' :
                    message.senderRole === 'DONOR' ? 'Donor' :
-                   message.senderRole === 'SUB_ADMIN' ? 'Sub Admin' :
+                   message.senderRole === 'SUB_ADMIN' ? 'Case Worker' :
                    message.senderRole}
                 </Badge>
                 <span className="text-sm font-medium">

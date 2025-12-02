@@ -12,7 +12,7 @@ async function createMissingTestAccounts() {
   ];
 
   try {
-    console.log('🔧 Creating missing test accounts...\n');
+    console.log(' Creating missing test accounts...\n');
 
     for (const email of testAccounts) {
       // Check if user already exists
@@ -21,7 +21,7 @@ async function createMissingTestAccounts() {
       });
 
       if (existing) {
-        console.log(`✅ ${email} already exists`);
+        console.log(` ${email} already exists`);
         continue;
       }
 
@@ -46,19 +46,19 @@ async function createMissingTestAccounts() {
         }
       });
 
-      console.log(`✅ Created ${email} with password "password123"`);
+      console.log(` Created ${email} with password "password123"`);
       console.log(`   User ID: ${user.id}`);
       console.log(`   Student ID: ${student.id}\n`);
     }
 
-    console.log('🎉 All missing test accounts created successfully!');
+    console.log(' All missing test accounts created successfully!');
     
     // Show final user count
     const totalUsers = await prisma.user.count();
-    console.log(`\n📊 Total users in database: ${totalUsers}`);
+    console.log(`\n Total users in database: ${totalUsers}`);
 
   } catch (error) {
-    console.error('❌ Error creating test accounts:', error);
+    console.error(' Error creating test accounts:', error);
   } finally {
     await prisma.$disconnect();
   }

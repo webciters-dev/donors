@@ -21,7 +21,7 @@ class UniversityImporter {
 
   // Read Excel or CSV file
   async readFile(filePath) {
-    console.log(`📁 Reading file: ${filePath}`);
+    console.log(` Reading file: ${filePath}`);
     
     const fileExtension = path.extname(filePath).toLowerCase();
     let data = [];
@@ -41,11 +41,11 @@ class UniversityImporter {
         throw new Error('Unsupported file format. Please use .xlsx, .xls, or .csv');
       }
 
-      console.log(`✅ Successfully read ${data.length} rows from ${filePath}`);
+      console.log(` Successfully read ${data.length} rows from ${filePath}`);
       this.stats.totalRows = data.length;
       return data;
     } catch (error) {
-      console.error('❌ Error reading file:', error.message);
+      console.error(' Error reading file:', error.message);
       throw error;
     }
   }
@@ -90,7 +90,7 @@ class UniversityImporter {
     const lowerName = name.toLowerCase();
     for (const [key, value] of Object.entries(universityMappings)) {
       if (lowerName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerName)) {
-        console.log(`📝 Normalized university name: "${name}" → "${value}"`);
+        console.log(` Normalized university name: "${name}" → "${value}"`);
         return value;
       }
     }
@@ -130,7 +130,7 @@ class UniversityImporter {
     const missing = required.filter(field => !normalizedRow[field]);
 
     if (missing.length > 0) {
-      console.warn(`⚠️ Row ${rowIndex + 2}: Missing required fields: ${missing.join(', ')}`);
+      console.warn(`️ Row ${rowIndex + 2}: Missing required fields: ${missing.join(', ')}`);
       return null;
     }
 
@@ -196,11 +196,11 @@ class UniversityImporter {
       });
 
       this.stats.universities.created++;
-      console.log(`✅ Created university: ${university.name}`);
+      console.log(` Created university: ${university.name}`);
       return university;
     } catch (error) {
       this.stats.universities.errors++;
-      console.error(`❌ Error creating university ${universityData.name}:`, error.message);
+      console.error(` Error creating university ${universityData.name}:`, error.message);
       throw error;
     }
   }
@@ -233,7 +233,7 @@ class UniversityImporter {
       return degreeLevelRecord;
     } catch (error) {
       this.stats.degreeLevels.errors++;
-      console.error(`❌ Error creating degree level ${degreeLevel}:`, error.message);
+      console.error(` Error creating degree level ${degreeLevel}:`, error.message);
       throw error;
     }
   }
@@ -269,7 +269,7 @@ class UniversityImporter {
       return field;
     } catch (error) {
       this.stats.fields.errors++;
-      console.error(`❌ Error creating field ${fieldName}:`, error.message);
+      console.error(` Error creating field ${fieldName}:`, error.message);
       throw error;
     }
   }
@@ -308,7 +308,7 @@ class UniversityImporter {
       return program;
     } catch (error) {
       this.stats.programs.errors++;
-      console.error(`❌ Error creating program ${programName}:`, error.message);
+      console.error(` Error creating program ${programName}:`, error.message);
       throw error;
     }
   }
@@ -354,18 +354,18 @@ class UniversityImporter {
       );
 
       if ((rowIndex + 1) % 100 === 0) {
-        console.log(`📊 Processed ${rowIndex + 1} rows...`);
+        console.log(` Processed ${rowIndex + 1} rows...`);
       }
 
     } catch (error) {
-      console.error(`❌ Error processing row ${rowIndex + 2}:`, error.message);
+      console.error(` Error processing row ${rowIndex + 2}:`, error.message);
       this.stats.skippedRows++;
     }
   }
 
   // Main import function
   async importFromFile(filePath) {
-    console.log('🚀 Starting University Data Import');
+    console.log(' Starting University Data Import');
     console.log('==================================');
     
     try {
@@ -376,7 +376,7 @@ class UniversityImporter {
         throw new Error('No data found in file');
       }
 
-      console.log(`📊 Processing ${data.length} records...`);
+      console.log(` Processing ${data.length} records...`);
       console.log('');
 
       // Process each row
@@ -388,7 +388,7 @@ class UniversityImporter {
       this.printStats();
 
     } catch (error) {
-      console.error('❌ Import failed:', error.message);
+      console.error(' Import failed:', error.message);
       throw error;
     }
   }
@@ -396,32 +396,32 @@ class UniversityImporter {
   // Print import statistics
   printStats() {
     console.log('');
-    console.log('📊 IMPORT COMPLETE - Final Statistics');
+    console.log(' IMPORT COMPLETE - Final Statistics');
     console.log('=====================================');
-    console.log(`📁 Total Rows Processed: ${this.stats.totalRows}`);
+    console.log(` Total Rows Processed: ${this.stats.totalRows}`);
     console.log(`⏭️ Skipped Rows: ${this.stats.skippedRows}`);
     console.log('');
-    console.log('🏛️ Universities:');
-    console.log(`   ✅ Created: ${this.stats.universities.created}`);
-    console.log(`   🔄 Existing: ${this.stats.universities.existing}`);
-    console.log(`   ❌ Errors: ${this.stats.universities.errors}`);
+    console.log('️ Universities:');
+    console.log(`    Created: ${this.stats.universities.created}`);
+    console.log(`    Existing: ${this.stats.universities.existing}`);
+    console.log(`    Errors: ${this.stats.universities.errors}`);
     console.log('');
-    console.log('🎓 Degree Levels:');
-    console.log(`   ✅ Created: ${this.stats.degreeLevels.created}`);
-    console.log(`   🔄 Existing: ${this.stats.degreeLevels.existing}`);
-    console.log(`   ❌ Errors: ${this.stats.degreeLevels.errors}`);
+    console.log(' Degree Levels:');
+    console.log(`    Created: ${this.stats.degreeLevels.created}`);
+    console.log(`    Existing: ${this.stats.degreeLevels.existing}`);
+    console.log(`    Errors: ${this.stats.degreeLevels.errors}`);
     console.log('');
-    console.log('📚 Fields:');
-    console.log(`   ✅ Created: ${this.stats.fields.created}`);
-    console.log(`   🔄 Existing: ${this.stats.fields.existing}`);
-    console.log(`   ❌ Errors: ${this.stats.fields.errors}`);
+    console.log(' Fields:');
+    console.log(`    Created: ${this.stats.fields.created}`);
+    console.log(`    Existing: ${this.stats.fields.existing}`);
+    console.log(`    Errors: ${this.stats.fields.errors}`);
     console.log('');
-    console.log('📖 Programs:');
-    console.log(`   ✅ Created: ${this.stats.programs.created}`);
-    console.log(`   🔄 Existing: ${this.stats.programs.existing}`);
-    console.log(`   ❌ Errors: ${this.stats.programs.errors}`);
+    console.log(' Programs:');
+    console.log(`    Created: ${this.stats.programs.created}`);
+    console.log(`    Existing: ${this.stats.programs.existing}`);
+    console.log(`    Errors: ${this.stats.programs.errors}`);
     console.log('');
-    console.log('🎉 Import completed successfully!');
+    console.log(' Import completed successfully!');
   }
 }
 
@@ -430,14 +430,14 @@ async function main() {
   const filePath = process.argv[2];
 
   if (!filePath) {
-    console.error('❌ Please provide the file path as an argument');
+    console.error(' Please provide the file path as an argument');
     console.log('Usage: node import-universities.js <file-path>');
     console.log('Example: node import-universities.js ./data/universities.xlsx');
     process.exit(1);
   }
 
   if (!fs.existsSync(filePath)) {
-    console.error(`❌ File not found: ${filePath}`);
+    console.error(` File not found: ${filePath}`);
     process.exit(1);
   }
 
@@ -446,17 +446,17 @@ async function main() {
   try {
     await importer.importFromFile(filePath);
     console.log('');
-    console.log('🎯 UNIVERSITY NAME NORMALIZATION SUMMARY');
+    console.log(' UNIVERSITY NAME NORMALIZATION SUMMARY');
     console.log('========================================');
-    console.log('✅ University names are automatically normalized:');
+    console.log(' University names are automatically normalized:');
     console.log('   • "LUMS" → "Lahore University of Management Sciences (LUMS)"');
     console.log('   • "NUST" → "National University of Sciences and Technology (NUST)"');
     console.log('   • "UET" → "University of Engineering and Technology (UET)"');
     console.log('   • And many more Pakistani university abbreviations');
     console.log('');
-    console.log('📊 This prevents duplicate entries for the same university!');
+    console.log(' This prevents duplicate entries for the same university!');
   } catch (error) {
-    console.error('💥 Import failed:', error.message);
+    console.error(' Import failed:', error.message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

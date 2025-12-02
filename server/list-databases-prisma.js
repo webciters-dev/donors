@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🔍 Listing databases using Prisma...');
+console.log(' Listing databases using Prisma...');
 
 try {
   await prisma.$connect();
@@ -18,14 +18,14 @@ try {
     ORDER BY datname;
   `;
 
-  console.log('\n📊 Available databases:');
+  console.log('\n Available databases:');
   databases.forEach((db, index) => {
     console.log(`${index + 1}. ${db.database_name} (${db.size})`);
   });
 
   // Get current database name
   const currentDb = await prisma.$queryRaw`SELECT current_database() as current_db`;
-  console.log(`\n📍 Currently connected to: ${currentDb[0].current_db}`);
+  console.log(`\n Currently connected to: ${currentDb[0].current_db}`);
 
   // Check table counts in current database
   const tableCounts = await prisma.$queryRaw`
@@ -40,7 +40,7 @@ try {
     ORDER BY live_rows DESC;
   `;
 
-  console.log('\n📈 Table statistics in current database:');
+  console.log('\n Table statistics in current database:');
   tableCounts.forEach((table) => {
     console.log(`• ${table.tablename}: ${table.live_rows} rows`);
   });
@@ -48,6 +48,6 @@ try {
   await prisma.$disconnect();
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

@@ -236,7 +236,7 @@ router.post('/create-payment-intent', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ ERROR CREATING PAYMENT INTENT:');
+    console.error(' ERROR CREATING PAYMENT INTENT:');
     console.error('Error message:', error.message);
     console.error('Error code:', error.code);
     console.error('Error type:', error.type);

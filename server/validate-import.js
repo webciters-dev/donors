@@ -9,7 +9,7 @@ class ImportValidator {
   
   // Create sample test data
   async createTestFile() {
-    console.log('📝 Creating test Excel file...');
+    console.log(' Creating test Excel file...');
     
     const testData = [
       { University: 'University of the Punjab', Programme: 'Computer Science', Field: 'Computer Science', 'Degree Level': 'Bachelor' },
@@ -26,13 +26,13 @@ class ImportValidator {
     ].join('\n');
 
     fs.writeFileSync('./test-universities.csv', csvContent);
-    console.log('✅ Test file created: ./test-universities.csv');
+    console.log(' Test file created: ./test-universities.csv');
     return './test-universities.csv';
   }
 
   // Validate existing data before import
   async validateDatabase() {
-    console.log('🔍 Validating database state...');
+    console.log(' Validating database state...');
     
     const counts = {
       universities: await prisma.university.count(),
@@ -41,7 +41,7 @@ class ImportValidator {
       programs: await prisma.universityProgram.count()
     };
 
-    console.log('📊 Current database counts:');
+    console.log(' Current database counts:');
     console.log(`   Universities: ${counts.universities}`);
     console.log(`   Degree Levels: ${counts.degreeLevels}`);
     console.log(`   Fields: ${counts.fields}`);
@@ -52,7 +52,7 @@ class ImportValidator {
 
   // Test import with sample data
   async testImport() {
-    console.log('🧪 Running import test...');
+    console.log(' Running import test...');
     
     // Create test file
     const testFile = await this.createTestFile();
@@ -68,7 +68,7 @@ class ImportValidator {
     const afterCounts = await this.validateDatabase();
     
     // Show changes
-    console.log('\n📈 Changes from test import:');
+    console.log('\n Changes from test import:');
     console.log(`   Universities: ${beforeCounts.universities} → ${afterCounts.universities} (+${afterCounts.universities - beforeCounts.universities})`);
     console.log(`   Degree Levels: ${beforeCounts.degreeLevels} → ${afterCounts.degreeLevels} (+${afterCounts.degreeLevels - beforeCounts.degreeLevels})`);
     console.log(`   Fields: ${beforeCounts.fields} → ${afterCounts.fields} (+${afterCounts.fields - beforeCounts.fields})`);
@@ -76,7 +76,7 @@ class ImportValidator {
     
     // Clean up test file
     fs.unlinkSync(testFile);
-    console.log('🗑️ Test file cleaned up');
+    console.log('️ Test file cleaned up');
     
     return {
       before: beforeCounts,
@@ -87,7 +87,7 @@ class ImportValidator {
 
   // Create database backup before import
   async createBackup() {
-    console.log('💾 Creating database backup...');
+    console.log(' Creating database backup...');
     
     try {
       // Export current data
@@ -105,17 +105,17 @@ class ImportValidator {
       const backupFile = `./backup-universities-${new Date().toISOString().slice(0, 10)}.json`;
       fs.writeFileSync(backupFile, JSON.stringify(backup, null, 2));
       
-      console.log(`✅ Backup created: ${backupFile}`);
+      console.log(` Backup created: ${backupFile}`);
       return backupFile;
     } catch (error) {
-      console.error('❌ Backup failed:', error.message);
+      console.error(' Backup failed:', error.message);
       throw error;
     }
   }
 
   // Validate file format before import
   validateFile(filePath) {
-    console.log(`🔍 Validating file: ${filePath}`);
+    console.log(` Validating file: ${filePath}`);
     
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
@@ -128,25 +128,25 @@ class ImportValidator {
       throw new Error(`Unsupported file format: ${fileExtension}. Allowed: ${allowedExtensions.join(', ')}`);
     }
 
-    console.log(`✅ File format valid: ${fileExtension}`);
+    console.log(` File format valid: ${fileExtension}`);
     return true;
   }
 
   // Show import preview
   async previewImport(filePath, maxRows = 5) {
-    console.log('👀 Import Preview');
+    console.log(' Import Preview');
     console.log('================');
     
     const importer = new UniversityImporter();
     const data = await importer.readFile(filePath);
     
-    console.log(`📊 Total rows in file: ${data.length}`);
-    console.log(`🔍 Showing first ${Math.min(maxRows, data.length)} rows:\n`);
+    console.log(` Total rows in file: ${data.length}`);
+    console.log(` Showing first ${Math.min(maxRows, data.length)} rows:\n`);
     
     // Show column headers
     if (data.length > 0) {
       const headers = Object.keys(data[0]);
-      console.log('📋 Detected columns:', headers.join(' | '));
+      console.log(' Detected columns:', headers.join(' | '));
       console.log('');
       
       // Show sample data
@@ -173,36 +173,36 @@ async function main() {
   try {
     switch (command) {
       case 'test':
-        console.log('🧪 Running Import Test');
+        console.log(' Running Import Test');
         console.log('======================');
         await validator.testImport();
         break;
 
       case 'validate':
         if (!filePath) {
-          console.error('❌ Please provide file path for validation');
+          console.error(' Please provide file path for validation');
           process.exit(1);
         }
-        console.log('🔍 Validating File');
+        console.log(' Validating File');
         console.log('==================');
         validator.validateFile(filePath);
         await validator.previewImport(filePath);
         break;
 
       case 'backup':
-        console.log('💾 Creating Backup');
+        console.log(' Creating Backup');
         console.log('==================');
         await validator.createBackup();
         break;
 
       case 'status':
-        console.log('📊 Database Status');
+        console.log(' Database Status');
         console.log('==================');
         await validator.validateDatabase();
         break;
 
       default:
-        console.log('📚 University Import Validator');
+        console.log(' University Import Validator');
         console.log('==============================');
         console.log('Usage:');
         console.log('  node validate-import.js test              # Run test import');
@@ -216,7 +216,7 @@ async function main() {
         break;
     }
   } catch (error) {
-    console.error('❌ Validation failed:', error.message);
+    console.error(' Validation failed:', error.message);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

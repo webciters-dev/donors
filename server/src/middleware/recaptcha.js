@@ -19,10 +19,10 @@ export async function verifyRecaptchaToken(token, remoteip = null) {
     throw new Error('reCAPTCHA token is required');
   }
 
-  // 🚀 Development bypass for localhost
+  //  Development bypass for localhost
   const isDevelopment = process.env.DEVELOPMENT_MODE === 'true';
   if (isDevelopment && token === 'development-bypass-token') {
-    console.log('🚀 Development mode: Bypassing reCAPTCHA verification for localhost');
+    console.log(' Development mode: Bypassing reCAPTCHA verification for localhost');
     return {
       success: true,
       score: 0.9,

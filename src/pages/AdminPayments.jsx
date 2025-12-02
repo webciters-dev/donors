@@ -61,7 +61,7 @@ export default function AdminPayments() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">💳 Payments Overview</h1>
+          <h1 className="text-2xl font-semibold text-slate-900"> Payments Overview</h1>
           <p className="text-slate-600">Track all payments received from donors</p>
         </div>
         <Button onClick={() => navigate(-1)} variant="outline" className="rounded-2xl">

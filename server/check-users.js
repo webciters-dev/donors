@@ -39,7 +39,7 @@ async function checkAllUsers() {
       const user = await prisma.user.findUnique({
         where: { email }
       });
-      console.log(`${email}: ${user ? '✅ EXISTS' : '❌ NOT FOUND'}`);
+      console.log(`${email}: ${user ? ' EXISTS' : ' NOT FOUND'}`);
       if (user) {
         console.log(`   ID: ${user.id}, Role: ${user.role}, Created: ${user.createdAt}`);
       }

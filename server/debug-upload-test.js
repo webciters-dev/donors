@@ -7,7 +7,7 @@ const API_BASE = "http://localhost:3001";
 
 async function testUpload() {
   try {
-    console.log("🔧 Testing upload functionality...");
+    console.log(" Testing upload functionality...");
     
     // Create a simple test file
     const testContent = "This is a test file for debugging uploads.";
@@ -30,14 +30,14 @@ async function testUpload() {
     });
     
     if (!loginRes.ok) {
-      console.log(`   ❌ Login failed: ${loginRes.status}`);
+      console.log(`    Login failed: ${loginRes.status}`);
       const errorText = await loginRes.text();
       console.log(`   Error: ${errorText}`);
       return;
     }
     
     const loginData = await loginRes.json();
-    console.log(`   ✅ Login success`);
+    console.log(`    Login success`);
     console.log(`   User: ${loginData.user?.email} (${loginData.user?.role})`);
     console.log(`   StudentId: ${loginData.user?.studentId}`);
     
@@ -62,12 +62,12 @@ async function testUpload() {
     
     if (uploadRes.ok) {
       const result = await uploadRes.json();
-      console.log(`   ✅ Upload SUCCESS`);
+      console.log(`    Upload SUCCESS`);
       console.log(`   Document ID: ${result.document?.id}`);
       console.log(`   File URL: ${result.document?.url}`);
     } else {
       const errorText = await uploadRes.text();
-      console.log(`   ❌ Upload FAILED`);
+      console.log(`    Upload FAILED`);
       console.log(`   Error: ${errorText}`);
     }
     
@@ -75,7 +75,7 @@ async function testUpload() {
     fs.unlinkSync("debug-upload.txt");
     
   } catch (error) {
-    console.error("❌ Test error:", error.message);
+    console.error(" Test error:", error.message);
   }
 }
 

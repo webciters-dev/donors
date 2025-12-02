@@ -7,10 +7,10 @@ const databases = [
   { name: 'donors_db', url: 'postgresql://postgres:RoG*741%23PoS@localhost:5432/donors_db?schema=public' }
 ];
 
-console.log('🔍 Searching for database with complete setup...\n');
+console.log(' Searching for database with complete setup...\n');
 
 for (const db of databases) {
-  console.log(`🗄️  Database: ${db.name}`);
+  console.log(`️  Database: ${db.name}`);
   console.log('='.repeat(60));
   
   const prisma = new PrismaClient({
@@ -32,7 +32,7 @@ for (const db of databases) {
       }
     });
 
-    console.log('👥 Users by Role:');
+    console.log(' Users by Role:');
     let totalUsers = 0;
     usersByRole.forEach(group => {
       console.log(`   ${group.role}: ${group._count.role} users`);
@@ -44,14 +44,14 @@ for (const db of databases) {
     const adminCount = usersByRole.find(g => g.role === 'ADMIN')?._count.role || 0;
     const caseWorkerCount = usersByRole.find(g => g.role === 'SUB_ADMIN')?._count.role || 0;
     
-    console.log(`🎯 Target Match Check:`);
-    console.log(`   Admin: ${adminCount} (target: 1) ${adminCount === 1 ? '✅' : '❌'}`);
-    console.log(`   Case Workers: ${caseWorkerCount} (target: 4) ${caseWorkerCount === 4 ? '✅' : '❌'}`);
+    console.log(` Target Match Check:`);
+    console.log(`   Admin: ${adminCount} (target: 1) ${adminCount === 1 ? '' : ''}`);
+    console.log(`   Case Workers: ${caseWorkerCount} (target: 4) ${caseWorkerCount === 4 ? '' : ''}`);
 
     // Check for universities table
     try {
       const universityCount = await prisma.university.count();
-      console.log(`🏫 Universities: ${universityCount} ${universityCount >= 26 ? '✅' : '❌'}`);
+      console.log(` Universities: ${universityCount} ${universityCount >= 26 ? '' : ''}`);
       
       if (universityCount > 0) {
         // Get Pakistani universities
@@ -60,7 +60,7 @@ for (const db of databases) {
             country: 'Pakistan'
           }
         });
-        console.log(`🇵🇰 Pakistani Universities: ${pakistaniUniversities}`);
+        console.log(` Pakistani Universities: ${pakistaniUniversities}`);
         
         // Show some sample universities
         const sampleUniversities = await prisma.university.findMany({
@@ -68,31 +68,31 @@ for (const db of databases) {
           select: { name: true },
           take: 5
         });
-        console.log(`📋 Sample Pakistani Universities:`);
+        console.log(` Sample Pakistani Universities:`);
         sampleUniversities.forEach((uni, index) => {
           console.log(`   ${index + 1}. ${uni.name}`);
         });
       }
     } catch (uniError) {
-      console.log(`🏫 Universities: Table not found or accessible ❌`);
+      console.log(` Universities: Table not found or accessible `);
     }
 
     // Check for board members
     try {
       const boardMemberCount = await prisma.boardMember.count();
-      console.log(`👔 Board Members: ${boardMemberCount} ${boardMemberCount > 0 ? '✅' : '❌'}`);
+      console.log(` Board Members: ${boardMemberCount} ${boardMemberCount > 0 ? '' : ''}`);
       
       if (boardMemberCount > 0) {
         const boardMembers = await prisma.boardMember.findMany({
           select: { name: true, title: true, isActive: true }
         });
-        console.log(`📋 Board Members:`);
+        console.log(` Board Members:`);
         boardMembers.forEach((member, index) => {
           console.log(`   ${index + 1}. ${member.name} - ${member.title || 'Member'} ${member.isActive ? '(Active)' : '(Inactive)'}`);
         });
       }
     } catch (boardError) {
-      console.log(`👔 Board Members: Table not found or accessible ❌`);
+      console.log(` Board Members: Table not found or accessible `);
     }
 
     // Check other key data
@@ -100,7 +100,7 @@ for (const db of databases) {
     const donorCount = await prisma.donor.count();
     const applicationCount = await prisma.application.count();
     
-    console.log(`\n📊 Additional Data:`);
+    console.log(`\n Additional Data:`);
     console.log(`   Students: ${studentCount}`);
     console.log(`   Donors: ${donorCount}`);
     console.log(`   Applications: ${applicationCount}`);
@@ -112,13 +112,13 @@ for (const db of databases) {
     if (universityCount >= 26) matchScore += 25;
     if (boardMemberCount > 0) matchScore += 25;
 
-    console.log(`\n🎯 MATCH SCORE: ${matchScore}/100 ${matchScore === 100 ? '🎉 PERFECT MATCH!' : matchScore >= 75 ? '✅ Good Match' : '❌ Not the target database'}`);
+    console.log(`\n MATCH SCORE: ${matchScore}/100 ${matchScore === 100 ? ' PERFECT MATCH!' : matchScore >= 75 ? ' Good Match' : ' Not the target database'}`);
 
     await prisma.$disconnect();
     console.log('\n' + '='.repeat(60) + '\n');
     
   } catch (error) {
-    console.log(`❌ Error accessing ${db.name}:`, error.message);
+    console.log(` Error accessing ${db.name}:`, error.message);
     console.log('\n' + '='.repeat(60) + '\n');
   }
 }

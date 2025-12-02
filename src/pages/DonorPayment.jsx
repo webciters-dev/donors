@@ -379,7 +379,7 @@ function DonorPayment() {
         <Card className="p-6 sm:p-8 text-center">
           <div className="space-y-4">
             <Badge variant="default" className="px-4 py-2">
-              ✓ Already Sponsored
+               Already Sponsored
             </Badge>
             <div>
               <h3 className="text-lg font-semibold text-slate-900">This student is fully sponsored</h3>

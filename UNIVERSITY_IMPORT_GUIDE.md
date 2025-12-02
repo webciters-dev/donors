@@ -1,19 +1,19 @@
 # University Data Import Guide
 
-## 📚 Overview
+##  Overview
 
 This guide explains how to import your 3000+ Pakistani university records into the AWAKE Connect database. The system supports Excel (`.xlsx`, `.xls`) and CSV (`.csv`) files.
 
-## 📋 File Format Requirements
+##  File Format Requirements
 
 Your Excel/CSV file should have these columns (case-insensitive):
 
 | Column Name | Variations Supported | Required | Example |
 |------------|---------------------|----------|---------|
-| **University** | University, Uni, Institution, College | ✅ Yes | University of the Punjab |
-| **Programme** | Programme, Program, Course | ✅ Yes | Computer Science |
-| **Field** | Field, Department, Field/Department, Dept | ✅ Yes | Computer Science |
-| **Degree Level** | Degree Level, DegreeLevel, Level, Degree | ✅ Yes | Bachelor's |
+| **University** | University, Uni, Institution, College |  Yes | University of the Punjab |
+| **Programme** | Programme, Program, Course |  Yes | Computer Science |
+| **Field** | Field, Department, Field/Department, Dept |  Yes | Computer Science |
+| **Degree Level** | Degree Level, DegreeLevel, Level, Degree |  Yes | Bachelor's |
 
 ### Sample Data Structure:
 ```
@@ -24,7 +24,7 @@ National University of Sciences & Tech  | Mechanical Engineering       | Enginee
 University of Karachi                   | Business Administration      | Business          | Bachelor
 ```
 
-## 🚀 Import Process
+##  Import Process
 
 ### Step 1: Prepare Your Environment
 ```bash
@@ -59,21 +59,21 @@ npm run import:test
 npm run import:universities path/to/your/universities.xlsx
 ```
 
-## 📊 Import Features
+##  Import Features
 
-### ✅ Smart Data Handling
+###  Smart Data Handling
 - **Automatic deduplication** - Prevents duplicate entries
 - **Case-insensitive matching** - Handles various column name formats
 - **Data normalization** - Standardizes degree level names
 - **Country assignment** - Automatically sets country to "Pakistan"
 
-### ✅ Error Handling
+###  Error Handling
 - **Validation** - Checks for required fields
 - **Error reporting** - Shows which rows failed and why
 - **Partial imports** - Continues processing if some rows fail
 - **Statistics** - Detailed import results
 
-### ✅ Database Structure
+###  Database Structure
 Your data creates this hierarchy:
 ```
 Universities
@@ -89,7 +89,7 @@ Universities
 │           └── Advanced Computer Science (Programme)
 ```
 
-## 🔧 Commands Reference
+##  Commands Reference
 
 ### Validation Commands
 ```bash
@@ -124,69 +124,69 @@ npm run db:reset
 npm run db:generate
 ```
 
-## 📈 Expected Results
+##  Expected Results
 
 After importing your 3000+ records, you'll see:
 
 ```
-📊 IMPORT COMPLETE - Final Statistics
+ IMPORT COMPLETE - Final Statistics
 =====================================
-📁 Total Rows Processed: 3000+
+ Total Rows Processed: 3000+
 ⏭️ Skipped Rows: 0 (or minimal)
 
-🏛️ Universities:
-   ✅ Created: ~12 (your Pakistani universities)
-   🔄 Existing: 0 (or any previously imported)
+️ Universities:
+    Created: ~12 (your Pakistani universities)
+    Existing: 0 (or any previously imported)
 
-🎓 Degree Levels:
-   ✅ Created: ~10 (Bachelor's, Master's, PhD, etc.)
+ Degree Levels:
+    Created: ~10 (Bachelor's, Master's, PhD, etc.)
 
-📚 Fields:
-   ✅ Created: ~50+ (Computer Science, Engineering, Business, etc.)
+ Fields:
+    Created: ~50+ (Computer Science, Engineering, Business, etc.)
 
-📖 Programs:
-   ✅ Created: 3000+ (your actual programs)
+ Programs:
+    Created: 3000+ (your actual programs)
 
-🎉 Import completed successfully!
+ Import completed successfully!
 ```
 
-## 🛠️ Troubleshooting
+## ️ Troubleshooting
 
 ### Common Issues & Solutions
 
-#### ❌ "No data found in file"
+####  "No data found in file"
 - Check file format (.xlsx, .xls, or .csv)
 - Ensure file is not corrupted
 - Verify file path is correct
 
-#### ❌ "Missing required fields"
+####  "Missing required fields"
 - Check column names match expected format
 - Ensure all required columns exist: University, Programme, Field, Degree Level
 
-#### ❌ "File not found"
+####  "File not found"
 - Use full file path: `C:\path\to\universities.xlsx`
 - Ensure file exists and is accessible
 
-#### ❌ Database connection errors
+####  Database connection errors
 - Check your `.env` file has correct DATABASE_URL
 - Ensure PostgreSQL is running
 - Run `npm run db:generate` to update Prisma
 
 ### File Format Tips
 
-#### ✅ Excel Files
+####  Excel Files
 - Use `.xlsx` format (most compatible)
 - Ensure data starts from row 1 (headers)
 - No merged cells in data area
 - Remove any extra formatting
 
-#### ✅ CSV Files
+####  CSV Files
 - Use UTF-8 encoding
 - Comma-separated values
 - Quote text fields if they contain commas
 - No extra spaces around values
 
-## 🎯 Integration with AWAKE Connect
+##  Integration with AWAKE Connect
 
 After import, your university data will be available in:
 
@@ -205,7 +205,7 @@ After import, your university data will be available in:
 - Program-specific requirements
 - Field-based categorization
 
-## 📝 Example Import Session
+##  Example Import Session
 
 ```bash
 # Navigate to server directory
@@ -213,28 +213,28 @@ cd C:\projects\donors\server
 
 # Validate your file first
 npm run import:validate ./my-universities.xlsx
-# 👀 Import Preview
+#  Import Preview
 # ================
-# 📊 Total rows in file: 3000
-# 📋 Detected columns: University | Programme | Field | Degree Level
+#  Total rows in file: 3000
+#  Detected columns: University | Programme | Field | Degree Level
 
 # Create backup
 npm run import:backup
-# 💾 Creating database backup...
-# ✅ Backup created: ./backup-universities-2025-11-11.json
+#  Creating database backup...
+#  Backup created: ./backup-universities-2025-11-11.json
 
 # Run the import
 npm run import:universities ./my-universities.xlsx
-# 🚀 Starting University Data Import
+#  Starting University Data Import
 # ==================================
-# 📁 Reading file: ./my-universities.xlsx
-# ✅ Successfully read 3000 rows from ./my-universities.xlsx
-# 📊 Processing 3000 records...
+#  Reading file: ./my-universities.xlsx
+#  Successfully read 3000 rows from ./my-universities.xlsx
+#  Processing 3000 records...
 # ...
-# 🎉 Import completed successfully!
+#  Import completed successfully!
 ```
 
-## 📞 Support
+##  Support
 
 If you encounter issues:
 
@@ -243,4 +243,4 @@ If you encounter issues:
 3. **Use validation commands** to test before full import
 4. **Create backups** before major imports
 
-Your 3000+ university records will be properly imported and organized in the AWAKE Connect database, ready for student registrations and applications! 🚀
+Your 3000+ university records will be properly imported and organized in the AWAKE Connect database, ready for student registrations and applications! 

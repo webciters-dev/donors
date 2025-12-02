@@ -5,13 +5,13 @@ import { UNIVERSITIES_BY_COUNTRY } from '../src/lib/universities.js';
 const prisma = new PrismaClient();
 
 async function seedUniversities() {
-  console.log('🌱 Seeding universities database...');
+  console.log(' Seeding universities database...');
 
   let totalSeeded = 0;
   let totalSkipped = 0;
 
   for (const [country, countryData] of Object.entries(UNIVERSITIES_BY_COUNTRY)) {
-    console.log(`\n📍 Processing ${country}...`);
+    console.log(`\n Processing ${country}...`);
     
     for (const universityName of countryData.universities) {
       // Skip "Other" entries as these are not real universities
@@ -46,16 +46,16 @@ async function seedUniversities() {
           }
         });
 
-        console.log(`  ✅ ${universityName}`);
+        console.log(`   ${universityName}`);
         totalSeeded++;
       } catch (error) {
-        console.error(`  ❌ Error seeding ${universityName}:`, error.message);
+        console.error(`   Error seeding ${universityName}:`, error.message);
       }
     }
   }
 
-  console.log(`\n🎉 Seeding completed!`);
-  console.log(`📊 Summary:`);
+  console.log(`\n Seeding completed!`);
+  console.log(` Summary:`);
   console.log(`  - Total seeded: ${totalSeeded}`);
   console.log(`  - Total skipped: ${totalSkipped}`);
   console.log(`  - Countries processed: ${Object.keys(UNIVERSITIES_BY_COUNTRY).length}`);
@@ -67,7 +67,7 @@ async function seedUniversities() {
 
 seedUniversities()
   .catch((e) => {
-    console.error('❌ Error during seeding:', e);
+    console.error(' Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {

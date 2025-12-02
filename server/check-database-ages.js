@@ -7,10 +7,10 @@ const databases = [
   { name: 'donors_db', url: 'postgresql://postgres:RoG*741%23PoS@localhost:5432/donors_db?schema=public' }
 ];
 
-console.log('🔍 Checking database creation times and latest activity...\n');
+console.log(' Checking database creation times and latest activity...\n');
 
 for (const db of databases) {
-  console.log(`📅 Database: ${db.name}`);
+  console.log(` Database: ${db.name}`);
   console.log('='.repeat(50));
   
   const prisma = new PrismaClient({
@@ -34,7 +34,7 @@ for (const db of databases) {
     `;
 
     if (dbInfo.length > 0) {
-      console.log(`📊 Database modified: ${new Date(dbInfo[0].last_modified).toISOString()}`);
+      console.log(` Database modified: ${new Date(dbInfo[0].last_modified).toISOString()}`);
     }
 
     // Get latest user creation (indicates recent activity)
@@ -45,10 +45,10 @@ for (const db of databases) {
       });
 
       if (latestUser) {
-        console.log(`👤 Latest user created: ${latestUser.email} (${latestUser.role}) on ${latestUser.createdAt.toISOString()}`);
+        console.log(` Latest user created: ${latestUser.email} (${latestUser.role}) on ${latestUser.createdAt.toISOString()}`);
       }
     } catch (userError) {
-      console.log(`❌ Cannot read users: ${userError.message}`);
+      console.log(` Cannot read users: ${userError.message}`);
     }
 
     // Get latest student creation
@@ -59,10 +59,10 @@ for (const db of databases) {
       });
 
       if (latestStudent) {
-        console.log(`🎓 Latest student: ${latestStudent.name} on ${latestStudent.createdAt.toISOString()}`);
+        console.log(` Latest student: ${latestStudent.name} on ${latestStudent.createdAt.toISOString()}`);
       }
     } catch (studentError) {
-      console.log(`❌ Cannot read students: ${studentError.message}`);
+      console.log(` Cannot read students: ${studentError.message}`);
     }
 
     // Get latest application
@@ -77,10 +77,10 @@ for (const db of databases) {
       });
 
       if (latestApplication) {
-        console.log(`📝 Latest application: ${latestApplication.student.name} on ${latestApplication.submittedAt.toISOString()}`);
+        console.log(` Latest application: ${latestApplication.student.name} on ${latestApplication.submittedAt.toISOString()}`);
       }
     } catch (appError) {
-      console.log(`❌ Cannot read applications: ${appError.message}`);
+      console.log(` Cannot read applications: ${appError.message}`);
     }
 
     // Check schema version (from migrations table)
@@ -93,20 +93,20 @@ for (const db of databases) {
       `;
 
       if (migrations.length > 0) {
-        console.log(`🔧 Latest migration: ${migrations[0].migration_name}`);
+        console.log(` Latest migration: ${migrations[0].migration_name}`);
         console.log(`   Applied: ${new Date(migrations[0].finished_at).toISOString()}`);
       }
     } catch (migrationError) {
-      console.log(`❌ Cannot read migrations: ${migrationError.message}`);
+      console.log(` Cannot read migrations: ${migrationError.message}`);
     }
 
     await prisma.$disconnect();
     console.log('');
     
   } catch (error) {
-    console.log(`❌ Error accessing ${db.name}:`, error.message);
+    console.log(` Error accessing ${db.name}:`, error.message);
     console.log('');
   }
 }
 
-console.log('🎯 Recommendation: The database with the LATEST activity should be your primary database.');
+console.log(' Recommendation: The database with the LATEST activity should be your primary database.');

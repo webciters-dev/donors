@@ -16,12 +16,12 @@ export default function DonorBrowse() {
   useEffect(() => {
     async function loadStudents() {
       try {
-        console.log("🔍 DonorBrowse: Fetching from:", `${API.baseURL}/api/students/approved`);
+        console.log(" DonorBrowse: Fetching from:", `${API.baseURL}/api/students/approved`);
         const res = await fetch(`${API.baseURL}/api/students/approved`);
         
         if (res.ok) {
           const data = await res.json();
-          console.log("🔍 DonorBrowse: API Response:", data);
+          console.log(" DonorBrowse: API Response:", data);
           const apiStudents = Array.isArray(data?.students) ? data.students : [];
           
           // Transform for display - filter out sponsored students (ONE STUDENT = ONE DONOR)
@@ -36,11 +36,11 @@ export default function DonorBrowse() {
               displayAmount: student.application?.amount || 0
             }));
           
-          console.log("🔍 DonorBrowse: Transformed students:", transformedStudents);
+          console.log(" DonorBrowse: Transformed students:", transformedStudents);
           setStudents(transformedStudents);
         }
       } catch (error) {
-        console.error("🔍 DonorBrowse: API Error:", error);
+        console.error(" DonorBrowse: API Error:", error);
       } finally {
         setLoading(false);
       }
@@ -62,7 +62,7 @@ export default function DonorBrowse() {
           </Button>
         </div>
         <p className="text-green-800 text-xs sm:text-sm max-w-2xl leading-relaxed">
-          💡 Transform lives through education. Browse verified students who need your support to achieve their academic dreams. 
+           Transform lives through education. Browse verified students who need your support to achieve their academic dreams. 
           <strong> Create your donor account to unlock detailed profiles and start making an impact.</strong>
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function DonorBrowse() {
         </div>
       ) : students.length === 0 ? (
         <div className="text-center py-12 sm:py-16 px-4">
-          <div className="text-5xl sm:text-6xl mb-4">🎓</div>
+          <div className="text-5xl sm:text-6xl mb-4"></div>
           <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No Students Available Yet</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-6 leading-relaxed text-sm sm:text-base">
             We're currently processing student applications. Check back soon to see deserving students who need your support!

@@ -15,7 +15,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ## The Complete Journey - How It All Works
 
-### 📝 **Step 1: Student Applies for Help**
+###  **Step 1: Student Applies for Help**
 
 **What the Student Does:**
 1. **Creates Account** - Student visits the website and signs up with their email and password
@@ -44,7 +44,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 🏢 **Step 2: Akhuwat Admin Reviews Application**
+###  **Step 2: Akhuwat Admin Reviews Application**
 
 **What the Admin Does:**
 1. **Gets Notification** - Admin receives an email: "New student application received"
@@ -60,7 +60,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 🕵️ **Step 3: Case Worker Investigates**
+### ️ **Step 3: Case Worker Investigates**
 
 **What the Case Worker Does:**
 1. **Gets Assignment Email** - Case worker receives notification about new student to review
@@ -85,15 +85,15 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 👨‍💼 **Step 4: Admin Makes Final Decision**
+### ‍ **Step 4: Admin Makes Final Decision**
 
 **What the Admin Does:**
 1. **Reviews Case Worker Report** - Admin reads the field investigation results
 2. **Schedules Interview** (if needed) - For important cases, admin arranges interview with board members
 3. **Makes Final Decision** - Admin decides:
-   - ✅ **APPROVED** - Student gets help
-   - ❌ **REJECTED** - Student doesn't qualify
-   - 🔄 **NEEDS MORE INFO** - Ask for additional documents
+   -  **APPROVED** - Student gets help
+   -  **REJECTED** - Student doesn't qualify
+   -  **NEEDS MORE INFO** - Ask for additional documents
 
 **What Happens:**
 - **If Approved:** Student receives congratulations email and becomes available for sponsorship
@@ -102,7 +102,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 🌟 **Step 5: Student Becomes Available for Sponsorship**
+###  **Step 5: Student Becomes Available for Sponsorship**
 
 **What Happens When Approved:**
 1. **Student Profile Goes Live** - Student's information appears on the public website
@@ -111,7 +111,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 💝 **Step 6: Donor Finds and Chooses Student**
+###  **Step 6: Donor Finds and Chooses Student**
 
 **What the Donor Does:**
 1. **Visits Website** - Donor browses students who need help
@@ -134,7 +134,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 🤝 **Step 7: Sponsorship Begins**
+###  **Step 7: Sponsorship Begins**
 
 **What Both Student and Donor Get:**
 1. **Direct Communication** - They can send messages to each other through the platform
@@ -148,7 +148,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 💰 **Step 8: Money Gets to Student**
+###  **Step 8: Money Gets to Student**
 
 **How Student Receives Funds:**
 1. **Admin Processes Payment** - Akhuwat receives donor's money
@@ -159,7 +159,7 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ---
 
-### 📊 **Step 9: Ongoing Relationship**
+###  **Step 9: Ongoing Relationship**
 
 **What Continues Throughout Studies:**
 1. **Regular Check-ins** - Student updates progress every semester
@@ -172,19 +172,19 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ## Key Benefits for Everyone
 
-### 🎓 **For Students:**
+###  **For Students:**
 - **Free to Apply** - No cost to submit application
 - **Personal Support** - Get a dedicated sponsor who cares
 - **Full Education Funding** - Complete financial support for studies
 - **Mentorship** - Learn from successful people around the world
 
-### 💖 **For Donors:**
+###  **For Donors:**
 - **Real Impact** - See exactly how your money helps
 - **Direct Connection** - Communicate with your sponsored student
 - **Tax Benefits** - Get proper receipts for tax deductions
 - **Transparent Process** - Know exactly where your money goes
 
-### 🏢 **For Akhuwat:**
+###  **For Akhuwat:**
 - **Efficient Management** - Handle hundreds of students easily
 - **Quality Control** - Ensure only deserving students get help
 - **Success Tracking** - Monitor student progress and graduation rates
@@ -194,14 +194,14 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 ## Safety and Security
 
-### 🔒 **How We Keep Information Safe:**
+###  **How We Keep Information Safe:**
 - **Secure Login** - Password protection for all accounts
 - **Document Verification** - All papers are checked by experts
 - **Home Visits** - Personal verification of student situations
 - **Money Protection** - Secure payment processing
 - **Privacy Respect** - Personal information stays confidential
 
-### ✅ **Quality Assurance:**
+###  **Quality Assurance:**
 - **Multiple Reviews** - Every application checked by different people
 - **Field Verification** - Real-world confirmation of student needs
 - **Ongoing Monitoring** - Continuous oversight throughout studies
@@ -212,10 +212,10 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 ## Success Stories
 
 **The platform has already helped:**
-- ✨ **150+ Students** approved for sponsorship
-- 🌍 **85+ Active Sponsorships** currently running
-- 🎓 **15+ Graduates** completed their education successfully
-- 💰 **$425,000+** total funding provided to students
+-  **150+ Students** approved for sponsorship
+-  **85+ Active Sponsorships** currently running
+-  **15+ Graduates** completed their education successfully
+-  **$425,000+** total funding provided to students
 
 ---
 
@@ -225,9 +225,9 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 **For Donors:** If you want to sponsor a student or need assistance  
 **For General Questions:** About how the platform works
 
-📧 **Email:** admin@awakeconnect.org  
-🌐 **Website:** https://aircrew.nl  
-📞 **Phone:** Available through email request
+ **Email:** admin@awakeconnect.org  
+ **Website:** https://aircrew.nl  
+ **Phone:** Available through email request
 
 ---
 
@@ -235,14 +235,14 @@ AWAKE Connect is an online platform that helps Pakistani students get financial 
 
 **AWAKE Connect makes education possible by:**
 
-1. 📝 **Students apply** with their information and documents
-2. 🔍 **Akhuwat verifies** everything is real and accurate  
-3. ✅ **Qualified students** become available for sponsorship
-4. 💝 **Generous donors** choose students to help
-5. 💰 **Money flows safely** from donors to students
-6. 🎓 **Students succeed** in their education with ongoing support
-7. 🤝 **Relationships grow** between students and sponsors
-8. 🌟 **Everyone wins** - students get education, donors feel fulfilled
+1.  **Students apply** with their information and documents
+2.  **Akhuwat verifies** everything is real and accurate  
+3.  **Qualified students** become available for sponsorship
+4.  **Generous donors** choose students to help
+5.  **Money flows safely** from donors to students
+6.  **Students succeed** in their education with ongoing support
+7.  **Relationships grow** between students and sponsors
+8.  **Everyone wins** - students get education, donors feel fulfilled
 
 **It's that simple!** A platform where kindness meets opportunity, and education becomes possible for everyone.
 

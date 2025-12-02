@@ -1,4 +1,4 @@
-# 🚀 MANUAL DEPLOYMENT GUIDE - aircrew.nl
+#  MANUAL DEPLOYMENT GUIDE - aircrew.nl
 
 ## Quick Deployment Steps
 
@@ -68,9 +68,9 @@ curl https://aircrew.nl
 
 ---
 
-## ✅ What This Deployment Includes:
+##  What This Deployment Includes:
 
-🛡️ **Complete reCAPTCHA Spam Protection System**
+️ **Complete reCAPTCHA Spam Protection System**
 - Donor registration protection
 - Password reset flood protection  
 - Case worker creation protection
@@ -79,12 +79,12 @@ curl https://aircrew.nl
 - Messaging system spam protection
 - Student reply protection
 
-📧 **Email Server Crisis Resolution**
+ **Email Server Crisis Resolution**
 - Blocks the 200+ daily spam emails
 - Secures all email-sending endpoints
 - Maintains legitimate user experience
 
-🔒 **7 Protected Forms/Endpoints**
+ **7 Protected Forms/Endpoints**
 - `/api/auth/register-donor` & `/api/auth/request-password-reset`
 - `/api/users/sub-admins` & `/api/users/case-workers`
 - `/api/interviews` & `/api/board-members`
@@ -92,7 +92,7 @@ curl https://aircrew.nl
 
 ---
 
-## 🚨 If Deployment Fails:
+##  If Deployment Fails:
 
 1. **Check Git status**: `git status`, `git log --oneline -5`
 2. **Check Node.js version**: `node --version` (should be 18+)
@@ -102,11 +102,11 @@ curl https://aircrew.nl
 
 ---
 
-## 🎯 Post-Deployment Testing:
+##  Post-Deployment Testing:
 
 1. **Test Donor Signup**: https://aircrew.nl/signup → Should show reCAPTCHA
 2. **Test Password Reset**: https://aircrew.nl/forgot-password → Should be protected
 3. **Test Admin Functions**: Login as admin, try creating case workers
 4. **Monitor Email Logs**: Check that spam emails are blocked
 
-**Deployment completed!** 🎉
+**Deployment completed!** 

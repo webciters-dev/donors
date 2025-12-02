@@ -148,7 +148,7 @@ export default function AdminOfficers() {
         </Button>
       </div>
 
-      {/* Add New Sub Admin */}
+      {/* Add New Case Worker */}
       <Card className="border-l-4 border-l-green-500 bg-green-50">
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export default function AdminOfficers() {
         </div>
       </Card>
 
-      {/* Existing Sub Admins */}
+      {/* Existing Case Workers */}
       <Card>
         <div className="px-6 py-4 border-b bg-slate-50">
           <div className="flex items-center gap-2">

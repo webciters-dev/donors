@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-console.log('🗑️ REMOVING OLD DONOR RECORDS\n');
+console.log('️ REMOVING OLD DONOR RECORDS\n');
 
 const donorsToRemove = [
   'sarah@example.com',
@@ -15,7 +15,7 @@ try {
   await prisma.$connect();
   
   // First, show current donors
-  console.log('📊 Current donors before removal:');
+  console.log(' Current donors before removal:');
   const currentDonors = await prisma.donor.findMany({
     select: {
       id: true,
@@ -31,7 +31,7 @@ try {
     console.log(`${index + 1}. ${donor.name} (${donor.email}) - $${donor.totalFunded}`);
   });
   
-  console.log('\n🎯 Removing specified donors...');
+  console.log('\n Removing specified donors...');
   
   // Remove each donor
   for (const email of donorsToRemove) {
@@ -39,18 +39,18 @@ try {
       const deletedDonor = await prisma.donor.delete({
         where: { email: email }
       });
-      console.log(`✅ Removed: ${deletedDonor.name} (${deletedDonor.email})`);
+      console.log(` Removed: ${deletedDonor.name} (${deletedDonor.email})`);
     } catch (error) {
       if (error.code === 'P2025') {
-        console.log(`⚠️ Donor with email ${email} not found (may already be removed)`);
+        console.log(`️ Donor with email ${email} not found (may already be removed)`);
       } else {
-        console.error(`❌ Error removing ${email}:`, error.message);
+        console.error(` Error removing ${email}:`, error.message);
       }
     }
   }
   
   // Show remaining donors
-  console.log('\n📊 Remaining donors after removal:');
+  console.log('\n Remaining donors after removal:');
   const remainingDonors = await prisma.donor.findMany({
     select: {
       id: true,
@@ -72,12 +72,12 @@ try {
   
   // Final count
   const finalCount = await prisma.donor.count();
-  console.log(`\n📈 Final donor count: ${finalCount}`);
+  console.log(`\n Final donor count: ${finalCount}`);
   
   await prisma.$disconnect();
-  console.log('\n✅ Donor removal completed');
+  console.log('\n Donor removal completed');
   
 } catch (error) {
-  console.error('❌ Error:', error.message);
+  console.error(' Error:', error.message);
   process.exit(1);
 }

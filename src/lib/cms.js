@@ -59,7 +59,7 @@ export const updateCMSContent = (path, value) => {
     // Save back to localStorage
     localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(content));
     
-    console.log(`📝 CMS: Updated ${path} =`, value);
+    console.log(` CMS: Updated ${path} =`, value);
     return true;
   } catch (error) {
     console.error('Failed to update CMS content:', error);
@@ -73,7 +73,7 @@ export const updateCMSContent = (path, value) => {
 export const resetCMSContent = () => {
   try {
     localStorage.removeItem(CMS_STORAGE_KEY);
-    console.log('🔄 CMS: Reset to defaults');
+    console.log(' CMS: Reset to defaults');
     return true;
   } catch (error) {
     console.error('Failed to reset CMS content:', error);
@@ -104,7 +104,7 @@ export const importCMSContent = (jsonString) => {
   try {
     const content = JSON.parse(jsonString);
     localStorage.setItem(CMS_STORAGE_KEY, JSON.stringify(content));
-    console.log('📥 CMS: Imported content');
+    console.log(' CMS: Imported content');
     return true;
   } catch (error) {
     console.error('Failed to import CMS content:', error);

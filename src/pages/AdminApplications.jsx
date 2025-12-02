@@ -29,7 +29,7 @@ export const AdminApplications = () => {
   const [docsByRow, setDocsByRow] = useState({}); // app.id -> documents[]
   const [loadingDocsId, setLoadingDocsId] = useState(null);
 
-  // sub admin assignment state
+  // case worker assignment state
   const [officers, setOfficers] = useState([]);
   const [assigningId, setAssigningId] = useState(null);
 
@@ -82,7 +82,7 @@ export const AdminApplications = () => {
         }));
         if (!dead) setApps(withLocal);
 
-        // Load officers list (for sub admin assignment)
+        // Load officers list (for case worker assignment)
         try {
           const ofRes = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
           if (ofRes.ok) {
@@ -154,7 +154,7 @@ export const AdminApplications = () => {
   }
 
   // ---------------------------
-  // Assign Sub Admin
+  // Assign Case Worker
   // ---------------------------
   async function assignSubAdmin(applicationId, studentId, officerId) {
     try {
@@ -171,15 +171,16 @@ export const AdminApplications = () => {
         
         // Handle specific duplicate assignment error
         if (res.status === 400 && errorData.includes("already assigned")) {
-          errorMessage = "This application is already assigned to the selected sub admin.";
+          errorMessage = "This application is already assigned to the selected case worker.";
         }
         
         throw new Error(errorMessage || `HTTP ${res.status}`);
       }
 
-      toast.success("Sub Admin assigned successfully!");
+      const responseData = await res.json();
+      toast.success("Case Worker assigned successfully!");
       
-      // Immediately update the local state to reflect assignment
+      // Immediately update the local state to reflect assignment with the real ID from server
       const assignedOfficer = officers.find(o => o.id === officerId);
       setApps((prev) =>
         prev.map((app) =>
@@ -189,7 +190,7 @@ export const AdminApplications = () => {
                 fieldReviews: [
                   ...app.fieldReviews,
                   {
-                    id: `temp-${Date.now()}`, // Temporary ID until next refresh
+                    id: responseData.review?.id || `temp-${Date.now()}`, // Use real ID from server
                     officerUserId: officerId,
                     status: "PENDING",
                     applicationId,
@@ -205,7 +206,7 @@ export const AdminApplications = () => {
       // Show more user-friendly error messages
       if (err.message.includes("already assigned")) {
         toast.warning("Application Already Assigned", {
-          description: "This application is already assigned to the selected sub admin."
+          description: "This application is already assigned to the selected case worker."
         });
       } else {
         toast.error(`Assignment failed: ${err.message}`);
@@ -216,7 +217,7 @@ export const AdminApplications = () => {
   }
 
   // ---------------------------
-  // Reassign Sub Admin
+  // Reassign Case Worker
   // ---------------------------
   async function reassignSubAdmin(reviewId, newOfficerId, applicationId) {
     try {
@@ -259,7 +260,7 @@ export const AdminApplications = () => {
   }
 
   // ---------------------------
-  // Unassign Sub Admin
+  // Unassign Case Worker
   // ---------------------------
   async function unassignSubAdmin(reviewId, applicationId) {
     try {
@@ -488,13 +489,13 @@ export const AdminApplications = () => {
                           
                           return (
                             <Badge className={`text-white text-xs ${bgColor}`}>
-                              🏢 {recommendation?.replace('_', ' ') || 'APPROVED'}
+                               {recommendation?.replace('_', ' ') || 'APPROVED'}
                             </Badge>
                           );
                         } else if (status === "IN_PROGRESS") {
                           return (
                             <Badge className="bg-orange-500 text-white text-xs">
-                              🔄 In Review
+                               In Review
                             </Badge>
                           );
                         } else if (status === "PENDING") {
@@ -507,7 +508,7 @@ export const AdminApplications = () => {
                       })()
                     )}
                     
-                    {/* Sub Admin Assignment */}
+                    {/* Case Worker Assignment */}
                     {(!row.fieldReviews || row.fieldReviews.length === 0) ? (
                       <div className="flex items-center gap-2">
                         <select 
@@ -520,7 +521,7 @@ export const AdminApplications = () => {
                             }
                           }}
                         >
-                          <option value="">👤 Assign Sub Admin...</option>
+                          <option value=""> Assign Case Worker...</option>
                           {officers.map(officer => (
                             <option key={officer.id} value={officer.id}>
                               {officer.name || officer.email}
@@ -534,10 +535,10 @@ export const AdminApplications = () => {
                     ) : (
                       <div className="space-y-1">
                         <div className="text-xs text-slate-600">
-                          Assigned to: {row.fieldReviews.map(fr => {
+                          Assigned to: {Array.from(new Set(row.fieldReviews.map(fr => {
                             const officer = officers.find(o => o.id === fr.officerUserId);
                             return officer?.name || officer?.email || 'Unknown Officer';
-                          }).join(', ')}
+                          }))).join(', ')}
                         </div>
                         <div className="flex items-center gap-1">
                           {/* Reassign Dropdown */}
@@ -551,7 +552,7 @@ export const AdminApplications = () => {
                               }
                             }}
                           >
-                            <option value="">🔄 Reassign...</option>
+                            <option value=""> Reassign...</option>
                             {officers.filter(o => o.id !== row.fieldReviews[0]?.officerUserId).map(officer => (
                               <option key={officer.id} value={officer.id}>
                                 {officer.name || officer.email}
@@ -567,7 +568,7 @@ export const AdminApplications = () => {
                             disabled={assigningId === row.id || assigningId === `reassign-${row.fieldReviews[0]?.id}`}
                             onClick={() => unassignSubAdmin(row.fieldReviews[0].id, row.id)}
                           >
-                            ❌ Unassign
+                             Unassign
                           </Button>
                           
                           {(assigningId === row.id || assigningId === `reassign-${row.fieldReviews[0]?.id}`) && (
@@ -672,7 +673,7 @@ export const AdminApplications = () => {
                               rel="noreferrer"
                               className="text-green-700 hover:underline font-medium text-sm"
                             >
-                              📁 {d.originalName || d.url}
+                               {d.originalName || d.url}
                             </a>
                           </div>
                         </div>
