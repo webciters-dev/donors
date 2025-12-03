@@ -447,23 +447,6 @@ export async function sendInterviewScheduledBoardMemberEmail({
       to: email,
       subject: ' Board Interview Assignment - AWAKE Connect',
       html: `<div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;"><div style="background-color: white; padding: 30px; border-radius: 8px;"><h1 style="color: #059669; font-size: 22px; margin: 0 0 15px 0;">Interview Assignment</h1><p style="color: #374151; margin: 0 0 15px 0;">Hi ${name},</p><p style="color: #374151; margin: 0 0 15px 0;">You've been assigned to interview student <strong>${studentName}</strong>.${isChairperson ? ' You are the <strong>Chairperson</strong>.' : ''}</p><div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;"><p style="color: #374151; margin: 5px 0;"><strong>Date:</strong> ${scheduledDate}</p><p style="color: #374151; margin: 5px 0;"><strong>Time:</strong> ${scheduledTime}</p><p style="color: #374151; margin: 5px 0;"><strong>Interview ID:</strong> ${interviewId.slice(-8)}</p><p style="color: #374151; margin: 5px 0;"><strong>Application ID:</strong> ${applicationId.slice(-8)}</p></div>${meetingLink ? `<p style="color: #374151; margin: 0 0 10px 0;"><a href="${meetingLink}" style="color: #2563eb; text-decoration: none;"><strong>Join Interview</strong></a></p>` : ''}${notes ? `<p style="color: #374151; margin: 0 0 10px 0;"><strong>Notes:</strong> ${notes}</p>` : ''}<div style="text-align: center; margin: 20px 0;">${meetingLink ? `<a href="${meetingLink}" style="background-color: #059669; color: white; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold;">Join Interview</a>` : ''}</div><div style="text-align: center; padding-top: 15px; border-top: 1px solid #e5e7eb;"><p style="color: #6b7280; font-size: 12px; margin: 0;">AWAKE Connect</p></div></div></div>`
-              </a>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                If you cannot attend or need to reschedule, please contact us immediately.<br>
-                <a href="mailto:admin@aircrew.nl" style="color: #2563eb;">admin@aircrew.nl</a>
-              </p>
-              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
-                AWAKE Connect - Empowering Students Through Education
-              </p>
-            </div>
-            
-          </div>
-        </div>
-      `
     };
     
     const info = await transporter.sendMail(mailOptions);
@@ -509,11 +492,6 @@ export async function sendAdminFieldReviewCompletedEmail({
       to: email,
       subject: ` Field Review Completed - ${studentName} (${fielderRecommendation || 'Pending'})`,
       html: `<div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;"><div style="background-color: white; padding: 30px; border-radius: 8px;"><h1 style="color: #111827; font-size: 22px; margin: 0 0 15px 0;">Field Review Complete</h1><p style="color: #374151; margin: 0 0 15px 0;">Hi ${adminName},</p><p style="color: #374151; margin: 0 0 15px 0;"><strong>${caseWorkerName}</strong> completed field verification for <strong>${studentName}</strong>.</p><div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;"><p style="color: #374151; margin: 5px 0;"><strong>Student:</strong> ${studentName}</p><p style="color: #374151; margin: 5px 0;"><strong>Application ID:</strong> ${applicationId}</p><p style="color: #374151; margin: 5px 0;"><strong>Case Worker:</strong> ${caseWorkerName}</p><p style="color: #374151; margin: 5px 0;"><strong>Recommendation:</strong> ${fielderRecommendation ? fielderRecommendation.replace('_', ' ') : 'Pending'}</p>${verificationScore ? `<p style="color: #374151; margin: 5px 0;"><strong>Score:</strong> ${verificationScore}%</p>` : ''}</div>${adminNotesRequired ? `<p style="background-color: #fef3c7; color: #92400e; padding: 10px; border-radius: 6px; margin: 10px 0;"><strong>Attention:</strong> ${adminNotesRequired}</p>` : ''}<div style="text-align: center; margin: 20px 0;"><a href="${reviewUrl}" style="background-color: #059669; color: white; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Now</a></div><div style="text-align: center; padding-top: 15px; border-top: 1px solid #e5e7eb;"><p style="color: #6b7280; font-size: 12px; margin: 0;">AWAKE Connect</p></div></div></div>`
-            </div>
-            
-          </div>
-        </div>
-      `
     };
     
     const info = await transporter.sendMail(mailOptions);
@@ -587,54 +565,6 @@ export async function sendStudentSponsorshipNotificationEmail({
       to: email,
       subject: ` Great News! You Have a New Sponsor - ${formattedAmount} Sponsorship`,
       html: `<div style="font-family: Arial; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;"><div style="background-color: white; padding: 30px; border-radius: 8px;"><h1 style="color: #059669; font-size: 28px; margin: 0 0 15px 0;">Congratulations!</h1><p style="color: #374151; margin: 0 0 15px 0;">Hi ${studentName},</p><p style="color: #374151; margin: 0 0 15px 0;">Excellent news! You've been sponsored by <strong>${donorName}</strong> with an amount of <strong>${formattedAmount}</strong>.</p><div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 15px 0;"><p style="color: #374151; margin: 5px 0;"><strong>Sponsor:</strong> ${donorName}</p><p style="color: #374151; margin: 5px 0;"><strong>Amount:</strong> ${formattedAmount}</p><p style="color: #374151; margin: 5px 0;"><strong>Sponsorship ID:</strong> ${sponsorshipId}</p></div>${message ? `<div style="background-color: #fef3c7; padding: 12px; border-radius: 6px; margin: 15px 0;"><p style="color: #78350f; font-style: italic; margin: 0;"><strong>Message from sponsor:</strong> "${message}"</p></div>` : ''}<p style="color: #374151; margin: 0 0 15px 0;">Log in to view sponsor details and send a thank you message.</p><div style="text-align: center; margin: 20px 0;"><a href="${loginUrl}/student" style="background-color: #059669; color: white; padding: 10px 25px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Dashboard</a></div><div style="text-align: center; padding-top: 15px; border-top: 1px solid #e5e7eb;"><p style="color: #6b7280; font-size: 12px; margin: 0;">AWAKE Connect</p></div></div></div>`
-            
-            <!-- Action Buttons -->
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${loginUrl}/student" 
-                 style="background-color: #059669; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                 View Dashboard
-              </a>
-              <a href="${loginUrl}/student/messages" 
-                 style="background-color: #3b82f6; color: white; padding: 15px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 5px; font-size: 16px;">
-                 Thank Your Sponsor
-              </a>
-            </div>
-            
-            <!-- Responsibilities -->
-            <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; margin: 20px 0; border-radius: 0 6px 6px 0;">
-              <h3 style="color: #dc2626; margin-top: 0;"> Your Responsibilities</h3>
-              <ul style="color: #991b1b; margin: 10px 0; padding-left: 20px;">
-                <li>Maintain good academic standing</li>
-                <li>Provide regular progress updates</li>
-                <li>Use funds responsibly for educational purposes</li>
-                <li>Communicate respectfully with your sponsor</li>
-                <li>Show gratitude and appreciation</li>
-              </ul>
-            </div>
-            
-            <!-- Support Information -->
-            <div style="background-color: #f3f4f6; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <h4 style="color: #374151; margin-top: 0;"> Need Help?</h4>
-              <p style="color: #4b5563; margin: 0; font-size: 14px;">
-                If you have any questions about your sponsorship or need assistance, please contact our support team:
-                <br><a href="mailto:support@aircrew.nl" style="color: #2563eb;">support@aircrew.nl</a>
-              </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                Congratulations on this amazing milestone! Your dedication to education has been recognized.<br>
-                Make the most of this opportunity and continue striving for excellence.
-              </p>
-              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
-                AWAKE Connect - Empowering Students Through Education
-              </p>
-            </div>
-            
-          </div>
-        </div>
-      `
     };
     
     const info = await transporter.sendMail(mailOptions);
