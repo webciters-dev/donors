@@ -760,11 +760,6 @@ export async function sendApplicationSubmissionNotificationEmail({
           </div>
         </div>
       `
-            </div>
-            
-          </div>
-        </div>
-      `
     };
     
     const info = await transporter.sendMail(mailOptions);
