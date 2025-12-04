@@ -760,44 +760,6 @@ export async function sendApplicationSubmissionNotificationEmail({
           </div>
         </div>
       `
-            
-            <!-- Important Notes -->
-            <div style="background-color: #ede9fe; padding: 20px; border-radius: 6px; margin: 20px 0;">
-              <h3 style="color: #5b21b6; margin-top: 0;"> Important Notes</h3>
-              <ul style="color: #4c1d95; margin: 10px 0; padding-left: 20px;">
-                <li>Check that all <strong>required documents</strong> have been uploaded</li>
-                <li>Verify the student's <strong>profile completeness</strong></li>
-                <li>Review any <strong>admin notes or requests</strong> previously made</li>
-                <li>Contact student if <strong>additional information is needed</strong></li>
-              </ul>
-            </div>
-            
-            <!-- Action Button -->
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${applicationDetailsUrl}" 
-                 style="background-color: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;">
-                 Review Application Now
-              </a>
-            </div>
-            
-            <!-- Application Queue -->
-            <div style="background-color: #ecfdf5; padding: 15px; border-radius: 6px; margin: 20px 0;">
-              <h4 style="color: #065f46; margin-top: 0;"> Admin Portal</h4>
-              <p style="color: #047857; margin: 0; font-size: 14px;">
-                View all submitted applications and manage the review process in your admin dashboard.
-                <br><a href="${adminPortalUrl}/admin/applications" style="color: #2563eb;">Go to Applications List</a>
-              </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-              <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                This is an automated notification from AWAKE Connect.<br>
-                Please review this application promptly to maintain good service for students.
-              </p>
-              <p style="color: #6b7280; font-size: 14px; margin: 10px 0 0 0;">
-                <strong>AWAKE Connect</strong> - Student Sponsorship Platform
-              </p>
             </div>
             
           </div>
