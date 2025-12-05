@@ -4,9 +4,11 @@ import { GraduationCap, Users, Building2, TrendingUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCMSContent } from "@/lib/cms";
+import { useAuth } from "@/lib/AuthContext";
 
 export const Landing = ({ go }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     sponsored: '—',
     available: '—', 
@@ -64,21 +66,25 @@ export const Landing = ({ go }) => {
           {getCMSContent('hero.subtitle')}
         </p>
         <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4 px-4">
-          <Button 
-            onClick={() => go("apply")} 
-            size="lg"
-            className="w-full sm:w-auto min-h-[44px]"
-          >
-            {getCMSContent('hero.primaryButton')}
-          </Button>
-          <Button 
-            onClick={() => navigate("/donor-signup")} 
-            variant="outline" 
-            size="lg"
-            className="w-full sm:w-auto min-h-[44px]"
-          >
-            {getCMSContent('hero.secondaryButton')}
-          </Button>
+          {user?.role === 'STUDENT' && (
+            <Button 
+              onClick={() => go("apply")} 
+              size="lg"
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              {getCMSContent('hero.primaryButton')}
+            </Button>
+          )}
+          {user?.role !== 'DONOR' && (
+            <Button 
+              onClick={() => navigate("/donor-signup")} 
+              variant="outline" 
+              size="lg"
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              {getCMSContent('hero.secondaryButton')}
+            </Button>
+          )}
         </div>
         <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-600">
           {getCMSContent('trustIndicators.nonprofit.enabled') && (

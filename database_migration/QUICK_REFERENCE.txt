@@ -1,0 +1,216 @@
+# QUICK REFERENCE CARD - Database & File Migration
+
+## 🎯 WHAT'S READY RIGHT NOW
+
+✅ **Database Backup** (2.02 MB)
+- File: `donors_db_complete_2025-12-04-190704.sql`
+- Contains: All 25 tables with complete data
+
+✅ **Files Archive** (31.05 MB)  
+- File: `uploads_backup.tar.gz`
+- Contains: 108 files (photos, videos, documents)
+
+✅ **Transfer Script** Ready
+- File: `transfer_to_vps.ps1`
+- Automated + verification included
+
+✅ **Documentation** Complete
+- 3 detailed guides created
+- File inventory CSV included
+
+---
+
+## ⚡ 3 COMMANDS TO RUN (In Order)
+
+### COMMAND 1: Transfer to VPS
+```powershell
+cd C:\projects\donor\database_migration
+.\transfer_to_vps.ps1
+```
+⏱️ Takes: ~1-2 minutes  
+📍 Location: Your Windows machine  
+✓ Does: Transfers 2 files to VPS via SCP
+
+---
+
+### COMMAND 2: Restore Database (On VPS)
+```bash
+cd /home/sohail/projects/donors && \
+mkdir -p database_backup && \
+mv donors_db_complete_*.sql database_backup/ && \
+export PGPASSWORD="RoG*741#PoS" && \
+pm2 kill && \
+psql -U postgres -d donors_db < database_backup/donors_db_complete_*.sql
+```
+⏱️ Takes: ~30 seconds  
+📍 Location: VPS via SSH  
+✓ Does: Restores all database tables and data
+
+---
+
+### COMMAND 3: Extract Files & Restart (On VPS)
+```bash
+cd /home/sohail/projects/donors && \
+tar -xzf uploads_backup.tar.gz && \
+sudo chown -R sohail:sohail uploads/ && \
+chmod -R 755 uploads/ && \
+rm uploads_backup.tar.gz && \
+pm2 start ecosystem.config.json && \
+sleep 3 && \
+curl http://localhost:3001/api/health
+```
+⏱️ Takes: ~15 seconds  
+📍 Location: VPS via SSH  
+✓ Does: Extracts files, sets permissions, restarts backend
+
+---
+
+## ✅ VERIFICATION CHECKLIST
+
+After running all 3 commands, verify:
+
+- [ ] Transfer script shows "✓ Files verified on VPS"
+- [ ] Database restore shows no errors
+- [ ] File extraction completes without warnings
+- [ ] `curl http://localhost:3001/api/health` returns `{"ok":true}`
+- [ ] `pm2 status` shows both instances as "online"
+
+---
+
+## 🎯 WHAT GETS MIGRATED
+
+| Item | What | Count | Size |
+|------|------|-------|------|
+| **Database** | PostgreSQL dump | 25 tables | 2.02 MB |
+| **Users** | All accounts | ~50-100 users | Included |
+| **Applications** | Student applications | All records | Included |
+| **Documents** | PDFs, images | 29 files | 1.96 MB |
+| **Photos** | Profile pictures | 74 files | 2.63 MB |
+| **Videos** | Intro videos | 5 files | 27.75 MB |
+| **Total** | Everything | 108 files | 33.07 MB |
+
+---
+
+## 🔄 EXECUTION FLOW
+
+```
+START
+  ↓
+[1] Windows: Run transfer_to_vps.ps1
+  ↓ (files arrive on VPS)
+[2] VPS: Restore database with psql
+  ↓ (33.07 MB files now on VPS)
+[3] VPS: Extract archive & restart PM2
+  ↓
+[✓] Health check returns {"ok":true}
+  ↓
+END - MIGRATION COMPLETE
+```
+
+---
+
+## ❌ TROUBLESHOOTING QUICK FIXES
+
+| Problem | Solution |
+|---------|----------|
+| SSH connection fails | Check key is configured: `ssh-keygen -l -f ~/.ssh/id_rsa` |
+| SCP transfer times out | Check: `ping 136.144.175.93` |
+| Database restore fails | Check space: `df -h` |
+| Files won't extract | Check: `tar -tzf uploads_backup.tar.gz \| head` |
+| PM2 won't start | Check logs: `pm2 logs awake-backend` |
+| Health check fails | Check DB: `psql -U postgres -d donors_db -c "SELECT 1"` |
+
+---
+
+## 📁 FILES LOCATION
+
+**Windows (Local):**
+- Database: `C:\projects\donor\database_migration\donors_db_complete_*.sql`
+- Archive: `C:\projects\donor\server\uploads_backup.tar.gz`
+- Script: `C:\projects\donor\database_migration\transfer_to_vps.ps1`
+- Docs: `C:\projects\donor\database_migration\*.md`
+
+**VPS (After transfer):**
+- Database: `/home/sohail/projects/donors/donors_db_complete_*.sql`
+- Archive: `/home/sohail/projects/donors/uploads_backup.tar.gz`
+- Extracted: `/home/sohail/projects/donors/uploads/`
+
+---
+
+## 📊 PROGRESS STATUS
+
+```
+Steps 1-3 (Local Preparation): ✅ 100% COMPLETE
+Step 4 (Transfer):            🟡 READY TO RUN
+Steps 5-9 (VPS):              ⏳ READY WHEN YOU EXECUTE COMMANDS
+```
+
+---
+
+## 🚀 START HERE
+
+1. **You are here:** 
+   ```powershell
+   cd C:\projects\donor\database_migration
+   ```
+
+2. **Run this:**
+   ```powershell
+   .\transfer_to_vps.ps1
+   ```
+
+3. **Wait for completion** (1-2 minutes)
+
+4. **Then run Step 2 commands on VPS**
+
+5. **Then run Step 3 commands on VPS**
+
+6. **Verify:** Check health endpoint ✓
+
+---
+
+## 💾 BACKUP DETAILS
+
+**Database Backup (donors_db_complete_2025-12-04-190704.sql)**
+- Created: December 4, 2025 @ 19:07:05
+- Size: 2.02 MB (compressed format)
+- Tables: 25 (all tables included)
+- Includes: Schema, data, sequences, constraints, indexes
+- Format: PostgreSQL SQL dump
+
+**Files Archive (uploads_backup.tar.gz)**
+- Created: December 4, 2025 @ 19:08:37
+- Size: 31.05 MB (gzip compressed)
+- Files: 108 total
+  - Photos: 74 files, 2.63 MB
+  - Videos: 5 files, 27.75 MB
+  - Documents: 29 files, 1.96 MB
+- Compressed from: 32.34 MB (4% reduction)
+
+---
+
+## 🆘 NEED HELP?
+
+See detailed guides:
+- `MIGRATION_INSTRUCTIONS.md` - Complete step-by-step
+- `EXECUTION_SUMMARY.md` - Full reference
+- `file_inventory.csv` - Detailed file listing
+
+---
+
+## ⏱️ TOTAL TIME ESTIMATE
+
+| Step | Action | Time |
+|------|--------|------|
+| 1 | Run transfer script | 2 min |
+| 2 | Restore database | 30 sec |
+| 3 | Extract & restart | 15 sec |
+| **Total** | **Complete migration** | **~3 min** |
+
+---
+
+**👉 READY? Run this now:**
+```
+cd C:\projects\donor\database_migration && .\transfer_to_vps.ps1
+```
+
