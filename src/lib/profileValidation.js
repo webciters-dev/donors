@@ -2,7 +2,7 @@
 import { studentProfileAcademicSchema } from "@/schemas/studentProfileAcademic.schema";
 
 // Required documents for application completion
-const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
+const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HSSC_RESULT", "INCOME_CERTIFICATE", "UTILITY_BILL"];
 
 const REQUIRED_KEYS = [
   "cnic",

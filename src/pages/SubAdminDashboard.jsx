@@ -597,8 +597,8 @@ function ReviewModal({
     loadDocs();
   }, [selectedReview?.applicationId, selectedReview?.studentId, authHeader]);
 
-  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL"];
-  const OPTIONAL_DOCS = ["TRANSCRIPT", "DEGREE_CERTIFICATE", "ENROLLMENT_CERTIFICATE"];
+  const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HSSC_RESULT", "INCOME_CERTIFICATE", "UTILITY_BILL"];
+  const OPTIONAL_DOCS = ["TRANSCRIPT", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "DEGREE_CERTIFICATE", "SECOND_GUARDIAN_CNIC"];
   
   return (
     <Card className="p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">

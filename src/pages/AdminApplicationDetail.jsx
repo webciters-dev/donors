@@ -831,7 +831,7 @@ export default function AdminApplicationDetail() {
         <div className="flex items-center justify-between">
           <div className="font-medium">Documents ({docs.length})</div>
           {(() => {
-            const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "PHOTO", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "UNIVERSITY_CARD", "ENROLLMENT_CERTIFICATE", "TRANSCRIPT"];
+            const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HSSC_RESULT", "INCOME_CERTIFICATE", "UTILITY_BILL"];
             const uploadedTypes = docs.map(d => d.type);
             const missingRequired = REQUIRED_DOCS.filter(req => !uploadedTypes.includes(req));
             

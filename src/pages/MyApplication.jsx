@@ -25,7 +25,7 @@ const fmtPKR = (n) =>
 
 // Which profile fields matter for “completeness”
 // Required documents that affect profile completion percentage
-const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "HSSC_RESULT", "UNIVERSITY_CARD", "FEE_INVOICE", "INCOME_CERTIFICATE", "UTILITY_BILL", "TRANSCRIPT"];
+const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HSSC_RESULT", "INCOME_CERTIFICATE", "UTILITY_BILL"];
 
 export const MyApplication = () => {
   const navigate = useNavigate();
@@ -452,9 +452,11 @@ export const MyApplication = () => {
   // Current education documents checklist (visual only)
   const currentDocChecklist = useMemo(
     () => [
-      { key: "TRANSCRIPT", label: "Transcript" },
-      { key: "DEGREE_CERTIFICATE", label: "Degree Certificate" },
+      { key: "TRANSCRIPT", label: "TRANSCRIPT" },
+      { key: "UNIVERSITY_CARD", label: "UNIVERSITY/COLLEGE CARD" },
       { key: "ENROLLMENT_CERTIFICATE", label: "Enrollment / Admission Proof" },
+      { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
+      { key: "SECOND_GUARDIAN_CNIC", label: "2ND GUARDIAN CNIC" },
     ],
     []
   );

@@ -33,6 +33,7 @@ export default function DocumentUploader({ studentId, applicationId, onUploaded,
     { key: "TRANSCRIPT", label: "TRANSCRIPT" },
     { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
     { key: "ENROLLMENT_CERTIFICATE", label: "ENROLLMENT CERTIFICATE" },
+    { key: "SECOND_GUARDIAN_CNIC", label: "2ND GUARDIAN CNIC" },
     { key: "OTHER", label: "OTHER" },
   ];
 
