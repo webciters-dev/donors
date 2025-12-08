@@ -78,6 +78,9 @@ router.get("/approved/:id", async (req, res) => {
       communityInvolvement: student.communityInvolvement,
       currentAcademicYear: student.currentAcademicYear,
       specificField: student.specificField,
+      // Media for donors - photos and videos
+      photoUrl: student.photoUrl,
+      introVideoUrl: student.introVideoUrl,
       // Financial information
       amount: app?.amount || 0,
       currency: app?.currency || "USD",
@@ -149,6 +152,9 @@ router.get("/approved", async (_req, res) => {
         province: s.province,
         gpa: s.gpa,
         gradYear: s.gradYear,
+        // Media for donors - photos and videos
+        photoUrl: s.photoUrl,
+        introVideoUrl: s.introVideoUrl,
 
         // application snapshot for card
         application: app

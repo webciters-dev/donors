@@ -48,18 +48,89 @@ const uploadVideo = multer({
   storage: videoStorage,
   fileFilter: videoFileFilter,
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB limit
+    fileSize: 100 * 1024 * 1024,    // 100MB file size limit
+    fieldSize: 100 * 1024 * 1024,   // 100MB max per field (for large video field)
+    fieldNameSize: 256,              // Allow longer field names if needed
+    fields: 10,                      // Allow up to 10 form fields
+    parts: 100,                      // Allow up to 100 parts in multipart message
   }
 });
+
+/**
+ * Multer Error Handler Middleware
+ * Catches and properly handles multer-specific errors
+ */
+const handleUploadErrors = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    console.error('Multer Error:', err.code, err.message);
+    
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ 
+        success: false,
+        error: `File too large. Maximum size is 100MB, but received ${Math.round(err.limit / (1024*1024))}MB`
+      });
+    }
+    if (err.code === 'LIMIT_FIELD_SIZE') {
+      return res.status(413).json({ 
+        success: false,
+        error: `Form field too large. Maximum field size is 100MB`
+      });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Too many files uploaded'
+      });
+    }
+    if (err.code === 'LIMIT_PART_COUNT') {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Too many parts in the request'
+      });
+    }
+    
+    return res.status(400).json({ 
+      success: false,
+      error: `Upload error: ${err.message}`
+    });
+  }
+  
+  if (err) {
+    console.error('Upload Error:', err);
+    return res.status(500).json({ 
+      success: false,
+      error: err.message || 'Unknown upload error'
+    });
+  }
+  
+  next();
+};
 
 /**
  * POST /api/videos/upload-intro
  * Upload introduction video for the authenticated student (simplified version)
  */
-router.post("/upload-intro", requireAuth, uploadVideo.single('video'), async (req, res) => {
+router.post("/upload-intro", requireAuth, (req, res, next) => {
+  uploadVideo.single('video')(req, res, (err) => {
+    handleUploadErrors(err, req, res, next);
+  });
+}, async (req, res) => {
   try {
+    // Log upload attempt
+    console.log('🎥 Video Upload Attempt:', {
+      studentId: req.user.studentId,
+      studentRole: req.user.role,
+      fileReceived: !!req.file,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size,
+      fileSizeMB: req.file ? `${(req.file.size / (1024*1024)).toFixed(2)}MB` : 'N/A',
+      contentType: req.file?.mimetype,
+      duration: req.body.duration
+    });
+
     // Only students can upload introduction videos
     if (req.user.role !== 'STUDENT') {
+      console.warn('❌ Unauthorized upload attempt by:', req.user.role);
       return res.status(403).json({ error: "Only students can upload introduction videos" });
     }
 
@@ -139,8 +210,16 @@ router.post("/upload-intro", requireAuth, uploadVideo.single('video'), async (re
     }
 
   } catch (error) {
-    console.error('Video upload error:', error);
-    res.status(500).json({ error: "Failed to upload video" });
+    console.error('❌ Video upload error:', {
+      message: error.message,
+      code: error.code,
+      statusCode: error.statusCode,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Failed to upload video. Please try again." 
+    });
   }
 });
 

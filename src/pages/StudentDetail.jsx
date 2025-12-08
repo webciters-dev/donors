@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, GraduationCap, DollarSign, FileText, Users, MapPin, Calendar, Mail, Phone } from "lucide-react";
+import { ArrowLeft, GraduationCap, DollarSign, FileText, Users, MapPin, Calendar, Mail, Phone, Video } from "lucide-react";
 import DonorStudentMessaging from "@/components/DonorStudentMessaging";
+import StudentPhoto from "@/components/StudentPhoto";
+import StudentVideo from "@/components/StudentVideo";
 import { mockData } from "@/data/mockData";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -260,6 +262,41 @@ export const StudentDetail = ({ id, goBack }) => {
             <div className="prose prose-sm max-w-none">
               <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{student.personalIntroduction}</p>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Meet the Student - Photo and Video */}
+      {(student.photoUrl || student.introVideoUrl) && (
+        <Card className="p-6">
+          <SectionTitle icon={Users} title="Meet the Student" />
+          <div className="mt-4 grid md:grid-cols-2 gap-6">
+            {/* Photo Column */}
+            {student.photoUrl && (
+              <div>
+                <h4 className="font-medium text-sm mb-3 text-slate-700">Student Photo</h4>
+                <StudentPhoto 
+                  student={student}
+                  size="large"
+                  className="shadow-lg border-2 border-gray-200"
+                  clickable={true}
+                />
+              </div>
+            )}
+            
+            {/* Video Column */}
+            {student.introVideoUrl && (
+              <div>
+                <h4 className="font-medium text-sm mb-3 text-slate-700">Introduction Video</h4>
+                <p className="text-sm text-slate-600 mb-3">
+                  {student.name} shares their educational goals and aspirations.
+                </p>
+                <StudentVideo 
+                  student={student}
+                  size="large"
+                />
+              </div>
+            )}
           </div>
         </Card>
       )}

@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import { API } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
   const { token } = useParams();
+  const { logout } = useAuth(); // ✅ NEW: Get logout function
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,8 +24,23 @@ export default function ResetPassword() {
       console.log(' No token found, redirecting to forgot-password');
       toast.error("Invalid reset link. Please request a new password reset.");
       navigate("/forgot-password");
+      return;
     }
-  }, [token, navigate]);
+
+    // ✅ Validate reset token is a non-empty string (UUID format)
+    // Password reset tokens are UUIDs (e.g., 8687389c-a44d-48d4-91f0-03a89680a1ac), not JWTs
+    if (typeof token !== 'string' || token.trim().length === 0) {
+      console.error('[AUTH] Reset token is malformed');
+      toast.error("Invalid reset link. Please request a new password reset.");
+      setValidToken(false);
+      return;
+    }
+
+    // ✅ NEW: Clear any existing auth state when processing a password reset link
+    // This prevents showing another user's data when clicking email links
+    console.log('[AUTH] Processing password reset - clearing existing session for isolation');
+    logout();
+  }, [token, navigate, logout]);
 
   async function handleSubmit(e) {
     e.preventDefault();

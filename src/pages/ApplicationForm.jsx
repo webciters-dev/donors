@@ -879,7 +879,7 @@ export const ApplicationForm = () => {
         throw new Error(errorData.error || errorData.message || `Server error: ${appRes.status}`);
       }
 
-      toast.success(" Application submitted successfully!");
+      toast.success("Step 3 Complete! Continue to Step 4");
       
       // Small delay to ensure application is created before navigation
       setTimeout(() => {
@@ -1074,6 +1074,13 @@ export const ApplicationForm = () => {
         {/* STEP 2 — education basics */}
         {step === 2 && (
           <div ref={step2ContainerRef} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* Warning Message - Data Lock Notice */}
+            <div className="sm:col-span-2 bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-2">
+              <p className="text-sm text-amber-900">
+                <strong>⚠️ Important:</strong> The education details you select in this step cannot be edited by you after submission. Please review carefully before proceeding.
+              </p>
+            </div>
+
             {/* Country Selection - Searchable Input */}
             <div className="sm:col-span-2">
               <Input

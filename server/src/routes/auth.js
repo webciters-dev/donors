@@ -331,9 +331,29 @@ router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetCo
       return res.status(400).json({ error: "token and password required" });
     }
 
+    console.log('[PASSWORD RESET] Attempting reset with token:', token);
+    
     const pr = await prisma.passwordReset.findUnique({ where: { token } });
     
-    if (!pr || pr.used || pr.expiresAt < new Date()) {
+    console.log('[PASSWORD RESET] Token lookup result:', {
+      found: !!pr,
+      used: pr?.used,
+      expiresAt: pr?.expiresAt,
+      now: new Date()
+    });
+    
+    if (!pr) {
+      console.error('[PASSWORD RESET] Token not found in database:', token);
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+    
+    if (pr.used) {
+      console.error('[PASSWORD RESET] Token already used:', token);
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+    
+    if (pr.expiresAt < new Date()) {
+      console.error('[PASSWORD RESET] Token expired:', { expiresAt: pr.expiresAt, now: new Date() });
       return res.status(400).json({ error: "Invalid or expired token" });
     }
 
@@ -349,6 +369,8 @@ router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetCo
         data: { used: true },
       }),
     ]);
+    
+    console.log('[PASSWORD RESET] Password successfully reset for user:', pr.userId);
 
     return res.json({ ok: true, message: "Password updated" });
   } catch (err) {

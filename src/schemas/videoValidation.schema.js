@@ -11,7 +11,8 @@ const SUPPORTED_VIDEO_TYPES = [
 
 // Video file size limits (in bytes)
 const MIN_VIDEO_SIZE = 1 * 1024 * 1024;  // 1MB minimum
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB maximum
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB maximum (backend limit)
+const MAX_VIDEO_SIZE_DISPLAY = 25; // 25MB (display to users)
 
 // Duration limits (in seconds)
 const MIN_DURATION = 60;  // 60 seconds (1 minute)
@@ -70,7 +71,7 @@ export const VIDEO_GUIDELINES = {
   
   fileSize: {
     max: MAX_VIDEO_SIZE,
-    maxMB: MAX_VIDEO_SIZE / (1024 * 1024)
+    maxMB: MAX_VIDEO_SIZE_DISPLAY  // Use display value (25MB) for UI messages
   },
   
   formats: SUPPORTED_VIDEO_TYPES,

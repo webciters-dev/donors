@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { isTokenExpired } from "./tokenUtils";
 
 const AuthContext = createContext(null);
 
@@ -8,6 +9,19 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem("auth_token") || "");
+
+  // ✅ NEW: Validate token on app load (fix for persistent expired tokens)
+  useEffect(() => {
+    if (!token) return;
+    
+    if (isTokenExpired(token)) {
+      console.warn("[AUTH] Stored token is expired. Clearing authentication.");
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      setToken("");
+      setUser(null);
+    }
+  }, []); // Run once on app mount
 
   useEffect(() => {
     if (user) localStorage.setItem("auth_user", JSON.stringify(user));

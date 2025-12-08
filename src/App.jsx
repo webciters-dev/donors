@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FooterInfo from "@/components/layout/FooterInfo";
 import DonorSignup from "@/pages/DonorSignup";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -41,6 +41,7 @@ import { SponsorshipMatrix } from "@/pages/SponsorshipMatrix";
 import { StudentTermUpdate } from "@/pages/StudentTermUpdate";
 import { DisbursementDrawer } from "@/components/DisbursementDrawer";
 import { Clock } from "lucide-react";
+import { setGlobalLogoutCallback } from "@/lib/apiClient"; // ✅ NEW: Import setGlobalLogoutCallback
 
 // ⬇️ NEW
 import { AdminApplications } from "@/pages/AdminApplications";
@@ -120,7 +121,12 @@ function Shell() {
   const [disburseOpen, setDisburseOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+
+  // ✅ NEW: Set global logout callback for API client to use on 401
+  useEffect(() => {
+    setGlobalLogoutCallback(logout);
+  }, [logout]);
 
   const active = keyFromPath(location.pathname);
 

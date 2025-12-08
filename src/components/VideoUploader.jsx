@@ -137,6 +137,7 @@ export default function VideoUploader({
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
           toast.success("Video uploaded successfully!");
+          console.log('✅ Video upload successful:', response);
           
           // Pass the uploaded video data to parent
           onVideoSelect(response.video, metadata);
@@ -147,8 +148,19 @@ export default function VideoUploader({
             setPreviewUrl(null);
           }
         } else {
-          const errorResponse = JSON.parse(xhr.responseText);
-          toast.error(errorResponse.error || "Failed to upload video");
+          // Server returned an error status
+          console.error('🎥 Upload returned error status:', {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            response: xhr.responseText
+          });
+          
+          try {
+            const errorResponse = JSON.parse(xhr.responseText);
+            toast.error(errorResponse.error || `Upload failed (${xhr.status})`);
+          } catch (e) {
+            toast.error(`Upload failed with status ${xhr.status}. Please try again.`);
+          }
           handleRemoveVideo(false); // Don't call DELETE on error cleanup
         }
       });
@@ -156,6 +168,13 @@ export default function VideoUploader({
       // Handle upload error
       xhr.addEventListener('error', () => {
         setIsUploading(false);
+        console.error('🎥 XHR Upload Error:', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          readyState: xhr.readyState,
+          responseText: xhr.responseText,
+          response: xhr.response
+        });
         toast.error("Failed to upload video. Please try again.");
         handleRemoveVideo(false); // Don't call DELETE on error cleanup
       });

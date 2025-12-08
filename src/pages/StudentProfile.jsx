@@ -696,168 +696,63 @@ export default function StudentProfile() {
           {/* Future Education Section Header */}
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold text-blue-800 mb-3">Future Education</h3>
+            <p className="text-sm text-gray-600 mb-4">Information submitted in your application (Step 2)</p>
           </div>
 
-          {/* Country */}
-          <div>
-            <label className="block text-sm mb-1">Country</label>
-            <select
-              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full"
-              value={form.country}
-              onChange={(e) => setVal("country", e.target.value)}
-            >
-              {filterCountryList([
-                "",
-                "Pakistan",
-                "USA", 
-                "UK",
-                "Canada",
-                "Germany",
-                "Australia", 
-                "Turkey",
-                "Other"
-              ]).map((country) => (
-                <option key={country} value={country}>
-                  {country === "" ? "Select Country" :
-                   country === "Pakistan" ? " Pakistan" :
-                   country === "USA" ? " United States" :
-                   country === "UK" ? " United Kingdom" :
-                   country === "Canada" ? " Canada" :
-                   country === "Germany" ? " Germany" :
-                   country === "Australia" ? " Australia" :
-                   country === "Turkey" ? " Turkey" :
-                   country === "Other" ? " Other Country" :
-                   country}
-                </option>
-              ))}
-            </select>
-            {errors.country && (
-              <p className="text-xs text-rose-600 mt-1">{errors.country}</p>
-            )}
-          </div>
+          {/* Future Education - Read Only Display */}
+          <div className="md:col-span-2 bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Country Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Country</label>
+                <p className="text-sm text-gray-800">{form.country || "Not specified"}</p>
+              </div>
 
-          {/* University */}
-          <div className="sm:col-span-2">
-            <label className="block text-sm mb-1">University</label>
-            <UniversitySelector
-              country={form.country}
-              value={form.university}
-              customValue={form.customUniversity}
-              onChange={(university, customUniversity, universityId) => {
-                setVal("university", university);
-                setVal("customUniversity", customUniversity);
-                // Note: StudentProfile doesn't need universityId currently
-              }}
-              required={false}
-              className="rounded-2xl"
-            />
-            {errors.university && (
-              <p className="text-xs text-rose-600 mt-1">{errors.university}</p>
-            )}
-            {errors.customUniversity && (
-              <p className="text-xs text-rose-600 mt-1">{errors.customUniversity}</p>
-            )}
-          </div>
+              {/* University Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">University</label>
+                <p className="text-sm text-gray-800">
+                  {form.university === "Other" ? form.customUniversity : form.university || "Not specified"}
+                </p>
+              </div>
 
-          {/* Field of Study */}
-          <div>
-            <label className="block text-sm mb-1">Field of Study</label>
-            <select
-              value={form.field}
-              onChange={e => {
-                setVal("field", e.target.value);
-                setVal("program", "");
-                if (e.target.value && form.degreeLevel) fetchPrograms(form.degreeLevel, e.target.value);
-              }}
-              required
-              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
-              disabled={academicLoading.fields || !form.degreeLevel}
-            >
-              <option value="">{academicLoading.fields ? "Loading..." : "Select field of study"}</option>
-              {availableFields.map(field => (
-                <option key={field} value={field}>{field}</option>
-              ))}
-            </select>
-            {errors.field && (
-              <p className="text-xs text-rose-600 mt-1">{errors.field}</p>
-            )}
-          </div>
+              {/* Degree Level Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Degree Level</label>
+                <p className="text-sm text-gray-800">{form.degreeLevel || "Not specified"}</p>
+              </div>
 
-          {/* Degree Level */}
-          <div>
-            <label className="block text-sm mb-1">Degree Level</label>
-            <select 
-              value={form.degreeLevel}
-              onChange={(e) => setVal("degreeLevel", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Select Degree Level</option>
-              <option value="Associate">Associate</option>
-              <option value="Certificate">Certificate</option>
-              <option value="Diploma">Diploma</option>
-              <option value="Bachelor's Degree">Bachelor's Degree</option>
-              <option value="Master's Degree">Master's Degree</option>
-              <option value="PhD">PhD</option>
-              <option value="Professional">Professional</option>
-            </select>
-            {errors.degreeLevel && (
-              <p className="text-xs text-rose-600 mt-1">{errors.degreeLevel}</p>
-            )}
-          </div>
+              {/* Field of Study Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Field of Study</label>
+                <p className="text-sm text-gray-800">{form.field || "Not specified"}</p>
+              </div>
 
-          {/* Program */}
-          <div>
-            <label className="block text-sm mb-1">Program</label>
-            <select
-              value={form.program}
-              onChange={e => setVal("program", e.target.value)}
-              required
-              className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
-              disabled={academicLoading.programs || !form.field || !form.degreeLevel}
-            >
-              <option value="">{academicLoading.programs ? "Loading..." : "Select specific program"}</option>
-              {availablePrograms.map(program => (
-                <option key={program} value={program}>{program}</option>
-              ))}
-            </select>
-            {errors.program && (
-              <p className="text-xs text-rose-600 mt-1">{errors.program}</p>
-            )}
-          </div>
+              {/* Program Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Program</label>
+                <p className="text-sm text-gray-800">{form.program || "Not specified"}</p>
+              </div>
 
-          {/* GPA */}
-          <div>
-            <label className="block text-sm mb-1">GPA (4.00 scale only)</label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="4"
-              value={form.gpa}
-              onChange={(e) => setVal("gpa", e.target.value)}
-              className="rounded-2xl"
-              placeholder="e.g., 3.4 (convert from percentage if needed)"
-            />
-            <p className="text-xs text-slate-500 mt-1">Use 4.00 scale format. Need help converting? 85% ≈ 3.4, 90% ≈ 3.6</p>
-            {errors.gpa ? (
-              <p className="text-xs text-rose-600 mt-1">{errors.gpa}</p>
-            ) : (
-              <p className="text-xs text-slate-500 mt-1">Use 4.00 scale</p>
-            )}
-          </div>
+              {/* GPA Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">GPA (4.00 scale)</label>
+                <p className="text-sm text-gray-800">{form.gpa || "Not specified"}</p>
+              </div>
 
-          {/* Graduation Year */}
-          <div>
-            <label className="block text-sm mb-1">Graduation Year</label>
-            <Input
-              type="number"
-              value={form.gradYear}
-              onChange={(e) => setVal("gradYear", e.target.value)}
-              className="rounded-2xl"
-            />
-            {errors.gradYear && (
-              <p className="text-xs text-rose-600 mt-1">{errors.gradYear}</p>
-            )}
+              {/* Graduation Year Display */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Graduation Year</label>
+                <p className="text-sm text-gray-800">{form.gradYear || "Not specified"}</p>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-blue-200 mt-3">
+              <p className="text-xs text-blue-700">
+                ℹ️ <strong>Note:</strong> These details were submitted during your application and are now locked. 
+                To request changes, please contact support.
+              </p>
+            </div>
           </div>
 
           {/* Personal Introduction Section Header */}

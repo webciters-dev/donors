@@ -167,7 +167,7 @@ export const requireRecaptchaV2 = requireRecaptcha({
 export const requireMediumRecaptcha = requireRecaptcha({
   minScore: 0.5,
   allowedActions: ['submit', 'register', 'login', 'reset'],
-  skipOnMissing: false
+  skipOnMissing: true  // Allow password reset requests without reCAPTCHA (still protected by email verification)
 });
 
 /**

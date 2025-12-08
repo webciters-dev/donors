@@ -145,7 +145,7 @@ export const validatePasswordResetConfirm = [
   body('token')
     .notEmpty().withMessage('Reset token is required')
     .isLength({ min: 32, max: 64 }).withMessage('Invalid token format'),
-  validatePassword('newPassword')
+  validatePassword('password')
 ];
 
 // ============================================================================

@@ -6,8 +6,10 @@ import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import { API } from "@/lib/api";
 import RecaptchaProtection from "@/components/RecaptchaProtection";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function ForgotPassword() {
+  const { logout } = useAuth(); // ✅ NEW: Get logout function
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
@@ -22,6 +24,10 @@ export default function ForgotPassword() {
     }
     try {
       setBusy(true);
+
+      // ✅ NEW: Clear any existing auth to prevent token confusion
+      console.log('[AUTH] Password reset requested - clearing session for security');
+      logout();
 
       // ️ reCAPTCHA Protection - Get verification token
       let recaptchaToken = null;

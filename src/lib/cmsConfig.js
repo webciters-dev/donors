@@ -5,7 +5,7 @@ export const CMS_CONTENT_DEFAULTS = {
   // Hero Section
   hero: {
     title: "Compassionate Giving",
-    subtitle: "Connect with deserving students across Pakistan and help them achieve their educational dreams. Transparent funding platform by Akhuwat USA with 100% secure donations.",
+    subtitle: "Connect with deserving students across Pakistan and help them achieve their educational dreams. Transparent funding platform by Akhuwat with 100% secure donations.",
     primaryButton: "Apply for Sponsorship",
     secondaryButton: "Donor Signup"
   },
@@ -71,7 +71,7 @@ export const CMS_CONTENT_DEFAULTS = {
       },
       questions: {
         title: "Questions?",
-        description: "Reach us at support@awake.org - Akhuwat USA",
+        description: "Reach us at support@awake.org - Akhuwat",
         icon: ""
       }
     }
