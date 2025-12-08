@@ -879,7 +879,7 @@ export const ApplicationForm = () => {
         throw new Error(errorData.error || errorData.message || `Server error: ${appRes.status}`);
       }
 
-      toast.success("Financial details saved! Redirecting to application review...");
+      toast.success("Step 3 Complete! Continue to Step 4");
       
       // Small delay to ensure application is created before navigation
       setTimeout(() => {
@@ -1336,10 +1336,8 @@ export const ApplicationForm = () => {
                       degreeLevel: form.degreeLevel, // Include degreeLevel - it exists in schema
                       field: form.field.trim(),
                       program: form.program.trim(),
-                      gpa: Number(form.gpa),
-                      // Add program start and end dates
-                      programStartDate: form.startMonth && form.startYear ? `${form.startMonth}/${form.startYear}` : null,
-                      programEndDate: form.endMonth && form.endYear ? `${form.endMonth}/${form.endYear}` : null
+                      gpa: Number(form.gpa)
+                      // Note: programStartDate and programEndDate removed - not in database schema
                     };
                     
                     console.log(' Step 2 save debug - current form state:', {
