@@ -879,7 +879,7 @@ export const ApplicationForm = () => {
         throw new Error(errorData.error || errorData.message || `Server error: ${appRes.status}`);
       }
 
-      toast.success("Step 3 Complete! Continue to Step 4");
+      toast.success("Financial details saved! Redirecting to application review...");
       
       // Small delay to ensure application is created before navigation
       setTimeout(() => {

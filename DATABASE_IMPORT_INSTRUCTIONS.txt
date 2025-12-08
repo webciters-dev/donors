@@ -1,0 +1,63 @@
+# DATABASE IMPORT INSTRUCTIONS FOR DEVELOPER
+
+## File Location
+donors_db_export_complete.sql (2.02 MB)
+
+## How to Import the Database
+
+### Step 1: Make sure PostgreSQL is running
+
+### Step 2: Create the database (if not already created)
+psql -U postgres -c "CREATE DATABASE donors_db;"
+
+### Step 3: Import the database from the SQL file
+psql -U postgres -d donors_db < donors_db_export_complete.sql
+
+### Step 4: Verify the import was successful
+psql -U postgres -d donors_db -c "SELECT COUNT(*) as total_users FROM "User";"
+
+You should see: 14 users
+
+---
+
+## What's Included in This Database Export
+
+The export includes all tables with complete data:
+- 14 Users (Students, Donors, Case Workers, Admin, Super Admin)
+- All student applications
+- All donor profiles
+- All case worker assignments
+- Password reset tokens
+- All other related data
+
+---
+
+## Alternative: Manual Database Setup (Without Export)
+
+If you prefer to not import this export, you can:
+
+1. Let Prisma create the schema:
+   cd server
+   npx prisma migrate deploy
+   npx prisma db push
+
+2. The database will be empty but ready to use
+3. You can create test accounts through the UI
+
+---
+
+## Troubleshooting
+
+### Error: "database does not exist"
+Run: psql -U postgres -c "CREATE DATABASE donors_db;"
+
+### Error: "permission denied"
+Check your PostgreSQL password is correct in .env file
+
+### Import takes a long time
+This is normal for a 2MB database export. Be patient.
+
+### To verify tables were imported
+psql -U postgres -d donors_db -c "\dt"
+
+This will list all tables.
