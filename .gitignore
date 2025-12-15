@@ -2,6 +2,14 @@
 .env
 .env.local
 .env.*.local
+.env.production
+.env.staging
+.env.production.local
+.env.staging.local
+ENV_FILE.txt
+server/.env.production
+server/.env.staging
+server/.env.*.local
 
 # Dependencies
 node_modules/
