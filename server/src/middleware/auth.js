@@ -2,13 +2,16 @@
 import jwt from "jsonwebtoken";
 import prisma from "../prismaClient.js";
 
-// Require JWT_SECRET environment variable - fail fast if missing
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error(
-    "FATAL: JWT_SECRET environment variable is required. " +
-    "Please set it in your .env file before starting the server."
-  );
+// Get JWT_SECRET - validate at runtime when first used, not at import time
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "FATAL: JWT_SECRET environment variable is required. " +
+      "Please set it in your .env file before starting the server."
+    );
+  }
+  return secret;
 }
 
 /**
@@ -26,7 +29,7 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ error: "Missing token" });
     }
 
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, getJwtSecret());
     // payload should have { sub, role, email } because that’s how we signed it
     req.user = {
       id: payload.sub,
@@ -123,7 +126,7 @@ export function optionalAuth(req, _res, next) {
     const header = req.headers.authorization || "";
     const [scheme, token] = header.split(" ");
     if (scheme === "Bearer" && token) {
-      const payload = jwt.verify(token, JWT_SECRET);
+      const payload = jwt.verify(token, getJwtSecret());
       req.user = { id: payload.sub, role: payload.role, email: payload.email };
     }
   } catch (e) {

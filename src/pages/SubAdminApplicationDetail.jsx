@@ -28,7 +28,10 @@ export default function SubAdminApplicationDetail() {
   const { reviewId } = useParams(); // field review id
   const navigate = useNavigate();
   const { token } = useAuth();
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+  const authHeader = useMemo(() =>
+    token ? { Authorization: `Bearer ${token}` } : {},
+    [token]
+  );
 
   const [review, setReview] = useState(null);
   const [application, setApplication] = useState(null);

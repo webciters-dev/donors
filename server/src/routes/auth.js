@@ -14,6 +14,9 @@ import {
   validatePasswordResetConfirm,
   handleValidationErrors 
 } from "../middleware/validators.js";
+import { ErrorCodes } from "../lib/errorCodes.js";
+import { logError } from "../lib/errorLogger.js";
+import { createValidationError, createConflictError, handlePrismaError, createInternalError, createAuthError } from "../lib/enhancedError.js";
 
 const router = express.Router();
 
@@ -31,15 +34,25 @@ function signToken(payload) {
 router.post("/register", authRateLimiter, validateRegistration, handleValidationErrors, async (req, res) => {
   try {
     const { email, password, role = "STUDENT" } = req.body;
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password required." });
+      const error = createValidationError("Email and password are required", { fields: ["email", "password"] }, requestId);
+      logError(new Error("Missing email or password"), { route: "/register", action: "register_validation" });
+      return res.status(error.statusCode).json(error);
     }
     if (!["ADMIN", "DONOR", "STUDENT"].includes(role)) {
-      return res.status(400).json({ error: "Invalid role." });
+      const error = createValidationError("Invalid role provided", { field: "role", value: role }, requestId);
+      logError(new Error("Invalid role"), { route: "/register", action: "register_role_validation" });
+      return res.status(error.statusCode).json(error);
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(409).json({ error: "Email already registered." });
+    if (existing) {
+      const error = createConflictError("Email already registered", { field: "email", existingEmail: email }, requestId);
+      logError(new Error("Duplicate email registration"), { route: "/register", action: "register_duplicate", body: { email } });
+      return res.status(error.statusCode).json(error);
+    }
 
     const passwordHash = await bcrypt.hash(String(password), 10);
 
@@ -49,10 +62,12 @@ router.post("/register", authRateLimiter, validateRegistration, handleValidation
     });
 
     const token = signToken({ sub: user.id, role: user.role, email: user.email });
-    res.json({ token, user });
+    res.json({ success: true, token, user });
   } catch (err) {
-    console.error("REGISTER ERROR:", err);
-    res.status(500).json({ error: "Internal server error." });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/register", action: "register_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Failed to register", { error: err.message }, requestId);
+    res.status(error.statusCode).json(error);
   }
 });
 
@@ -63,15 +78,27 @@ router.post("/register", authRateLimiter, validateRegistration, handleValidation
 router.post("/login", authRateLimiter, validateLogin, handleValidationErrors, async (req, res) => {
   try {
     const { email, password } = req.body || {};
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password required." });
+      const error = createValidationError("Email and password are required", { fields: ["email", "password"] }, requestId);
+      logError(new Error("Missing login credentials"), { route: "/login", action: "login_validation" });
+      return res.status(error.statusCode).json(error);
     }
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ error: "Invalid credentials." });
+    if (!user) {
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
+      logError(new Error("User not found during login"), { route: "/login", action: "login_not_found", body: { email } });
+      return res.status(error.statusCode).json(error);
+    }
 
     const ok = await bcrypt.compare(String(password), String(user.passwordHash || ""));
-    if (!ok) return res.status(401).json({ error: "Invalid credentials." });
+    if (!ok) {
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
+      logError(new Error("Password mismatch during login"), { route: "/login", action: "login_invalid_password", body: { email } });
+      return res.status(error.statusCode).json(error);
+    }
 
     // Get name and additional profile data from the appropriate profile record
     let userName = user.name; // Default to user.name (for backwards compatibility)
@@ -106,12 +133,15 @@ router.post("/login", authRateLimiter, validateLogin, handleValidationErrors, as
     }
     
     res.json({
+      success: true,
       token,
       user: userData,
     });
   } catch (err) {
-    console.error("LOGIN ERROR:", err);
-    res.status(500).json({ error: "Internal server error." });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/login", action: "login_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Login failed", { error: err.message }, requestId);
+    res.status(error.statusCode).json(error);
   }
 });
 
@@ -142,24 +172,27 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
       photoThumbnailUrl,
       photoUploadedAt,
     } = req.body;
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ error: "name, email, and password are required" });
+      const error = createValidationError("Name, email, and password are required", { fields: ["name", "email", "password"] }, requestId);
+      logError(new Error("Missing required student registration fields"), { route: "/register-student", action: "register_student_validation" });
+      return res.status(error.statusCode).json(error);
     }
 
     // 1) Check if email is already registered (prevent duplicates)
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
-      return res.status(409).json({ 
-        error: "Email address is already registered. Please use a different email or sign in to your existing account." 
-      });
+      const error = createConflictError("Email address is already registered", { field: "email", reason: "existing_user" }, requestId);
+      logError(new Error("Duplicate user email in student registration"), { route: "/register-student", action: "register_student_duplicate_user", body: { email } });
+      return res.status(error.statusCode).json(error);
     }
 
     const existingStudent = await prisma.student.findUnique({ where: { email } });
     if (existingStudent) {
-      return res.status(409).json({ 
-        error: "A student account with this email already exists. Please use a different email or sign in." 
-      });
+      const error = createConflictError("A student account with this email already exists", { field: "email", reason: "existing_student" }, requestId);
+      logError(new Error("Duplicate student email in registration"), { route: "/register-student", action: "register_student_duplicate_student", body: { email } });
+      return res.status(error.statusCode).json(error);
     }
 
     // 2) Create new student (no upsert - prevent duplicates)
@@ -200,21 +233,20 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
       email: email,
       name: name
     }).catch(emailError => {
-      console.error('Failed to send student welcome email:', emailError);
+      logError(emailError, { route: "/register-student", action: "student_welcome_email_failed" });
     });
 
     return res.status(201).json({
+      success: true,
       ok: true,
       studentId: student.id,
       message: "Student account created successfully",
     });
   } catch (err) {
-    console.error("register-student failed:", err);
-    console.error("Full error details:", err.message, err.stack);
-    return res.status(500).json({ 
-      error: "Failed to register student",
-      details: err.message // Add error details for debugging
-    });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/register-student", action: "register_student_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Failed to register student", { error: err.message }, requestId);
+    return res.status(error.statusCode).json(error);
   }
 });
 
@@ -225,13 +257,21 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
 router.post("/register-donor", requireStrictRecaptcha, async (req, res) => {
   try {
     const { name, email, password, organization, country, phone } = req.body || {};
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     if (!name || !email || !password) {
-      return res.status(400).json({ error: "name, email and password are required" });
+      const error = createValidationError("Name, email, and password are required", { fields: ["name", "email", "password"] }, requestId);
+      logError(new Error("Missing required donor registration fields"), { route: "/register-donor", action: "register_donor_validation" });
+      return res.status(error.statusCode).json(error);
     }
 
     // Create Donor (or ensure none exists with same email via user table)
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) return res.status(409).json({ error: "Email already registered." });
+    if (existingUser) {
+      const error = createConflictError("Email already registered", { field: "email", existingEmail: email }, requestId);
+      logError(new Error("Duplicate donor email registration"), { route: "/register-donor", action: "register_donor_duplicate", body: { email } });
+      return res.status(error.statusCode).json(error);
+    }
 
     const donor = await prisma.donor.create({
       data: {
@@ -261,18 +301,21 @@ router.post("/register-donor", requireStrictRecaptcha, async (req, res) => {
       name: name,
       organization: organization
     }).catch(emailError => {
-      console.error('Failed to send donor welcome email:', emailError);
+      logError(emailError, { route: "/register-donor", action: "donor_welcome_email_failed" });
     });
 
     const token = signToken({ sub: user.id, role: user.role, email: user.email });
     return res.status(201).json({
+      success: true,
       token,
       user,
       donor: { id: donor.id, name: donor.name, email: donor.email, organization: donor.organization },
     });
   } catch (err) {
-    console.error("register-donor failed:", err);
-    return res.status(500).json({ error: "Failed to register donor" });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/register-donor", action: "register_donor_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Failed to register donor", { error: err.message }, requestId);
+    return res.status(error.statusCode).json(error);
   }
 });
 
@@ -314,8 +357,10 @@ router.post("/request-password-reset", passwordResetRateLimiter, requireMediumRe
     // In dev: return token so you can paste it in the reset form.
     return res.json({ ok: true, token });
   } catch (err) {
-    console.error("request-password-reset failed:", err);
-    return res.status(500).json({ error: "Failed to start reset" });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/request-password-reset", action: "password_reset_request_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Failed to process password reset request", { error: err.message }, requestId);
+    return res.status(error.statusCode).json(error);
   }
 });
 
@@ -326,35 +371,32 @@ router.post("/request-password-reset", passwordResetRateLimiter, requireMediumRe
 router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetConfirm, handleValidationErrors, async (req, res) => {
   try {
     const { token, password } = req.body || {};
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     if (!token || !password) {
-      return res.status(400).json({ error: "token and password required" });
+      const error = createValidationError("Token and password are required", { fields: ["token", "password"] }, requestId);
+      logError(new Error("Missing token or password in password reset"), { route: "/reset-password", action: "reset_validation" });
+      return res.status(error.statusCode).json(error);
     }
 
-    console.log('[PASSWORD RESET] Attempting reset with token:', token);
-    
     const pr = await prisma.passwordReset.findUnique({ where: { token } });
     
-    console.log('[PASSWORD RESET] Token lookup result:', {
-      found: !!pr,
-      used: pr?.used,
-      expiresAt: pr?.expiresAt,
-      now: new Date()
-    });
-    
     if (!pr) {
-      console.error('[PASSWORD RESET] Token not found in database:', token);
-      return res.status(400).json({ error: "Invalid or expired token" });
+      const error = createAuthError("Invalid or expired token", ErrorCodes.AUTH.TOKEN_INVALID, requestId);
+      logError(new Error("Password reset token not found"), { route: "/reset-password", action: "reset_token_not_found" });
+      return res.status(error.statusCode).json(error);
     }
     
     if (pr.used) {
-      console.error('[PASSWORD RESET] Token already used:', token);
-      return res.status(400).json({ error: "Invalid or expired token" });
+      const error = createAuthError("Invalid or expired token (already used)", ErrorCodes.AUTH.TOKEN_INVALID, requestId);
+      logError(new Error("Password reset token already used"), { route: "/reset-password", action: "reset_token_already_used" });
+      return res.status(error.statusCode).json(error);
     }
     
     if (pr.expiresAt < new Date()) {
-      console.error('[PASSWORD RESET] Token expired:', { expiresAt: pr.expiresAt, now: new Date() });
-      return res.status(400).json({ error: "Invalid or expired token" });
+      const error = createAuthError("Invalid or expired token (expired)", ErrorCodes.AUTH.TOKEN_EXPIRED, requestId);
+      logError(new Error("Password reset token expired"), { route: "/reset-password", action: "reset_token_expired" });
+      return res.status(error.statusCode).json(error);
     }
 
     const passwordHash = await bcrypt.hash(String(password), 10);
@@ -369,13 +411,13 @@ router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetCo
         data: { used: true },
       }),
     ]);
-    
-    console.log('[PASSWORD RESET] Password successfully reset for user:', pr.userId);
 
-    return res.json({ ok: true, message: "Password updated" });
+    return res.json({ success: true, ok: true, message: "Password updated" });
   } catch (err) {
-    console.error("reset-password failed:", err);
-    return res.status(500).json({ error: "Failed to reset password" });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(err, { route: "/reset-password", action: "reset_password_exception", method: "POST" });
+    const error = handlePrismaError(err, requestId) || createInternalError("Failed to reset password", { error: err.message }, requestId);
+    return res.status(error.statusCode).json(error);
   }
 });
 

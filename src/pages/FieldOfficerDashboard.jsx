@@ -14,7 +14,10 @@ import { fmtAmount } from "@/lib/currency";
 export default function FieldOfficerDashboard() {
   const navigate = useNavigate();
   const { token, user } = useAuth();
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const authHeader = useMemo(() =>
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+    [token]
+  );
 
   // Token validation (simplified)
   const isTokenValid = useMemo(() => {

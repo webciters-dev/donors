@@ -17,7 +17,10 @@ export const AdminApplications = () => {
   const navigate = useNavigate();
   const { token, user, logout } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const authHeader = useMemo(() =>
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+    [token]
+  );
 
   const [apps, setApps] = useState([]);
   const [query, setQuery] = useState("");

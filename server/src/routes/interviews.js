@@ -6,6 +6,9 @@ import {
   sendInterviewScheduledStudentEmail, 
   sendInterviewScheduledBoardMemberEmail 
 } from '../lib/emailService.js';
+import { ErrorCodes } from '../lib/errorCodes.js';
+import { logError } from '../lib/errorLogger.js';
+import { createValidationError, createNotFoundError, handlePrismaError, createInternalError } from '../lib/enhancedError.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -33,12 +36,10 @@ router.get('/', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
 
     res.json({ success: true, data: interviews });
   } catch (error) {
-    console.error('Error fetching interviews:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch interviews',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(error, { route: "/", action: "get_all_interviews", method: "GET" });
+    const enhancedErr = handlePrismaError(error, requestId) || createInternalError("Failed to fetch interviews", { error: error.message }, requestId);
+    res.status(enhancedErr.statusCode).json(enhancedErr);
   }
 });
 
@@ -67,20 +68,18 @@ router.get('/:id', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
     });
 
     if (!interview) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Interview not found' 
-      });
+      const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const error = createNotFoundError("Interview not found", { resource: "Interview", id }, requestId);
+      logError(new Error("Interview not found"), { route: "/:id", action: "get_interview_not_found", params: { id } });
+      return res.status(error.statusCode).json(error);
     }
 
     res.json({ success: true, data: interview });
   } catch (error) {
-    console.error('Error fetching interview:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch interview',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(error, { route: "/:id", action: "get_interview", method: "GET", params: { id: req.params.id } });
+    const enhancedErr = handlePrismaError(error, requestId) || createInternalError("Failed to fetch interview", { error: error.message }, requestId);
+    res.status(enhancedErr.statusCode).json(enhancedErr);
   }
 });
 

@@ -24,7 +24,10 @@ export default function AdminApplicationDetail() {
   const { id } = useParams(); // application id
   const navigate = useNavigate();
   const { token, user } = useAuth();
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const authHeader = useMemo(() =>
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+    [token]
+  );
 
   const [app, setApp] = useState(null);
   const [docs, setDocs] = useState([]);

@@ -295,14 +295,14 @@ export const ApplicationForm = () => {
     }
   }, [step, user, token, loadExistingStudentData]);
 
-  // Update URL when step changes for proper browser navigation
+  // Update URL when step changes for proper browser navigation with HashRouter
   useEffect(() => {
     if (user && step > 1) {
-      // Update URL to reflect current step for registered users
-      const newUrl = `${location.pathname}?step=${step}`;
-      window.history.replaceState(null, '', newUrl);
+      // Use navigate() to properly update URL for HashRouter
+      // This lets React Router handle the hash conversion
+      navigate(`/apply?step=${step}`, { replace: true });
     }
-  }, [step, user, location.pathname]);
+  }, [step, user, navigate]);
 
   // Scroll to top when step changes (more reliable than setTimeout in handlers)
   useEffect(() => {
@@ -388,6 +388,8 @@ export const ApplicationForm = () => {
 
   // Handle Student Registration at Step 1
   const handleStep1Registration = async (executeRecaptcha) => {
+    console.log('🔍 handleStep1Registration called with executeRecaptcha:', typeof executeRecaptcha);
+    
     // Validation
     if (!form.name || !form.email || !form.password || !form.gender) {
       toast.error("Please complete all fields.");
@@ -409,14 +411,20 @@ export const ApplicationForm = () => {
       let recaptchaToken = null;
       if (executeRecaptcha) {
         try {
+          console.log('🔓 Executing reCAPTCHA...');
           recaptchaToken = await executeRecaptcha('register');
-          console.log('reCAPTCHA token obtained for student registration');
+          console.log('✅ reCAPTCHA token obtained:', recaptchaToken ? 'Success' : 'No token');
         } catch (recaptchaError) {
-          console.error('reCAPTCHA failed:', recaptchaError);
+          console.error('❌ reCAPTCHA failed:', recaptchaError);
           toast.error("Security verification failed. Please try again.");
           setLoading(false);
           return;
         }
+      } else {
+        console.error('❌ executeRecaptcha is UNDEFINED - render prop not working!');
+        toast.error("reCAPTCHA not initialized. Please refresh the page.");
+        setLoading(false);
+        return;
       }
 
       // Register student using the student-specific endpoint

@@ -13,6 +13,7 @@
  */
 
 import logger from './logger.js';
+import { logError } from './errorLogger.js';
 
 /**
  * Custom API Error class
@@ -117,8 +118,12 @@ export const ErrorCodes = {
 /**
  * Express error handler middleware
  * Catches all errors and formats them consistently
+ * Enhanced with structured error logging
  */
 export function errorHandlerMiddleware(err, req, res, next) {
+  // Generate request ID for tracing
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
   // If headers already sent, delegate to default Express error handler
   if (res.headersSent) {
     return next(err);
@@ -126,29 +131,73 @@ export function errorHandlerMiddleware(err, req, res, next) {
   
   // Handle ApiError instances
   if (err instanceof ApiError) {
+    logError(err, { 
+      route: req.path, 
+      method: req.method, 
+      action: 'api_error',
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     return sendError(res, err.statusCode, err.message, err.details);
   }
   
   // Handle validation errors
   if (err.name === 'ValidationError') {
+    logError(err, { 
+      route: req.path, 
+      method: req.method, 
+      action: 'validation_error',
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     return sendError(res, 422, 'Validation failed', err.details || err.message);
   }
   
   // Handle Prisma errors
   if (err.code && err.code.startsWith('P')) {
-    return handlePrismaError(res, err);
+    logError(err, { 
+      route: req.path, 
+      method: req.method, 
+      action: 'prisma_error',
+      prismaCode: err.code,
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
+    return handlePrismaError(res, err, requestId);
   }
   
   // Handle JWT errors
   if (err.name === 'JsonWebTokenError') {
+    logError(err, { 
+      route: req.path, 
+      method: req.method, 
+      action: 'jwt_error',
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     return sendError(res, 401, 'Invalid token');
   }
   
   if (err.name === 'TokenExpiredError') {
+    logError(err, { 
+      route: req.path, 
+      method: req.method, 
+      action: 'token_expired',
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     return sendError(res, 401, 'Token expired');
   }
   
   // Log unexpected errors
+  logError(err, {
+    route: req.path,
+    method: req.method,
+    action: 'unexpected_error',
+    userId: req.user?.id,
+    userRole: req.user?.role
+  });
+  
   logger.error('Unexpected error', {
     error: err.message,
     stack: err.stack,
@@ -166,27 +215,38 @@ export function errorHandlerMiddleware(err, req, res, next) {
 
 /**
  * Handle Prisma-specific errors
+ * Enhanced with error code mapping and logging
  */
-function handlePrismaError(res, err) {
+function handlePrismaError(res, err, requestId = null) {
   const { code, meta } = err;
+  
+  // Generate request ID if not provided
+  if (!requestId) {
+    requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
   
   switch (code) {
     case 'P2002': // Unique constraint violation
       return sendError(res, 409, 'Resource already exists', {
         field: meta?.target,
+        errorCode: 'DB_003', // DATABASE_UNIQUE_VIOLATION
       });
     
     case 'P2025': // Record not found
-      return sendError(res, 404, 'Resource not found');
+      return sendError(res, 404, 'Resource not found', {
+        errorCode: 'DB_005', // DATABASE_RECORD_NOT_FOUND
+      });
     
     case 'P2003': // Foreign key constraint violation
       return sendError(res, 400, 'Invalid reference', {
         field: meta?.field_name,
+        errorCode: 'DB_004', // DATABASE_FOREIGN_KEY_VIOLATION
       });
     
     case 'P2014': // Relation violation
       return sendError(res, 400, 'Related records exist', {
         relation: meta?.relation_name,
+        errorCode: 'DB_002', // DATABASE_CONSTRAINT_VIOLATION
       });
     
     default:
@@ -195,7 +255,9 @@ function handlePrismaError(res, err) {
         message: err.message,
         meta,
       });
-      return sendError(res, 500, 'Database error');
+      return sendError(res, 500, 'Database error', {
+        errorCode: 'DB_001', // DATABASE_ERROR
+      });
   }
 }
 

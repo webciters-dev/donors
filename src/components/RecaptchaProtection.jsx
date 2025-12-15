@@ -4,11 +4,23 @@ import ReCAPTCHA from 'react-google-recaptcha';
 // reCAPTCHA v3 Component for invisible protection  
 const RecaptchaV3 = forwardRef(({ onVerify, onError, onExpired }, ref) => {
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-  const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
+  const devMode = import.meta.env.VITE_DEVELOPMENT_MODE;
+  const isDevelopment = devMode === true || devMode === 'true';
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' || 
                      window.location.hostname.includes('localhost');
   const [grecaptchaLoaded, setGrecaptchaLoaded] = useState(false);
+
+  // Log environment at component mount
+  useEffect(() => {
+    console.log('🔍 RecaptchaV3 mounted - Env Debug:', {
+      siteKey: siteKey ? `${siteKey.substring(0, 10)}...` : 'UNDEFINED',
+      VITE_DEVELOPMENT_MODE_raw: devMode,
+      isDevelopment,
+      hostname: window.location.hostname,
+      isLocalhost
+    });
+  }, []);
 
   // Load reCAPTCHA v3 script
   useEffect(() => {
@@ -187,7 +199,7 @@ const RecaptchaProtection = forwardRef(({
   children
 }, ref) => {
   const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-  const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
+  const isDevelopment = import.meta.env.VITE_DEVELOPMENT_MODE === true || import.meta.env.VITE_DEVELOPMENT_MODE === 'true';
   const isLocalhost = window.location.hostname === 'localhost' || 
                      window.location.hostname === '127.0.0.1' || 
                      window.location.hostname.includes('localhost');
@@ -195,17 +207,24 @@ const RecaptchaProtection = forwardRef(({
 
   // Create a stable executeRecaptcha function that wraps the ref
   const executeRecaptcha = async (action = 'submit') => {
+    console.log('🔓 executeRecaptcha called with action:', action);
+    
     // Development mode bypass
     if (isDevelopment && isLocalhost) {
-      console.log(' Development mode: Bypassing reCAPTCHA for localhost');
+      console.log('💡 Development mode: Bypassing reCAPTCHA for localhost');
       return 'development-bypass-token';
     }
 
     // Production mode - call the ref method
     if (recaptchaRef.current && recaptchaRef.current.executeRecaptcha) {
+      console.log('📡 Calling ref.executeRecaptcha()');
       return await recaptchaRef.current.executeRecaptcha(action);
     }
     
+    console.error('❌ recaptchaRef not initialized:', {
+      refExists: !!recaptchaRef.current,
+      hasMethod: recaptchaRef.current?.executeRecaptcha ? 'yes' : 'no'
+    });
     throw new Error('reCAPTCHA not initialized');
   };
 

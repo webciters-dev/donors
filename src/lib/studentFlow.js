@@ -102,6 +102,7 @@ export const checkStudentProgress = async (user, token) => {
       redirectPath = '/my-application';
     } else if (hasReachedStep3) {
       // Step 3 reached but not completed - return to Step 3 to continue
+      // Return with query parameter for React Router to handle
       redirectPath = '/apply?step=3';
     } else if (hasEducationDetails) {
       // Step 2 completed, need Step 3 - financial details

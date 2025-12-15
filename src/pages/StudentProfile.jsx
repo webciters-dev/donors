@@ -68,7 +68,10 @@ const deriveDegreeLevel = (program) => {
 export default function StudentProfile() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const authHeader = useMemo(() => 
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+    [token]
+  );
 
   // Initialize form state FIRST (before any useEffect that uses it)
   const [form, setForm] = useState({

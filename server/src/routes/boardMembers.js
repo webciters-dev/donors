@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { requireAuth, onlyRoles } from '../middleware/auth.js';
 import { requireBasicRecaptcha } from '../middleware/recaptcha.js';
 import { sendBoardMemberWelcomeEmail } from '../lib/emailService.js';
+import { ErrorCodes } from '../lib/errorCodes.js';
+import { logError } from '../lib/errorLogger.js';
+import { createValidationError, createNotFoundError, handlePrismaError, createInternalError } from '../lib/enhancedError.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -16,12 +19,10 @@ router.get('/', requireAuth, onlyRoles('ADMIN'), async (req, res) => {
 
     res.json({ success: true, data: boardMembers });
   } catch (error) {
-    console.error('Error fetching board members:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to fetch board members',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    logError(error, { route: "/", action: "get_all_board_members", method: "GET" });
+    const enhancedErr = handlePrismaError(error, requestId) || createInternalError("Failed to fetch board members", { error: error.message }, requestId);
+    res.status(enhancedErr.statusCode).json(enhancedErr);
   }
 });
 

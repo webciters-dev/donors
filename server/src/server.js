@@ -1,13 +1,27 @@
 // server/src/server.js (ESM)
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get the directory of this file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const serverDir = path.join(__dirname, "..");
+
+// Load environment variables FIRST before importing anything that needs them
+const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env";
+const envPath = path.join(serverDir, envFile);
+dotenv.config({ path: envPath });
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import dotenv from "dotenv";
 
 // Structured logging
 import logger from "./lib/logger.js";
 import { httpLogger, errorLogger } from "./middleware/httpLogger.js";
+import { logError as errorReportingLogger } from "./lib/errorLogger.js";
 
 // API Documentation
 import { setupSwagger } from "./lib/swagger.js";
@@ -46,8 +60,6 @@ import ipWhitelistRouter from "./routes/ipWhitelist.js";
 // Audit logging middleware
 import { auditLogin } from "./middleware/auditMiddleware.js";
 import { ipWhitelistMiddleware } from "./middleware/ipWhitelist.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -122,6 +134,28 @@ app.use(express.urlencoded({ limit: "10mb", extended: true })); // For form data
 app.use((req, res, next) => {
   req.socket.setTimeout(300000); // 5 minutes (300,000 ms)
   res.setTimeout(300000);
+  next();
+});
+
+// ─────────────────────────────────────────────────────────────
+// Error Reporting Middleware (Phase 3 Enhancement)
+// Captures request context for error logging
+app.use((req, res, next) => {
+  // Attach request metadata for error logging
+  req.requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  res.on('finish', () => {
+    // Log errors only for error responses
+    if (res.statusCode >= 400 && res.locals?.errorLogged !== true) {
+      errorReportingLogger.logError(new Error(`${res.statusCode} ${req.method} ${req.path}`), {
+        route: req.path,
+        method: req.method,
+        statusCode: res.statusCode,
+        userId: req.user?.id,
+        userRole: req.user?.role,
+        action: 'http_error_response'
+      });
+    }
+  });
   next();
 });
 

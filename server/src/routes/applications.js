@@ -234,18 +234,11 @@ router.post("/", async (req, res) => {
 
     // Send application confirmation email (async, non-blocking)
     try {
-      await sendApplicationConfirmationEmail(
-        application.student.email,
-        application.student.name,
-        {
-          applicationId: application.id,
-          term: application.term,
-          amount: application.amount,
-          currency: application.currency,
-          university: application.student.university,
-          program: application.student.program
-        }
-      );
+      await sendApplicationConfirmationEmail({
+        email: application.student.email,
+        name: application.student.name,
+        applicationId: application.id
+      });
     } catch (emailError) {
       console.error(" Failed to send application confirmation email:", emailError);
       // Don't fail the request if email fails

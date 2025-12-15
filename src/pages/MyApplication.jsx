@@ -30,7 +30,10 @@ const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HS
 export const MyApplication = () => {
   const navigate = useNavigate();
   const { token, user } = useAuth();
-  const authHeader = token ? { Authorization: `Bearer ${token}` } : undefined;
+  const authHeader = useMemo(() => 
+    token ? { Authorization: `Bearer ${token}` } : undefined,
+    [token]
+  );
 
   // Redirect ACTIVE students to their clean dashboard
   useEffect(() => {
