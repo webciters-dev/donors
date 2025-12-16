@@ -82,7 +82,15 @@ tmp/
 *.tar.gz
 *.zip
 
+# Build artifacts and generated files
+*.ps1
+*.docx
+*.xlsx
+*.exe
+builds/
+
 # Development
 .next/
 .cache/
 coverage/
+
