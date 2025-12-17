@@ -49,11 +49,11 @@ const upload = multer({
 });
 
 // Helper function to generate unique filename
+// All images are converted to JPEG by Sharp, so always use .jpg extension
 function generateFilename(originalName, suffix = '') {
   const timestamp = Date.now();
   const random = Math.floor(Math.random() * 10000);
-  const ext = path.extname(originalName).toLowerCase();
-  return `student-photo-${timestamp}-${random}${suffix}${ext}`;
+  return `student-photo-${timestamp}-${random}${suffix}.jpg`;
 }
 
 // Upload student photo endpoint
