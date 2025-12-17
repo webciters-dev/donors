@@ -21,7 +21,7 @@ import morgan from "morgan";
 // Structured logging
 import logger from "./lib/logger.js";
 import { httpLogger, errorLogger } from "./middleware/httpLogger.js";
-import { logError as errorReportingLogger } from "./lib/errorLogger.js";
+import { logError } from "./lib/errorLogger.js";
 
 // API Documentation
 import { setupSwagger } from "./lib/swagger.js";
@@ -146,14 +146,19 @@ app.use((req, res, next) => {
   res.on('finish', () => {
     // Log errors only for error responses
     if (res.statusCode >= 400 && res.locals?.errorLogged !== true) {
-      errorReportingLogger.logError(new Error(`${res.statusCode} ${req.method} ${req.path}`), {
-        route: req.path,
-        method: req.method,
-        statusCode: res.statusCode,
-        userId: req.user?.id,
-        userRole: req.user?.role,
-        action: 'http_error_response'
-      });
+      try {
+        logError(new Error(`${res.statusCode} ${req.method} ${req.path}`), {
+          route: req.path,
+          method: req.method,
+          statusCode: res.statusCode,
+          userId: req.user?.id,
+          userRole: req.user?.role,
+          action: 'http_error_response'
+        });
+      } catch (e) {
+        // Silently fail - don't let logging break the response
+        logger.error('Error logging request error:', e);
+      }
     }
   });
   next();
