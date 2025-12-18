@@ -376,11 +376,11 @@ function Shell() {
               }
             />
 
-            {/* PROTECTED: SUB_ADMIN */}
+            {/* PROTECTED: SUB_ADMIN / CASE_WORKER */}
             <Route
               path="/sub-admin"
               element={
-                <ProtectedRoute roles={["SUB_ADMIN"]}>
+                <ProtectedRoute roles={["SUB_ADMIN", "CASE_WORKER"]}>
                   <SubAdminDashboard />
                 </ProtectedRoute>
               }
@@ -388,7 +388,7 @@ function Shell() {
             <Route
               path="/sub-admin/review/:reviewId"
               element={
-                <ProtectedRoute roles={["SUB_ADMIN"]}>
+                <ProtectedRoute roles={["SUB_ADMIN", "CASE_WORKER"]}>
                   <SubAdminApplicationDetail />
                 </ProtectedRoute>
               }

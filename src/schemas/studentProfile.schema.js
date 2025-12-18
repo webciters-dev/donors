@@ -54,7 +54,7 @@ export const studentProfileSchema = z.object({
       "JPG/PNG up to 3MB"
     ),
   
-  // Introduction video validation (60-90 seconds, max 100MB)
+  // Introduction video validation (30-120 seconds, max 100MB)
   introVideo: z
     .any()
     .optional()

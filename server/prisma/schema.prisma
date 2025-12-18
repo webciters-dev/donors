@@ -67,7 +67,7 @@ model Student {
   introVideoUrl         String?           // URL to introduction video (MP4)
   introVideoThumbnailUrl String?          // URL to video thumbnail image
   introVideoUploadedAt  DateTime?         // When video was uploaded
-  introVideoDuration    Int?              // Video duration in seconds (60-90 recommended)
+  introVideoDuration    Int?              // Video duration in seconds (30-120 acceptable)
   introVideoOriginalName String?          // Original filename for reference
   messages              Message[]
   applications          Application[]

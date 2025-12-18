@@ -138,10 +138,8 @@ export default function VideoUploader({
           
           // Then show duration warning if applicable (AFTER upload completes)
           const uploadedDuration = response.video?.duration || metadata.duration;
-          if (uploadedDuration < 60) {
-            toast.warning("Your video is shorter than recommended (60-90 seconds)");
-          } else if (uploadedDuration > 90) {
-            toast.warning("Your video is longer than recommended (60-90 seconds)");
+          if (uploadedDuration < 30 || uploadedDuration > 120) {
+            toast.warning("Video duration is outside acceptable range (30-120 seconds)");
           }
           
           console.log('✅ Video upload successful:', response);
@@ -266,10 +264,10 @@ export default function VideoUploader({
           <div>
             <h4 className="font-medium text-blue-900 mb-2">Introduction Video Guidelines</h4>
             <p className="text-sm text-blue-800 mb-3">
-              Record a personal 60-90 second video introducing yourself and explaining why you deserve educational sponsorship.
+              Record a personal 30-120 second video introducing yourself and explaining why you deserve educational sponsorship.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-700">
-              <div>• Duration: 60-90 seconds</div>
+              <div>• Duration: 30-120 seconds</div>
               <div>• Max size: {MAX_SIZE_MB}MB</div>
               <div>• Formats: MP4, MOV, AVI, WebM</div>
               <div>• Speak clearly about your goals</div>

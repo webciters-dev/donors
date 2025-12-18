@@ -54,7 +54,7 @@ export default function SubAdminDashboard() {
 
   // Auth recovery mechanism
   useEffect(() => {
-    if (user && user.role === "SUB_ADMIN" && !token) {
+    if (user && (user.role === "SUB_ADMIN" || user.role === "CASE_WORKER") && !token) {
       console.error(" User appears logged in but no token found - corrupted auth state");
       toast.error("Authentication issue detected. Please log in again.");
       setTimeout(() => {
@@ -204,7 +204,7 @@ export default function SubAdminDashboard() {
   const pendingReviews = reviews.filter(r => r.status === "PENDING" || r.status === "IN_PROGRESS");
   const completedReviews = reviews.filter(r => r.status === "COMPLETED");
 
-  if (user?.role !== "SUB_ADMIN") {
+  if (user?.role !== "SUB_ADMIN" && user?.role !== "CASE_WORKER") {
     return <Card className="p-6">Case Workers only.</Card>;
   }
 
@@ -294,14 +294,14 @@ export default function SubAdminDashboard() {
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                         <Badge variant="secondary" className="self-start">
-                           {review.student?.name || 'Student'}
+                           {review.application?.student?.name || 'Student'}
                         </Badge>
                         <span className="text-xs text-slate-500">
-                          CNIC: {review.student?.cnic || 'Not provided'}
+                          CNIC: {review.application?.student?.cnic || 'Not provided'}
                         </span>
                       </div>
                       <p className="text-slate-800 text-xs sm:text-sm font-medium">
-                        {review.student?.program} at {review.student?.university}
+                        {review.application?.student?.program} at {review.application?.student?.university}
                       </p>
                       <p className="text-slate-600 text-xs">
                         Assigned: {new Date(review.createdAt).toLocaleDateString()}
@@ -345,7 +345,7 @@ export default function SubAdminDashboard() {
                 <div key={review.id} className="border rounded-lg p-3 sm:p-4 space-y-2">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <div className="text-sm sm:text-base font-medium">{review.student?.name}</div>
+                      <div className="text-sm sm:text-base font-medium">{review.application?.student?.name}</div>
                       {review.taskType && (
                         <Badge variant="secondary" className="text-xs bg-green-50 border-green-200 text-green-700">
                           {TASK_TYPES.find(t => t.value === review.taskType)?.icon || ""} {TASK_TYPES.find(t => t.value === review.taskType)?.label || review.taskType}
@@ -362,10 +362,10 @@ export default function SubAdminDashboard() {
                     </Badge>
                   </div>
                   <div className="text-xs sm:text-sm text-slate-600">
-                    {review.student?.program} · {review.student?.university}
+                    {review.application?.student?.program} · {review.application?.student?.university}
                   </div>
                   <div className="text-xs sm:text-sm text-slate-600">
-                     {review.student?.name} • CNIC: {review.student?.cnic || 'Not provided'}
+                     {review.application?.student?.name} • CNIC: {review.application?.student?.cnic || 'Not provided'}
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     <Button 
@@ -424,7 +424,7 @@ export default function SubAdminDashboard() {
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-1">
                           <div className={`text-sm sm:text-base font-medium ${isAdminDecided ? 'text-slate-800' : 'text-green-800'}`}>
-                            {review.student?.name}
+                            {review.application?.student?.name}
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {review.taskType && (
@@ -454,7 +454,7 @@ export default function SubAdminDashboard() {
                         </div>
                         
                         <div className="text-xs sm:text-sm text-slate-600 mb-2">
-                          {review.student?.program} at {review.student?.university}
+                          {review.application?.student?.program} at {review.application?.student?.university}
                         </div>
                         
                         <div className={`text-xs mb-2 ${isAdminDecided ? 'text-slate-700' : 'text-green-700'}`}>
@@ -614,19 +614,19 @@ function ReviewModal({
         <div>
           <div className="text-sm font-medium text-slate-700">Student Information</div>
           <div className="text-xs sm:text-sm text-slate-600 mt-1 space-y-1">
-            <div><strong>Name:</strong> {selectedReview.student?.name}</div>
-            <div><strong>Email:</strong> <span className="break-all">{selectedReview.student?.email}</span></div>
-            <div><strong>Program:</strong> {selectedReview.student?.program}</div>
-            <div><strong>University:</strong> {selectedReview.student?.university}</div>
-            <div><strong>GPA:</strong> {selectedReview.student?.gpa}</div>
+            <div><strong>Name:</strong> {selectedReview.application?.student?.name}</div>
+            <div><strong>Email:</strong> <span className="break-all">{selectedReview.application?.student?.email}</span></div>
+            <div><strong>Program:</strong> {selectedReview.application?.student?.program}</div>
+            <div><strong>University:</strong> {selectedReview.application?.student?.university}</div>
+            <div><strong>GPA:</strong> {selectedReview.application?.student?.gpa}</div>
           </div>
         </div>
         
         <div>
           <div className="text-sm font-medium text-slate-700">Application Details</div>
           <div className="text-xs sm:text-sm text-slate-600 mt-1 space-y-1">
-            <div><strong>Student:</strong> {selectedReview.student?.name}</div>
-            <div><strong>CNIC:</strong> {selectedReview.student?.cnic || 'Not provided'}</div>
+            <div><strong>Student:</strong> {selectedReview.application?.student?.name}</div>
+            <div><strong>CNIC:</strong> {selectedReview.application?.student?.cnic || 'Not provided'}</div>
             <div><strong>Status:</strong> {selectedReview.application?.status}</div>
             <div><strong>Term:</strong> {selectedReview.application?.term}</div>
             <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}</div>

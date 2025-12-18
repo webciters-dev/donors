@@ -15,8 +15,8 @@ const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB maximum (backend limit)
 const MAX_VIDEO_SIZE_DISPLAY = 25; // 25MB (display to users)
 
 // Duration limits (in seconds)
-const MIN_DURATION = 60;  // 60 seconds (1 minute)
-const MAX_DURATION = 90;  // 90 seconds (1.5 minutes)
+const MIN_DURATION = 30;  // 30 seconds minimum
+const MAX_DURATION = 120;  // 120 seconds (2 minutes) maximum
 
 export const introVideoSchema = z.object({
   file: z
@@ -43,8 +43,8 @@ export const introVideoSchema = z.object({
 export const videoMetadataSchema = z.object({
   duration: z
     .number()
-    .min(MIN_DURATION, `Video must be at least ${MIN_DURATION} seconds (1 minute)`)
-    .max(MAX_DURATION, `Video must be no longer than ${MAX_DURATION} seconds (1.5 minutes)`),
+    .min(MIN_DURATION, `Video must be at least ${MIN_DURATION} seconds`)
+    .max(MAX_DURATION, `Video must be no longer than ${MAX_DURATION} seconds (2 minutes)`),
   
   format: z.enum(["mp4", "mov", "avi", "webm"], {
     errorMap: () => ({ message: "Unsupported video format" })
@@ -66,7 +66,7 @@ export const VIDEO_GUIDELINES = {
   duration: {
     min: MIN_DURATION,
     max: MAX_DURATION,
-    recommended: "60-90 seconds"
+    recommended: "30-120 seconds"
   },
   
   fileSize: {
@@ -78,7 +78,7 @@ export const VIDEO_GUIDELINES = {
   
   content: {
     title: "Introduction Video Guidelines",
-    prompt: `Please record a 60-90 second video introducing yourself and explaining why you deserve educational sponsorship. 
+    prompt: `Please record a 30-120 second video introducing yourself and explaining why you deserve educational sponsorship. 
     
 Guidelines for your video:
 • Speak clearly about your goals and challenges
@@ -86,7 +86,7 @@ Guidelines for your video:
 • Be authentic and genuine
 • Ensure good lighting and clear audio
 • Look directly at the camera when speaking
-• Keep it within 60-90 seconds
+• Keep it within 30-120 seconds
 
 This video helps donors connect with you personally and understand your story better.`,
     

@@ -943,7 +943,7 @@ export default function StudentProfile() {
           {/* Introduction Video Section */}
           <div className="md:col-span-2">
             <h3 className="text-lg font-semibold text-blue-800 mb-3">Introduction Video</h3>
-            <p className="text-sm text-gray-600 mb-4">Record a personal video (60-90 seconds) to introduce yourself to potential sponsors. This helps create a stronger connection and shows your personality.</p>
+            <p className="text-sm text-gray-600 mb-4">Record a personal video (30-120 seconds) to introduce yourself to potential sponsors. This helps create a stronger connection and shows your personality.</p>
             
             <VideoUploader
               currentVideoUrl={form.introVideoUrl}
