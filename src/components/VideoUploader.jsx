@@ -103,12 +103,8 @@ export default function VideoUploader({
         return;
       }
 
-      // Duration warnings for non-optimal lengths
-      if (metadata.duration < 60) {
-        toast.warning("Video is shorter than recommended (60-90 seconds)");
-      } else if (metadata.duration > 90) {
-        toast.warning("Video is longer than recommended (60-90 seconds)");
-      }
+      // NOTE: Duration warnings are now displayed AFTER successful upload completion
+      // This prevents confusing the user with warnings while the upload is still processing
 
       // Upload the video
       const formData = new FormData();
@@ -136,7 +132,18 @@ export default function VideoUploader({
         
         if (xhr.status === 200) {
           const response = JSON.parse(xhr.responseText);
+          
+          // Display success toast first
           toast.success("Video uploaded successfully!");
+          
+          // Then show duration warning if applicable (AFTER upload completes)
+          const uploadedDuration = response.video?.duration || metadata.duration;
+          if (uploadedDuration < 60) {
+            toast.warning("Your video is shorter than recommended (60-90 seconds)");
+          } else if (uploadedDuration > 90) {
+            toast.warning("Your video is longer than recommended (60-90 seconds)");
+          }
+          
           console.log('✅ Video upload successful:', response);
           
           // Pass the uploaded video data to parent

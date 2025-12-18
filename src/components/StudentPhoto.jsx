@@ -51,12 +51,14 @@ const StudentPhoto = ({
     
     // For thumbnail and small sizes, prefer thumbnail if available
     if ((size === 'thumbnail' || size === 'small') && student.photoThumbnailUrl) {
-      return `${API.baseURL}/${student.photoThumbnailUrl}`;
+      // Add cache-bust query param to force fresh photo load after token changes
+      return `${API.baseURL}/${student.photoThumbnailUrl}?t=${student.id}`;
     }
     
     // For larger sizes or if no thumbnail, use full photo
     if (student.photoUrl) {
-      return `${API.baseURL}/${student.photoUrl}`;
+      // Add cache-bust query param to force fresh photo load after token changes
+      return `${API.baseURL}/${student.photoUrl}?t=${student.id}`;
     }
     
     return null;
