@@ -100,7 +100,7 @@ server/uploads/photos/*
 server/uploads/photos/thumbnails/*
 server/uploads/videos/*
 
-# Keep empty directories for git
+# BUT do not ignore the .gitkeep files (the exclamation mark means "un-ignore")
 !server/uploads/.gitkeep
 !server/uploads/photos/.gitkeep
 !server/uploads/photos/thumbnails/.gitkeep
