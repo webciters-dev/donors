@@ -94,3 +94,14 @@ builds/
 .cache/
 coverage/
 
+# Server uploads
+server/uploads/*
+server/uploads/photos/*
+server/uploads/photos/thumbnails/*
+server/uploads/videos/*
+
+# Keep empty directories for git
+!server/uploads/.gitkeep
+!server/uploads/photos/.gitkeep
+!server/uploads/photos/thumbnails/.gitkeep
+!server/uploads/videos/.gitkeep
