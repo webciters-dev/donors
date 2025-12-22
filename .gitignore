@@ -94,14 +94,19 @@ builds/
 .cache/
 coverage/
 
-# Server uploads
+# Ignore contents of the main uploads folder
 server/uploads/*
-server/uploads/photos/*
-server/uploads/photos/thumbnails/*
-server/uploads/videos/*
-
-# BUT do not ignore the .gitkeep files (the exclamation mark means "un-ignore")
 !server/uploads/.gitkeep
+
+# Explicitly allow the subfolders to be seen, but ignore their contents
+!server/uploads/photos/
+server/uploads/photos/*
 !server/uploads/photos/.gitkeep
+
+!server/uploads/photos/thumbnails/
+server/uploads/photos/thumbnails/*
 !server/uploads/photos/thumbnails/.gitkeep
+
+!server/uploads/videos/
+server/uploads/videos/*
 !server/uploads/videos/.gitkeep
