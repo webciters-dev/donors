@@ -11,6 +11,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node src/seed.js",
+    "db:admin-seed": "node src/admin-seed.js",
     "seed": "node ./prisma/seed.cjs",
     "db:export": "cd ../database && bash export_database.sh",
     "db:export:win": "cd ../database && export_database.bat",
