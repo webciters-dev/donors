@@ -88,15 +88,15 @@ router.post("/login", authRateLimiter, validateLogin, handleValidationErrors, as
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
-      logError(new Error("User not found during login"), { route: "/login", action: "login_not_found", body: { email } });
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH_INVALID_CREDENTIALS, requestId);
+      logError(new Error("User not found during login: " + email), { route: "/login", action: "login_not_found", body: { email } });
       return res.status(error.statusCode).json(error);
     }
 
     const ok = await bcrypt.compare(String(password), String(user.passwordHash || ""));
     if (!ok) {
-      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
-      logError(new Error("Password mismatch during login"), { route: "/login", action: "login_invalid_password", body: { email } });
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH_INVALID_CREDENTIALS, requestId);
+      logError(new Error("Password mismatch during login: " + email), { route: "/login", action: "login_invalid_password", body: { email } });
       return res.status(error.statusCode).json(error);
     }
 

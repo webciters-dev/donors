@@ -260,6 +260,7 @@ router.post("/", async (req, res) => {
  * Allows updating status/notes and amount/currency
  */
 router.patch("/:id", async (req, res) => {
+  console.log('get application....');
   try {
     const { id } = req.params;
     const { status, notes, amount, currency, forceApprove } = req.body;
@@ -557,6 +558,27 @@ router.get("/:id", async (req, res) => {
   try {
     const application = await prisma.application.findUnique({
       where: { id: req.params.id },
+      include: { student: true },
+    });
+
+    if (!application) {
+      return res.status(404).json({ error: "Application not found" });
+    }
+
+    res.json(application);
+  } catch (error) {
+    console.error("Error fetching application:", error);
+    res.status(500).json({ error: "Failed to fetch application" });
+  }
+});
+
+/**
+ * GET /api/applications/student/:id
+ */
+router.get("/student/:id", async (req, res) => {
+  try {
+    const application = await prisma.application.findFirst({
+      where: { studentId: req.params.id },
       include: { student: true },
     });
 

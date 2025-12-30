@@ -45,6 +45,7 @@ export function createErrorResponse(
   return {
     success: false,
     error: message,  // ← KEEP existing field for backward compatibility
+    statusCode: statusCode,
     errorCode: errorCode,
     errorCategory: errorInfo?.category || 'UNKNOWN',
     errorDetails: errorDetails,

@@ -44,7 +44,7 @@ export const validateEmail = () =>
   body('email')
     .trim()
     .isEmail().withMessage('Must be a valid email address')
-    .normalizeEmail()
+    // .normalizeEmail()
     .isLength({ max: 255 }).withMessage('Email must not exceed 255 characters');
 
 /**

@@ -6,20 +6,15 @@ const prisma = new PrismaClient();
 async function main() {
   console.log(' Starting super admin seed...');
 
-  const data = {
-    name: "Super Admin",
-    email: "super@awake.nl",
-    password: process.env.ADMIN_DEFAULT_PASSWORD,
-    role: "ADMIN",
-  }
+  const pwd = process.env.ADMIN_DEFAULT_PASSWORD;
 
   // Create admin user
-  const passwordHash = await bcrypt.hash(String(data.password), 12);
+  const passwordHash = await bcrypt.hash(String(pwd), 12);
   
   const newAdmin = await prisma.user.create({
     data: { 
-      name: data.name?.trim() || null, 
-      email: data.email.toLowerCase().trim(), 
+      name: "Super Admin", 
+      email: "super@awake.nl", 
       passwordHash, 
       role: "ADMIN" 
     },
