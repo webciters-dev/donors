@@ -1,5 +1,5 @@
 // src/pages/SubAdminApplicationDetail.jsx - Now displays as Case Worker interface
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -615,7 +615,7 @@ export default function SubAdminApplicationDetail() {
           </div>
           <div>
             <span className="text-slate-500">Date of Birth:</span>
-            <div className="font-medium break-words">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString() : 'Not provided'}</div>
+            <div className="font-medium break-words">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('en-GB') : 'Not provided'}</div>
           </div>
         </div>
 
@@ -635,22 +635,6 @@ export default function SubAdminApplicationDetail() {
               <span className="text-slate-500">Guardian Phone 1:</span>
               <div className="font-medium break-words">{student.guardianPhone1 || 'Not provided'}</div>
             </div>
-            {student.guardian2Name && (
-              <>
-                <div>
-                  <span className="text-slate-500">Second Guardian Name:</span>
-                  <div className="font-medium break-words">{student.guardian2Name}</div>
-                </div>
-                <div>
-                  <span className="text-slate-500">Second Guardian CNIC:</span>
-                  <div className="font-medium break-words">{student.guardian2Cnic || 'Not provided'}</div>
-                </div>
-                <div>
-                  <span className="text-slate-500">Guardian Phone 2:</span>
-                  <div className="font-medium break-words">{student.guardianPhone2 || 'Not provided'}</div>
-                </div>
-              </>
-            )}
           </div>
         </div>
         
@@ -744,14 +728,6 @@ export default function SubAdminApplicationDetail() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Academic Year</span>
                 <span className="font-medium">{student.currentAcademicYear}</span>
-              </div>
-            )}
-          </div>
-          <div className="space-y-3 text-sm">
-            {student.specificField && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Specialization</span>
-                <span className="font-medium">{student.specificField}</span>
               </div>
             )}
           </div>

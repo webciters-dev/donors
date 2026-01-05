@@ -79,11 +79,8 @@ export default function StudentProfile() {
     dateOfBirth: "",
     guardianName: "",
     guardianCnic: "",
-    guardian2Name: "",
-    guardian2Cnic: "",
     phone: "",
     guardianPhone1: "",
-    guardianPhone2: "",
     address: "",
     city: "",
     province: "",
@@ -187,11 +184,8 @@ export default function StudentProfile() {
             : "",
           guardianName: s.guardianName || "",
           guardianCnic: s.guardianCnic || "",
-          guardian2Name: s.guardian2Name || "",
-          guardian2Cnic: s.guardian2Cnic || "",
           phone: s.phone || "",
           guardianPhone1: s.guardianPhone1 || "",
-          guardianPhone2: s.guardianPhone2 || "",
           address: s.address || "",
           city: s.city || "",
           province: s.province || "",
@@ -543,20 +537,6 @@ export default function StudentProfile() {
             />
             {errors.guardianPhone1 && (
               <p className="text-xs text-rose-600 mt-1">{errors.guardianPhone1}</p>
-            )}
-          </div>
-
-          {/* Guardian Phone 2 */}
-          <div>
-            <label className="block text-xs sm:text-sm mb-1">Guardian Phone 2 (Optional)</label>
-            <Input
-              value={form.guardianPhone2}
-              onChange={(e) => setVal("guardianPhone2", e.target.value)}
-              placeholder="+92XXXXXXXXXX or 03XXXXXXXXX"
-              className="rounded-2xl min-h-[44px]"
-            />
-            {errors.guardianPhone2 && (
-              <p className="text-xs text-rose-600 mt-1">{errors.guardianPhone2}</p>
             )}
           </div>
 

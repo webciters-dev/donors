@@ -358,7 +358,7 @@ export default function AdminApplicationDetail() {
             </div>
             <div>
               <div className="text-slate-500">Date of Birth</div>
-              <div>{app.student?.dateOfBirth || "-"}</div>
+              <div>{app.student?.dateOfBirth ? new Date(app.student.dateOfBirth).toLocaleDateString('en-GB') : "-"}</div>
             </div>
             <div>
               <div className="text-slate-500">Gender</div>
@@ -394,18 +394,6 @@ export default function AdminApplicationDetail() {
             <div>
               <div className="text-slate-500">Guardian Phone 1</div>
               <div>{app.student?.guardianPhone1 || "-"}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Second Guardian</div>
-              <div>{app.student?.guardian2Name || "-"}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Second Guardian CNIC</div>
-              <div>{app.student?.guardian2Cnic || "-"}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Guardian Phone 2</div>
-              <div>{app.student?.guardianPhone2 || "-"}</div>
             </div>
           </div>
         </div>
@@ -445,10 +433,6 @@ export default function AdminApplicationDetail() {
             <div>
               <div className="text-slate-500">Expected Graduation</div>
               <div>{app.student?.gradYear || "-"}</div>
-            </div>
-            <div>
-              <div className="text-slate-500">Specific Field</div>
-              <div>{app.student?.specificField || "-"}</div>
             </div>
           </div>
         </div>

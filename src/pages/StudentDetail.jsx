@@ -338,14 +338,6 @@ export const StudentDetail = ({ id, goBack }) => {
               </div>
             )}
           </div>
-          <div className="space-y-3 text-sm">
-            {student.specificField && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">Specialization</span>
-                <span className="font-medium">{student.specificField}</span>
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Career Goals */}
