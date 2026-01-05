@@ -250,16 +250,19 @@ router.post("/", async (req, res) => {
       },
     });
 
-    // Send application confirmation email (async, non-blocking)
-    try {
-      await sendApplicationConfirmationEmail({
-        email: application.student.email,
-        name: application.student.name,
-        applicationId: application.id
-      });
-    } catch (emailError) {
-      console.error(" Failed to send application confirmation email:", emailError);
-      // Don't fail the request if email fails
+    // Only send confirmation email when application is actually submitted (status = PENDING)
+    // Do NOT send on DRAFT creation - that's just saving progress
+    if (data.status === "PENDING") {
+      try {
+        await sendApplicationConfirmationEmail({
+          email: application.student.email,
+          name: application.student.name,
+          applicationId: application.id
+        });
+      } catch (emailError) {
+        console.error(" Failed to send application confirmation email:", emailError);
+        // Don't fail the request if email fails
+      }
     }
 
     res.status(201).json(application);
