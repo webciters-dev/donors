@@ -171,19 +171,22 @@ export const ApplicationForm = () => {
         
         // Update form with existing data
         setForm(prevForm => {
-          // Parse program dates from database if they exist
-          let startMonth = '', startYear = '', endMonth = '', endYear = '';
+          // Parse program dates from database if they exist, otherwise keep defaults
+          let startMonth = prevForm.startMonth;
+          let startYear = prevForm.startYear;
+          let endMonth = prevForm.endMonth;
+          let endYear = prevForm.endYear;
           
           if (studentData.programStartDate) {
             const [sMonth, sYear] = studentData.programStartDate.split('/');
-            startMonth = sMonth || '';
-            startYear = sYear || '';
+            startMonth = sMonth || prevForm.startMonth;
+            startYear = sYear || prevForm.startYear;
           }
           
           if (studentData.programEndDate) {
             const [eMonth, eYear] = studentData.programEndDate.split('/');
-            endMonth = eMonth || '';
-            endYear = eYear || '';
+            endMonth = eMonth || prevForm.endMonth;
+            endYear = eYear || prevForm.endYear;
           }
           
           const newFormData = {
@@ -336,10 +339,10 @@ export const ApplicationForm = () => {
       degreeLevel: "", // Associate, Bachelor's, Master's, etc.
       field: "", // Agriculture, Computer Science, etc.
       program: "", // Specific program within the field
-      startMonth: "", // Program start month
-      startYear: "", // Program start year
-      endMonth: "", // Program end month  
-      endYear: "", // Program end year
+      startMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program start month - default to current
+      startYear: String(new Date().getFullYear()), // Program start year - default to current
+      endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
+      endYear: String(new Date().getFullYear()), // Program end year - default to current
       gpa: "",
       // Currency (auto-selected based on country)
       currency: "PKR", // Default to PKR for our primary market
@@ -1402,6 +1405,10 @@ export const ApplicationForm = () => {
                     }
                     
                     const currentStudentId = user?.studentId || studentId;
+                    console.log(' Step 2 save - Sending to:', `${API.baseURL}/api/students/${currentStudentId}`);
+                    console.log(' Step 2 save - Token present:', !!token);
+                    console.log(' Step 2 save - StudentId:', currentStudentId);
+                    
                     const step2Res = await fetch(`${API.baseURL}/api/students/${currentStudentId}`, {
                       method: "PATCH",
                       headers,
@@ -1409,7 +1416,9 @@ export const ApplicationForm = () => {
                     });
                     
                     if (!step2Res.ok) {
-                      throw new Error("Failed to save education details");
+                      const errorText = await step2Res.text();
+                      console.error(' Step 2 save failed:', step2Res.status, errorText);
+                      throw new Error(errorText || "Failed to save education details");
                     }
                     
                     //  Update local form state with saved data to ensure Step 3 displays correctly

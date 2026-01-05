@@ -138,10 +138,10 @@ export const generateMonthYearOptions = () => {
     { value: '12', label: 'December' }
   ];
 
-  // Extended year range: 10 years in the past to 15 years in the future
-  // This allows for students who started earlier and long-term programs
+  // Year range: current year to 5 years in the future only
+  // For future education programs - no past years allowed
   const years = [];
-  for (let year = currentYear - 10; year <= currentYear + 15; year++) {
+  for (let year = currentYear; year <= currentYear + 5; year++) {
     years.push({ value: year.toString(), label: year.toString() });
   }
 
