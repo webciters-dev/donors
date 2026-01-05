@@ -12,6 +12,8 @@ import { ThankYou } from "@/pages/ThankYou";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { BannerProvider } from "@/components/ui/TopBanner";
+import { AlertModalProvider } from "@/components/ui/AlertModal";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   HashRouter as Router,
@@ -181,7 +183,7 @@ function Shell() {
   return (
     <>
       <Toaster />
-      <Sonner richColors position="top-right" closeButton />
+      <Sonner richColors position="bottom-center" closeButton />
       <div className="min-h-screen bg-slate-50 text-slate-900">
         <Nav active={active} setActive={setActive} />
 
@@ -431,9 +433,13 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <Router>
-            <Shell />
-          </Router>
+          <BannerProvider>
+            <AlertModalProvider>
+              <Router>
+                <Shell />
+              </Router>
+            </AlertModalProvider>
+          </BannerProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

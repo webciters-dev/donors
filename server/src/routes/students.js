@@ -343,7 +343,8 @@ router.put(
         // Education fields
         degreeLevel,
         field,
-        // Note: programStartDate and programEndDate removed - not in database schema yet
+        programStartDate,
+        programEndDate,
         // Social media fields
         facebookUrl,
         instagramHandle,
@@ -423,7 +424,8 @@ router.put(
           // Education fields
           ...(degreeLevel !== undefined ? { degreeLevel } : {}),
           ...(field !== undefined ? { field } : {}),
-          // Note: programStartDate and programEndDate removed - not in database schema yet
+          ...(programStartDate !== undefined ? { programStartDate } : {}),
+          ...(programEndDate !== undefined ? { programEndDate } : {}),
           // Social media fields
           ...(facebookUrl !== undefined ? { facebookUrl } : {}),
           ...(instagramHandle !== undefined ? { instagramHandle } : {}),
@@ -487,7 +489,8 @@ router.patch("/:id", requireAuth, async (req, res) => {
       field,
       country,
       degreeLevel,
-      // Note: programStartDate and programEndDate removed - not in database schema yet
+      programStartDate,
+      programEndDate,
     } = req.body;
 
     console.log(' PATCH /students/:id - Debug request data:', {
@@ -531,7 +534,8 @@ router.patch("/:id", requireAuth, async (req, res) => {
         ...(field !== undefined ? { field } : {}),
         ...(country !== undefined ? { country } : {}),
         ...(degreeLevel !== undefined ? { degreeLevel } : {}),
-        // Note: programStartDate and programEndDate removed - not in database schema yet
+        ...(programStartDate !== undefined ? { programStartDate } : {}),
+        ...(programEndDate !== undefined ? { programEndDate } : {}),
       },
     });
 

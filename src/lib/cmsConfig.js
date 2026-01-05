@@ -71,7 +71,7 @@ export const CMS_CONTENT_DEFAULTS = {
       },
       questions: {
         title: "Questions?",
-        description: "Reach us at support@awake.org - Akhuwat",
+        description: "Reach us at op.executive@akhuwat.org.pk - Akhuwat",
         icon: ""
       }
     }

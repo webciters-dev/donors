@@ -91,7 +91,7 @@ export default function StudentProfile() {
     photoUrl: "",
     photoThumbnailUrl: "",
     photoUploadedAt: null,
-    // Completed Education fields
+    // Previous Academic Record fields
     currentInstitution: "",
     currentCity: "",
     currentCompletionYear: "",
@@ -195,7 +195,7 @@ export default function StudentProfile() {
           address: s.address || "",
           city: s.city || "",
           province: s.province || "",
-          // Completed Education fields
+          // Previous Academic Record fields
           currentInstitution: s.currentInstitution || "",
           currentCity: s.currentCity || "",
           currentCompletionYear: s.currentCompletionYear ?? "",
@@ -518,44 +518,6 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Second Guardian Name */}
-          <div>
-            <label className="block text-xs sm:text-sm mb-1">Second Guardian Name (Optional)</label>
-            <Input
-              value={form.guardian2Name}
-              onChange={(e) => setVal("guardian2Name", e.target.value)}
-              placeholder="Enter second guardian's name"
-              className="rounded-2xl min-h-[44px]"
-            />
-            {errors.guardian2Name && (
-              <p className="text-xs text-rose-600 mt-1">
-                {errors.guardian2Name}
-              </p>
-            )}
-          </div>
-
-          {/* Second Guardian CNIC */}
-          <div>
-            <label className="block text-xs sm:text-sm mb-1">Second Guardian CNIC (Optional)</label>
-            <Input
-              value={form.guardian2Cnic}
-              onChange={(e) =>
-                setVal("guardian2Cnic", formatCNIC(e.target.value))
-              }
-              placeholder="12345-1234567-1"
-              className="rounded-2xl min-h-[44px]"
-            />
-            {errors.guardian2Cnic ? (
-              <p className="text-xs text-rose-600 mt-1">
-                {errors.guardian2Cnic}
-              </p>
-            ) : (
-              <p className="text-xs text-slate-500 mt-1">
-                Format: 12345-1234567-1
-              </p>
-            )}
-          </div>
-
           {/* Student Phone */}
           <div>
             <label className="block text-xs sm:text-sm mb-1">Student Phone</label>
@@ -648,14 +610,14 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Completed Education Section Header */}
+          {/* Previous Academic Record Section Header */}
           <div className="sm:col-span-2">
-            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Completed Education</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Previous Academic Record</h3>
           </div>
 
-          {/* Completed Institution */}
+          {/* Previous Institution */}
           <div>
-            <label className="block text-xs sm:text-sm mb-1">Completed Institution</label>
+            <label className="block text-xs sm:text-sm mb-1">Previous Institution</label>
             <Input
               value={form.currentInstitution}
               onChange={(e) => setVal("currentInstitution", e.target.value)}
@@ -667,9 +629,9 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Completed City */}
+          {/* Previous City */}
           <div>
-            <label className="block text-xs sm:text-sm mb-1">Completed Institution City</label>
+            <label className="block text-xs sm:text-sm mb-1">Previous Institution City</label>
             <Input
               value={form.currentCity}
               onChange={(e) => setVal("currentCity", e.target.value)}
@@ -681,9 +643,9 @@ export default function StudentProfile() {
             )}
           </div>
 
-          {/* Completed Year */}
+          {/* Previous Year */}
           <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Year of Completion (Completed Education)</label>
+            <label className="block text-sm mb-1">Year of Completion (Previous Academic Record)</label>
             <Input
               type="number"
               value={form.currentCompletionYear}
@@ -739,8 +701,8 @@ export default function StudentProfile() {
 
               {/* GPA Display */}
               <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">GPA (4.00 scale)</label>
-                <p className="text-sm text-gray-800">{form.gpa || "Not specified"}</p>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">CGPA / Percentage</label>
+                <p className="text-sm text-gray-800">{form.gpa ? (form.gpa <= 4 ? `${form.gpa} (CGPA)` : `${form.gpa}%`) : "Not specified"}</p>
               </div>
 
               {/* Graduation Year Display */}
@@ -766,7 +728,7 @@ export default function StudentProfile() {
           {/* Personal Introduction */}
           <div className="md:col-span-2">
             <label className="block text-sm mb-1">
-              Tell us about yourself and your family (This helps potential sponsors understand your story)
+              Tell us about yourself and your family <span className="text-red-500">*</span>
             </label>
             <textarea
               className="w-full rounded-2xl border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -1039,20 +1001,6 @@ export default function StudentProfile() {
             </select>
             {errors.monthlyFamilyIncome && (
               <p className="text-xs text-rose-600 mt-1">{errors.monthlyFamilyIncome}</p>
-            )}
-          </div>
-
-          {/* Specific Field/Specialization */}
-          <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Specific Field/Specialization</label>
-            <Input
-              value={form.specificField}
-              onChange={(e) => setVal("specificField", e.target.value)}
-              className="rounded-2xl"
-              placeholder="e.g., Artificial Intelligence, Cardiac Surgery, Environmental Engineering"
-            />
-            {errors.specificField && (
-              <p className="text-xs text-rose-600 mt-1">{errors.specificField}</p>
             )}
           </div>
 

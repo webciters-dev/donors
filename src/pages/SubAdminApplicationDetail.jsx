@@ -13,7 +13,7 @@ import {
   MapPin, DollarSign, BookOpen, Users, ClipboardCheck 
 } from "lucide-react";
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 import StudentPhoto from "@/components/StudentPhoto";
 import StudentVideo from "@/components/StudentVideo";
 
@@ -565,20 +565,20 @@ export default function SubAdminApplicationDetail() {
                 {application?.totalExpense && (
                   <div className="flex justify-between">
                     <span className="text-slate-700 font-medium">Total Expense</span>
-                    <span className="font-semibold">{application.currency === "PKR" ? `₨${application.totalExpense.toLocaleString()}` : `$${application.totalExpense.toLocaleString()}`}</span>
+                    <span className="font-semibold">{fmtAmountDual(application.totalExpense, application.currency)}</span>
                   </div>
                 )}
                 {application?.scholarshipAmount && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Scholarship</span>
-                    <span className="font-medium text-green-600">-{application.currency === "PKR" ? `₨${application.scholarshipAmount.toLocaleString()}` : `$${application.scholarshipAmount.toLocaleString()}`}</span>
+                    <span className="font-medium text-green-600">-{fmtAmountDual(application.scholarshipAmount, application.currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-slate-700 font-semibold">Amount Required</span>
                   <span className="font-bold text-blue-600">
                     {application.amount && application.currency 
-                      ? fmtAmount(application.amount, application.currency)
+                      ? fmtAmountDual(application.amount, application.currency)
                       : 'Amount not set'
                     }
                   </span>
@@ -592,7 +592,7 @@ export default function SubAdminApplicationDetail() {
               <span className="text-slate-600 font-medium">Amount Required</span>
               <span className="font-bold text-blue-600">
                 {application.amount && application.currency 
-                  ? fmtAmount(application.amount, application.currency)
+                  ? fmtAmountDual(application.amount, application.currency)
                   : 'Amount not set'
                 }
               </span>

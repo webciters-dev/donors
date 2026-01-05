@@ -213,14 +213,23 @@ app.use("/api/uploads", uploadsRouter);     // handles file upload API
 
 // Serve all static files including videos with proper headers
 app.use("/uploads", express.static("uploads", {
-  setHeaders: (res, path) => {
-    // Set proper headers for video files
-    if (path.includes('/videos/')) {
+  setHeaders: (res, filePath) => {
+    // Set proper headers for video files based on extension
+    if (filePath.includes('/videos/') || filePath.includes('\\videos\\')) {
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Content-Type', 'video/mp4');
       // Enable CORS for video files
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', 'Range');
+      
+      // Set correct Content-Type based on file extension
+      const ext = filePath.toLowerCase().split('.').pop();
+      const mimeTypes = {
+        'mp4': 'video/mp4',
+        'mov': 'video/quicktime',
+        'avi': 'video/x-msvideo',
+        'webm': 'video/webm'
+      };
+      res.setHeader('Content-Type', mimeTypes[ext] || 'video/mp4');
     }
   }
 }));

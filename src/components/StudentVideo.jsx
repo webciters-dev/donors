@@ -103,6 +103,8 @@ const StudentVideo = ({
         >
           <source src={videoUrl} type="video/mp4" />
           <source src={videoUrl} type="video/quicktime" />
+          <source src={videoUrl} type="video/webm" />
+          <source src={videoUrl} type="video/x-msvideo" />
           Your browser does not support the video tag.
         </video>
         

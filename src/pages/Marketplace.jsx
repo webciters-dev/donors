@@ -163,12 +163,31 @@ export const Marketplace = () => {
   const [q, setQ] = useState("");
   const [program, setProgram] = useState("");
   const [gender, setGender] = useState("");
-  const [province, setProvince] = useState("");
+  const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   // maxBudget filter removed due to multiple currency complexity
 
   const [students, setStudents] = useState([]);
   // const [fx, setFx] = useState(null); // reserved for donor-localized display in Phase 1 UI
+
+  // Extract unique programs and countries from students data for dynamic dropdowns
+  const availablePrograms = useMemo(() => {
+    const programs = students
+      .filter(s => s.program)
+      .map(s => s.program)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+    return programs;
+  }, [students]);
+
+  const availableCountries = useMemo(() => {
+    const countries = students
+      .filter(s => s.country)
+      .map(s => s.country)
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort();
+    return countries;
+  }, [students]);
 
   // Load students - fast approach
   useEffect(() => {
@@ -305,13 +324,13 @@ export const Marketplace = () => {
 
         const programOk = !program || s.program === program;
         const genderOk = !gender || s.gender === gender;
-        const provOk = !province || s.province === province;
+        const countryOk = !country || s.country === country;
         const cityOk = !city || (s.city && s.city.toLowerCase() === city.toLowerCase());
 
         // Budget filter removed due to multiple currency complexity
-        return textMatch && programOk && genderOk && provOk && cityOk;
+        return textMatch && programOk && genderOk && countryOk && cityOk;
       });
-  }, [students, q, program, gender, province, city]);
+  }, [students, q, program, gender, country, city]);
 
   return (
     <div className="space-y-6">
@@ -336,17 +355,16 @@ export const Marketplace = () => {
           </div>
 
           {/* Program */}
+          {/* Program - Dynamic based on available students */}
           <select
             className="rounded-2xl border md:col-span-2 px-3 py-2 text-sm"
             value={program}
             onChange={(e) => setProgram(e.target.value)}
           >
-            <option value="">Program</option>
-            <option>Computer Science</option>
-            <option>Mechanical Engineering</option>
-            <option>Electrical Engineering</option>
-            <option>Medicine (MBBS)</option>
-            <option>Business Administration</option>
+            <option value="">All Programs</option>
+            {availablePrograms.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
           </select>
 
           {/* Gender */}
@@ -360,20 +378,16 @@ export const Marketplace = () => {
             <option value="M">Male</option>
           </select>
 
-          {/* Province */}
+          {/* Country - Dynamic based on available students */}
           <select
             className="rounded-2xl border md:col-span-2 px-3 py-2 text-sm"
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
           >
-            <option value="">Province</option>
-            <option>Punjab</option>
-            <option>Sindh</option>
-            <option>Khyber Pakhtunkhwa</option>
-            <option>Balochistan</option>
-            <option>Gilgit-Baltistan</option>
-            <option>Azad Jammu & Kashmir</option>
-            <option>Islamabad Capital Territory</option>
+            <option value="">All Countries</option>
+            {availableCountries.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
           </select>
 
           {/* City */}

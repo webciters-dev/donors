@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle } from "lucide-react";
 import { useAuth } from '@/lib/AuthContext';
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 
 export default function FieldOfficerDashboard() {
   const navigate = useNavigate();
@@ -562,7 +562,7 @@ function ReviewModal({
             <div><strong>Student:</strong> {selectedReview.student?.name} • CNIC: {selectedReview.student?.cnic || 'Not provided'}</div>
             <div><strong>Status:</strong> {selectedReview.application?.status}</div>
             <div><strong>Term:</strong> {selectedReview.application?.term}</div>
-            <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}
+            <div><strong>Amount:</strong> {fmtAmountDual(selectedReview.application?.amount, selectedReview.application?.currency)}
             </div>
           </div>
         </div>

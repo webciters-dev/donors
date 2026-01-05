@@ -129,11 +129,22 @@ router.post("/", async (req, res) => {
       amount,
       currency, 
       notes,
-      // Enhanced financial breakdown fields
+      // Enhanced financial breakdown fields (8 expense fields)
+      tuitionFee,
+      hostelFee,
+      stationeryExpense,
+      booksExpense,
+      messExpense,
+      computerLaptop,
+      travelExpense,
+      otherExpenses,
+      otherExpenseDesc,
+      // Legacy fields (for backward compatibility)
       universityFee,
       livingExpenses,
       totalExpense,
-      scholarshipAmount
+      scholarshipAmount,
+      otherResources
     } = req.body;
 
     if (!studentId || !term) {
@@ -159,27 +170,31 @@ router.post("/", async (req, res) => {
     if (existingApp) {
       console.log(` Application already exists for student ${studentId} term ${term}. Updating existing...`);
       
+      // Helper function to parse optional integer fields
+      const parseOptionalInt = (val) => 
+        val === undefined || val === null || val === "" ? null : parseInt(val, 10);
+      
       const data = {
         term: String(term),
         notes: notes ?? null,
         currency: currency,
         amount: parseInt(amount, 10),
-        universityFee:
-          universityFee === undefined || universityFee === null || universityFee === ""
-            ? null
-            : parseInt(universityFee, 10),
-        livingExpenses:
-          livingExpenses === undefined || livingExpenses === null || livingExpenses === ""
-            ? null
-            : parseInt(livingExpenses, 10),
-        totalExpense:
-          totalExpense === undefined || totalExpense === null || totalExpense === ""
-            ? null
-            : parseInt(totalExpense, 10),
-        scholarshipAmount:
-          scholarshipAmount === undefined || scholarshipAmount === null || scholarshipAmount === ""
-            ? null
-            : parseInt(scholarshipAmount, 10),
+        // 8 expense breakdown fields
+        tuitionFee: parseOptionalInt(tuitionFee),
+        hostelFee: parseOptionalInt(hostelFee),
+        stationeryExpense: parseOptionalInt(stationeryExpense),
+        booksExpense: parseOptionalInt(booksExpense),
+        messExpense: parseOptionalInt(messExpense),
+        computerLaptop: parseOptionalInt(computerLaptop),
+        travelExpense: parseOptionalInt(travelExpense),
+        otherExpenses: parseOptionalInt(otherExpenses),
+        otherExpenseDesc: otherExpenseDesc ?? null,
+        // Legacy fields (for backward compatibility)
+        universityFee: parseOptionalInt(universityFee),
+        livingExpenses: parseOptionalInt(livingExpenses),
+        totalExpense: parseOptionalInt(totalExpense),
+        scholarshipAmount: parseOptionalInt(scholarshipAmount),
+        otherResources: parseOptionalInt(otherResources),
       };
 
       const snap = await buildSnapshot(data.amount, data.currency);
@@ -196,6 +211,10 @@ router.post("/", async (req, res) => {
       return res.status(200).json(updated);
     }
 
+    // Helper function to parse optional integer fields (for new applications)
+    const parseOptionalInt = (val) => 
+      val === undefined || val === null || val === "" ? null : parseInt(val, 10);
+
     const data = {
       studentId,
       term: String(term),
@@ -203,23 +222,22 @@ router.post("/", async (req, res) => {
       notes: notes ?? null,
       currency: currency,
       amount: parseInt(amount, 10),
-      // Enhanced financial breakdown fields
-      universityFee:
-        universityFee === undefined || universityFee === null || universityFee === ""
-          ? null
-          : parseInt(universityFee, 10),
-      livingExpenses:
-        livingExpenses === undefined || livingExpenses === null || livingExpenses === ""
-          ? null
-          : parseInt(livingExpenses, 10),
-      totalExpense:
-        totalExpense === undefined || totalExpense === null || totalExpense === ""
-          ? null
-          : parseInt(totalExpense, 10),
-      scholarshipAmount:
-        scholarshipAmount === undefined || scholarshipAmount === null || scholarshipAmount === ""
-          ? null
-          : parseInt(scholarshipAmount, 10),
+      // 8 expense breakdown fields
+      tuitionFee: parseOptionalInt(tuitionFee),
+      hostelFee: parseOptionalInt(hostelFee),
+      stationeryExpense: parseOptionalInt(stationeryExpense),
+      booksExpense: parseOptionalInt(booksExpense),
+      messExpense: parseOptionalInt(messExpense),
+      computerLaptop: parseOptionalInt(computerLaptop),
+      travelExpense: parseOptionalInt(travelExpense),
+      otherExpenses: parseOptionalInt(otherExpenses),
+      otherExpenseDesc: otherExpenseDesc ?? null,
+      // Legacy fields (for backward compatibility)
+      universityFee: parseOptionalInt(universityFee),
+      livingExpenses: parseOptionalInt(livingExpenses),
+      totalExpense: parseOptionalInt(totalExpense),
+      scholarshipAmount: parseOptionalInt(scholarshipAmount),
+      otherResources: parseOptionalInt(otherResources),
     };
 
     // Build snapshot with single currency amount
@@ -370,8 +388,8 @@ router.patch("/:id", async (req, res) => {
 
           //  Send notification to admin when student submits for review
           // Get admin email from environment or use default
-          const adminEmail = process.env.ADMIN_EMAIL || 'admin@aircrew.nl';
-          if (adminEmail && adminEmail !== 'admin@aircrew.nl') {
+          const adminEmail = process.env.ADMIN_EMAIL || 'op.executive@akhuwat.org.pk';
+          if (adminEmail) {
             sendApplicationSubmissionNotificationEmail({
               adminEmail: adminEmail,
               studentName: updated.student.name,

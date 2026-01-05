@@ -22,6 +22,8 @@ model Student {
   degreeLevel           String?           // Degree level: Associate, Bachelor's, Master's, etc.
   gpa                   Float
   gradYear              Int
+  programStartDate      String?           // Program start date in MM/YYYY format
+  programEndDate        String?           // Expected program end date in MM/YYYY format
   city                  String?
   country               String
   province              String?
@@ -104,12 +106,19 @@ model Application {
   tuitionFee         Int?
   hostelFee          Int?
   otherExpenses      Int?
+  stationeryExpense  Int?              // Stationery expense
+  booksExpense       Int?              // Books expense
+  messExpense        Int?              // Mess/food expense (average)
+  computerLaptop     Int?              // Computer/Laptop expense
+  travelExpense      Int?              // Travel expense
+  otherExpenseDesc   String?           // Description for other expenses
   familyIncome       Int?
   familyContribution Int?
   purpose            String?
   approvalReason     String?
   livingExpenses     Int?
   scholarshipAmount  Int?
+  otherResources     Int?              // Other funding sources (family, part-time work, savings)
   totalExpense       Int?
   universityFee      Int?
   university         String?           // University name (for backward compatibility)

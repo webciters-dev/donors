@@ -347,12 +347,23 @@ export const ApplicationForm = () => {
       photoUrl: "",
       photoThumbnailUrl: "",
       photoUploadedAt: null,
-      // Step 3 — financial details
-      universityFee: "0", // Tuition and academic fees (default to 0 for calculations)
-      livingExpenses: "0", // Books, accommodation, food, transport, etc. (default to 0 for calculations)
-      totalExpense: "0", // Auto-calculated (universityFee + livingExpenses)
-      scholarshipAmount: "0", // Default to 0
-      amount: "0", // This will be auto-calculated (totalExpense - scholarshipAmount)
+      // Step 3 — financial details (8 expense breakdown fields)
+      tuitionFee: "0",          // Tuition Fee
+      hostelFee: "0",           // Hostel Fee
+      stationeryExpense: "0",   // Stationery expense
+      booksExpense: "0",        // Books expense
+      messExpense: "0",         // Mess (average food cost)
+      computerLaptop: "0",      // Computer/Laptop expense
+      travelExpense: "0",       // Travel expense
+      otherExpenses: "0",       // Other expenses (open-ended amount)
+      otherExpenseDesc: "",     // Other expenses description
+      // Legacy fields (kept for backward compatibility)
+      universityFee: "0",       // Will be calculated from tuitionFee for backward compat
+      livingExpenses: "0",      // Will be calculated from other expenses for backward compat
+      totalExpense: "0",        // Auto-calculated (sum of all 8 expense fields)
+      scholarshipAmount: "0",   // Default to 0
+      otherResources: "0",      // Other funding sources (family, work, savings)
+      amount: "0",              // This will be auto-calculated (totalExpense - scholarshipAmount - otherResources)
     };
   });
 
@@ -393,6 +404,10 @@ export const ApplicationForm = () => {
     // Validation
     if (!form.name || !form.email || !form.password || !form.gender) {
       toast.error("Please complete all fields.");
+      return;
+    }
+    if (!form.personalIntroduction || form.personalIntroduction.trim().length === 0) {
+      toast.error("Please tell us about yourself and your family.");
       return;
     }
     if (form.password !== form.confirm) {
@@ -642,19 +657,47 @@ export const ApplicationForm = () => {
     }
   };
 
-  // Calculate required amount (Total Expense - Scholarship)
-  const calculateRequiredAmount = (totalExpense, scholarshipAmount) => {
+  // Calculate required amount (Total Expense - Scholarship - Other Resources)
+  const calculateRequiredAmount = (totalExpense, scholarshipAmount, otherResources) => {
     const total = Number(totalExpense || 0);
     const scholarship = Number(scholarshipAmount || 0);
-    return Math.max(0, total - scholarship); // Ensure non-negative
+    const other = Number(otherResources || 0);
+    return Math.max(0, total - scholarship - other); // Ensure non-negative
   };
 
-  // Handle total expense change
-  const handleTotalExpenseChange = (value) => {
-    const newAmount = calculateRequiredAmount(value, form.scholarshipAmount);
-    setForm({
+  // Calculate total expense from all 8 expense fields
+  const calculateTotalExpense = (formData) => {
+    return (
+      Number(formData.tuitionFee || 0) +
+      Number(formData.hostelFee || 0) +
+      Number(formData.stationeryExpense || 0) +
+      Number(formData.booksExpense || 0) +
+      Number(formData.messExpense || 0) +
+      Number(formData.computerLaptop || 0) +
+      Number(formData.travelExpense || 0) +
+      Number(formData.otherExpenses || 0)
+    );
+  };
+
+  // Handle expense field change (unified handler for all 8 expense fields)
+  const handleExpenseChange = (fieldName, value) => {
+    const updatedForm = {
       ...form,
-      totalExpense: value,
+      [fieldName]: value
+    };
+    
+    const newTotal = calculateTotalExpense(updatedForm);
+    const newAmount = calculateRequiredAmount(newTotal.toString(), updatedForm.scholarshipAmount, updatedForm.otherResources);
+    
+    // Update legacy fields for backward compatibility
+    const universityFee = Number(updatedForm.tuitionFee || 0);
+    const livingExpenses = newTotal - universityFee;
+    
+    setForm({
+      ...updatedForm,
+      universityFee: universityFee.toString(),
+      livingExpenses: livingExpenses.toString(),
+      totalExpense: newTotal.toString(),
       amount: newAmount.toString()
     });
   };
@@ -670,7 +713,7 @@ export const ApplicationForm = () => {
       return;
     }
     
-    const newAmount = calculateRequiredAmount(form.totalExpense, value);
+    const newAmount = calculateRequiredAmount(form.totalExpense, value, form.otherResources);
     setForm({
       ...form,
       scholarshipAmount: value,
@@ -678,32 +721,23 @@ export const ApplicationForm = () => {
     });
   };
 
-  // Handle university fee change
-  const handleUniversityFeeChange = (value) => {
-    const universityFee = Number(value || 0);
-    const livingExpenses = Number(form.livingExpenses || 0);
-    const newTotal = universityFee + livingExpenses;
-    const newAmount = calculateRequiredAmount(newTotal.toString(), form.scholarshipAmount);
+  // Handle other resources change (family support, part-time work, savings)
+  const handleOtherResourcesChange = (value) => {
+    const total = Number(form.totalExpense || 0);
+    const scholarship = Number(form.scholarshipAmount || 0);
+    const other = Number(value || 0);
     
+    // Prevent other resources from exceeding remaining amount
+    const maxOther = total - scholarship;
+    if (other > maxOther && maxOther > 0) {
+      toast.error("Other resources cannot exceed remaining amount after scholarship.");
+      return;
+    }
+    
+    const newAmount = calculateRequiredAmount(form.totalExpense, form.scholarshipAmount, value);
     setForm({
       ...form,
-      universityFee: value,
-      totalExpense: newTotal.toString(),
-      amount: newAmount.toString()
-    });
-  };
-
-  // Handle living expenses change
-  const handleLivingExpensesChange = (value) => {
-    const universityFee = Number(form.universityFee || 0);
-    const livingExpenses = Number(value || 0);
-    const newTotal = universityFee + livingExpenses;
-    const newAmount = calculateRequiredAmount(newTotal.toString(), form.scholarshipAmount);
-    
-    setForm({
-      ...form,
-      livingExpenses: value,
-      totalExpense: newTotal.toString(),
+      otherResources: value,
       amount: newAmount.toString()
     });
   };
@@ -720,29 +754,28 @@ export const ApplicationForm = () => {
       return;
     }
 
-    // TODO: Add program dates validation when database schema supports these fields
-    // Currently commented out as database doesn't have programStartDate/programEndDate fields
-    /*
-    // Validate date fields (DISABLED - no database support)
-    if (!form.startMonth || !form.startYear || !form.endMonth || !form.endYear) {
-      toast.error("Please specify program start and end dates.");
+    // Validate program start date (required)
+    if (!form.startMonth || !form.startYear) {
+      toast.error("Please specify program start date.");
       return;
     }
 
-    // Validate that end date is after start date
-    const startDate = new Date(parseInt(form.startYear), parseInt(form.startMonth) - 1);
-    const endDate = new Date(parseInt(form.endYear), parseInt(form.endMonth) - 1);
-    if (endDate <= startDate) {
-      toast.error("Program end date must be after start date.");
-      return;
+    // Validate that if end date is provided, it's after start date
+    if (form.endMonth && form.endYear) {
+      const startDate = new Date(parseInt(form.startYear), parseInt(form.startMonth) - 1);
+      const endDate = new Date(parseInt(form.endYear), parseInt(form.endMonth) - 1);
+      if (endDate <= startDate) {
+        toast.error("Program end date must be after start date.");
+        return;
+      }
     }
-    */
 
     // Validate financial fields
     const universityFeeNum = Number(form.universityFee || 0);
     const livingExpensesNum = Number(form.livingExpenses || 0);
     const totalExpenseNum = Number(form.totalExpense || 0);
     const scholarshipNum = Number(form.scholarshipAmount || 0);
+    const otherResourcesNum = Number(form.otherResources || 0);
     const requiredAmountNum = Number(form.amount || 0);
 
     if (!totalExpenseNum || totalExpenseNum <= 0) {
@@ -809,9 +842,9 @@ export const ApplicationForm = () => {
         degreeLevel: form.degreeLevel,
         field: form.field.trim(),
         program: form.program.trim(),
-        gpa: Number(form.gpa)
-        // Note: programStartDate and programEndDate removed - not in database schema yet
-        // TODO: Add program date fields to Prisma schema if needed for future functionality
+        gpa: Number(form.gpa),
+        programStartDate,
+        programEndDate
       };
 
 
@@ -857,6 +890,7 @@ export const ApplicationForm = () => {
         livingExpenses: livingExpensesNum,
         totalExpense: totalExpenseNum,
         scholarshipAmount: scholarshipNum,
+        otherResources: otherResourcesNum,
         amount: requiredAmountNum
       };
       
@@ -1009,7 +1043,7 @@ export const ApplicationForm = () => {
             {/* Personal Introduction */}
             <div className="sm:col-span-2 space-y-2">
               <label className="block text-xs sm:text-sm font-medium text-gray-700">
-                Tell us about yourself and your family <span className="text-gray-500">(Optional but recommended)</span>
+                Tell us about yourself and your family <span className="text-red-500">*</span>
               </label>
               <textarea
                 className="w-full rounded-2xl border px-3 py-2 text-sm resize-none min-h-[44px]"
@@ -1227,12 +1261,13 @@ export const ApplicationForm = () => {
             {form.program && (
               <>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Program Start Date <span className="text-gray-500 font-normal">(Optional)</span></label>
+                  <label className="block text-sm font-medium mb-2">Program Start Date <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <select
                       value={form.startMonth}
                       onChange={(e) => setForm({ ...form, startMonth: e.target.value })}
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     >
                       <option value="">Month</option>
                       {months.map((month) => (
@@ -1245,6 +1280,7 @@ export const ApplicationForm = () => {
                       value={form.startYear}
                       onChange={(e) => setForm({ ...form, startYear: e.target.value })}
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     >
                       <option value="">Year</option>
                       {years.map((year) => (
@@ -1299,13 +1335,16 @@ export const ApplicationForm = () => {
             )}
 
             {/* GPA Field - Last Position */}
-            <Input
-              placeholder="CGPA (e.g., 3.5/4.0 or 85%)"
-              value={form.gpa}
-              onChange={(e) => setForm({ ...form, gpa: e.target.value })}
-              required
-              className="min-h-[44px]"
-            />
+            <div className="space-y-1">
+              <Input
+                placeholder="Enter CGPA (0-4) or Percentage (0-100)"
+                value={form.gpa}
+                onChange={(e) => setForm({ ...form, gpa: e.target.value })}
+                required
+                className="min-h-[44px]"
+              />
+              <p className="text-xs text-gray-500">Pakistani Matric/FSc uses percentage (0-100). University typically uses CGPA (0-4).</p>
+            </div>
 
             <div className="sm:col-span-2 flex flex-col sm:flex-row justify-between gap-3">
               <Button variant="outline" onClick={back} disabled={user ? false : true} className="min-h-[44px] w-full sm:w-auto">
@@ -1486,44 +1525,146 @@ export const ApplicationForm = () => {
             {/* Financial Breakdown */}
             <div className="space-y-4">
               <h3 className="text-base sm:text-lg font-medium text-gray-800">Financial Details</h3>
+              <p className="text-xs text-slate-500 -mt-2">Enter your estimated annual expenses in {form.currency}</p>
               
-              {/* University Fee */}
-              <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-medium text-gray-700">
-                  University Fee ({form.currency})
-                </label>
-                <Input
-                  placeholder={`Tuition and academic fees (${form.currency})`}
-                  type="number"
-                  min="0"
-                  value={form.universityFee}
-                  onChange={(e) => handleUniversityFeeChange(e.target.value)}
-                  required
-                  className="min-h-[44px]"
-                />
-                <p className="text-xs text-slate-500">
-                  Include tuition, registration, lab fees, and other academic costs
-                </p>
+              {/* Expense fields grid - 2 columns on larger screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Tuition Fee */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Tuition Fee <span className="text-rose-500">*</span>
+                  </label>
+                  <Input
+                    placeholder={`Tuition fees (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.tuitionFee}
+                    onChange={(e) => handleExpenseChange("tuitionFee", e.target.value)}
+                    required
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Hostel Fee */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Hostel Fee
+                  </label>
+                  <Input
+                    placeholder={`Hostel/accommodation (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.hostelFee}
+                    onChange={(e) => handleExpenseChange("hostelFee", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Stationery Expense */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Stationery Expense
+                  </label>
+                  <Input
+                    placeholder={`Stationery costs (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.stationeryExpense}
+                    onChange={(e) => handleExpenseChange("stationeryExpense", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Books Expense */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Books Expense
+                  </label>
+                  <Input
+                    placeholder={`Books and materials (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.booksExpense}
+                    onChange={(e) => handleExpenseChange("booksExpense", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Mess (Food) Expense */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Mess/Food Expense
+                  </label>
+                  <Input
+                    placeholder={`Monthly food average (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.messExpense}
+                    onChange={(e) => handleExpenseChange("messExpense", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Computer/Laptop */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Computer/Laptop
+                  </label>
+                  <Input
+                    placeholder={`Computer or laptop (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.computerLaptop}
+                    onChange={(e) => handleExpenseChange("computerLaptop", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Travel Expense */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Travel Expense
+                  </label>
+                  <Input
+                    placeholder={`Travel/transport (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.travelExpense}
+                    onChange={(e) => handleExpenseChange("travelExpense", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
+
+                {/* Other Expenses */}
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Other Expenses
+                  </label>
+                  <Input
+                    placeholder={`Other costs (${form.currency})`}
+                    type="number"
+                    min="0"
+                    value={form.otherExpenses}
+                    onChange={(e) => handleExpenseChange("otherExpenses", e.target.value)}
+                    className="min-h-[44px]"
+                  />
+                </div>
               </div>
 
-              {/* Living Expenses */}
-              <div className="space-y-2">
-                <label className="text-xs sm:text-sm font-medium text-slate-700">
-                  Books + Living Expenses ({form.currency})
-                </label>
-                <Input
-                  placeholder={`Books, accommodation, food, transport (${form.currency})`}
-                  type="number"
-                  min="0"
-                  value={form.livingExpenses}
-                  onChange={(e) => handleLivingExpensesChange(e.target.value)}
-                  required
-                  className="min-h-[44px]"
-                />
-                <p className="text-xs text-slate-500">
-                  Include books, accommodation, food, transport, and other living costs
-                </p>
-              </div>
+              {/* Other Expenses Description (full width) */}
+              {Number(form.otherExpenses || 0) > 0 && (
+                <div className="space-y-1">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700">
+                    Please describe &quot;Other Expenses&quot;
+                  </label>
+                  <Input
+                    placeholder="Describe what the other expenses are for..."
+                    value={form.otherExpenseDesc}
+                    onChange={(e) => setForm({ ...form, otherExpenseDesc: e.target.value })}
+                    className="min-h-[44px]"
+                  />
+                </div>
+              )}
 
               {/* Total (Auto-calculated) */}
               <div className="space-y-2 bg-slate-50 p-3 rounded-lg border-2 border-dashed border-slate-300">
@@ -1543,7 +1684,7 @@ export const ApplicationForm = () => {
                   </div>
                 </div>
                 <p className="text-xs text-blue-600">
-                   University Fee + Books/Living = {form.currency} {Number(form.universityFee || 0) + Number(form.livingExpenses || 0)}
+                   Sum of all expense fields = {form.currency} {form.totalExpense}
                 </p>
               </div>
 
@@ -1563,7 +1704,25 @@ export const ApplicationForm = () => {
                   className="min-h-[44px]"
                 />
                 <p className="text-xs text-slate-500">
-                  Amount you've already secured from scholarships, family, or other sources
+                  Scholarships or financial aid you've already secured
+                </p>
+              </div>
+
+              {/* Other Resources (Family, Work, Savings) */}
+              <div className="space-y-2">
+                <label className="text-xs sm:text-sm font-medium text-slate-700">
+                  Other Resources ({form.currency})
+                </label>
+                <Input
+                  placeholder={`Family support, part-time work, savings (${form.currency})`}
+                  type="number"
+                  min="0"
+                  value={form.otherResources}
+                  onChange={(e) => handleOtherResourcesChange(e.target.value)}
+                  className="min-h-[44px]"
+                />
+                <p className="text-xs text-slate-500">
+                  Family contributions, part-time work income, savings, or other funding sources
                 </p>
               </div>
 
@@ -1585,7 +1744,7 @@ export const ApplicationForm = () => {
                   </div>
                 </div>
                 <p className="text-xs text-green-600">
-                   This amount is automatically calculated: Total Expense - Scholarship
+                   This amount is automatically calculated: Total Expense - Scholarship - Other Resources
                 </p>
               </div>
 
@@ -1602,6 +1761,12 @@ export const ApplicationForm = () => {
                       <span>Scholarship:</span>
                       <span className="font-medium text-green-600">-{Number(form.scholarshipAmount || 0).toLocaleString()} {form.currency}</span>
                     </div>
+                    {Number(form.otherResources || 0) > 0 && (
+                      <div className="flex justify-between">
+                        <span>Other Resources:</span>
+                        <span className="font-medium text-green-600">-{Number(form.otherResources || 0).toLocaleString()} {form.currency}</span>
+                      </div>
+                    )}
                     <hr className="border-blue-300" />
                     <div className="flex justify-between font-semibold">
                       <span>Required Amount:</span>
@@ -1641,6 +1806,9 @@ export const ApplicationForm = () => {
                   <h4 className="font-medium text-slate-700 text-sm sm:text-base">Financial Information</h4>
                   <p><strong>Total Expense:</strong> {form.totalExpense ? `${Number(form.totalExpense).toLocaleString()} ${form.currency}` : "[Total Expense]"}</p>
                   <p><strong>Scholarship:</strong> {form.scholarshipAmount ? `${Number(form.scholarshipAmount).toLocaleString()} ${form.currency}` : "0 " + form.currency}</p>
+                  {Number(form.otherResources || 0) > 0 && (
+                    <p><strong>Other Resources:</strong> {`${Number(form.otherResources).toLocaleString()} ${form.currency}`}</p>
+                  )}
                   <p><strong>Required Amount:</strong> <span className="text-blue-600 font-semibold">{form.amount ? `${Number(form.amount).toLocaleString()} ${form.currency}` : "[Required Amount]"}</span></p>
                 </div>
               </div>

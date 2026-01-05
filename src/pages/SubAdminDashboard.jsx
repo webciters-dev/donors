@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { FileText, MessageCircle, AlertTriangle, Clock, CheckCircle, MessageSquare, AlertCircle, FileCheck, User, Calendar } from "lucide-react";
 import { useAuth } from '@/lib/AuthContext';
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 
 // Case Worker task types for display
 const TASK_TYPES = [
@@ -629,7 +629,7 @@ function ReviewModal({
             <div><strong>CNIC:</strong> {selectedReview.application?.student?.cnic || 'Not provided'}</div>
             <div><strong>Status:</strong> {selectedReview.application?.status}</div>
             <div><strong>Term:</strong> {selectedReview.application?.term}</div>
-            <div><strong>Amount:</strong> {fmtAmount(selectedReview.application?.amount, selectedReview.application?.currency)}</div>
+            <div><strong>Amount:</strong> {fmtAmountDual(selectedReview.application?.amount, selectedReview.application?.currency)}</div>
           </div>
         </div>
       </div>

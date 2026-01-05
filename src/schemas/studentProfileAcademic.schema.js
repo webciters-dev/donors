@@ -58,10 +58,10 @@ export const studentProfileAcademicSchema = z
     program: z.string().min(1, "Program is required"),
     gpa: z
       .coerce.number({
-        invalid_type_error: "GPA must be a number",
+        invalid_type_error: "CGPA/Percentage must be a number",
       })
-      .min(0, "GPA must be between 0.00 and 4.00")
-      .max(4, "GPA must be between 0.00 and 4.00"),
+      .min(0, "CGPA/Percentage must be between 0 and 100")
+      .max(100, "CGPA/Percentage must be between 0 and 100 (use CGPA 0-4 or Percentage 0-100)"),
     gradYear: z
       .coerce.number({
         invalid_type_error: "Graduation year must be a number",
@@ -80,7 +80,7 @@ export const studentProfileAcademicSchema = z
       .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
       .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
     // Personal Introduction
-    personalIntroduction: z.string().max(1000, "Personal introduction must be 1000 characters or less").optional(),
+    personalIntroduction: z.string().min(1, "Personal introduction is required").max(1000, "Personal introduction must be 1000 characters or less"),
     // Enhanced details for donors
     familySize: z.coerce.number().min(1).max(20).optional(),
     parentsOccupation: z.string().max(200).optional(),

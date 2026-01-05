@@ -109,9 +109,9 @@ export function getReadableFieldNames(missingFields = []) {
     program: "Program",
     gpa: "GPA",
     gradYear: "Graduation Year",
-    // Completed Education fields
-    currentInstitution: "Completed Institution",
-    currentCity: "Completed Institution City",
+    // Previous Academic Record fields
+    currentInstitution: "Previous Institution",
+    currentCity: "Previous Institution City",
     currentCompletionYear: "Completion Year"
   };
 

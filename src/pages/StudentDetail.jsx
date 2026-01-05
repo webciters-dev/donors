@@ -181,7 +181,7 @@ export const StudentDetail = ({ id, goBack }) => {
         <div className="ml-auto flex items-center gap-2">
           <div className="rounded-full bg-amber-500 text-white text-sm font-semibold px-4 py-2 shadow-sm flex items-center gap-2">
             <span>{flag(currency)}</span>
-            <span>{fmtAmount(displayAmount, currency)}</span>
+            <span>{fmtAmountDual(displayAmount, currency)}</span>
           </div>
         </div>
       </div>
@@ -413,30 +413,30 @@ export const StudentDetail = ({ id, goBack }) => {
                   {application?.universityFee && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">University Fee</span>
-                      <span className="font-medium">+{fmtAmount(application.universityFee, currency)}</span>
+                      <span className="font-medium">+{fmtAmountDual(application.universityFee, currency)}</span>
                     </div>
                   )}
                   {application?.livingExpenses && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">Books & Living</span>
-                      <span className="font-medium">+{fmtAmount(application.livingExpenses, currency)}</span>
+                      <span className="font-medium">+{fmtAmountDual(application.livingExpenses, currency)}</span>
                     </div>
                   )}
                   {application?.totalExpense && (
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-slate-700 font-medium">Total Expense</span>
-                      <span className="font-semibold">{fmtAmount(application.totalExpense, currency)}</span>
+                      <span className="font-semibold">{fmtAmountDual(application.totalExpense, currency)}</span>
                     </div>
                   )}
                   {application?.scholarshipAmount && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">Scholarship</span>
-                      <span className="font-medium text-green-600">-{fmtAmount(application.scholarshipAmount, currency)}</span>
+                      <span className="font-medium text-green-600">-{fmtAmountDual(application.scholarshipAmount, currency)}</span>
                     </div>
                   )}
                   <div className="flex justify-between border-t pt-2">
                     <span className="text-slate-700 font-semibold">Amount Required</span>
-                    <span className="font-bold text-blue-600">{fmtAmount(displayAmount, currency)}</span>
+                    <span className="font-bold text-blue-600">{fmtAmountDual(displayAmount, currency)}</span>
                   </div>
                 </div>
               ) : (

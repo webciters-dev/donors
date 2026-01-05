@@ -340,6 +340,14 @@ export default function VideoUploader({
                   src={hasSelectedVideo ? previewUrl : `${API.baseURL}${currentVideoUrl}`} 
                   type="video/quicktime" 
                 />
+                <source 
+                  src={hasSelectedVideo ? previewUrl : `${API.baseURL}${currentVideoUrl}`} 
+                  type="video/webm" 
+                />
+                <source 
+                  src={hasSelectedVideo ? previewUrl : `${API.baseURL}${currentVideoUrl}`} 
+                  type="video/x-msvideo" 
+                />
                 Your browser does not support the video tag.
               </video>
               

@@ -17,7 +17,7 @@ const options = {
       description: 'Student sponsorship platform REST API documentation',
       contact: {
         name: 'AWAKE Connect Team',
-        email: 'support@awakeconnect.com',
+        email: 'op.executive@akhuwat.org.pk',
       },
       license: {
         name: 'Private',

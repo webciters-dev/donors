@@ -10,7 +10,7 @@ import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API } from "@/lib/api";
-import { fmtAmount } from "@/lib/currency";
+import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 import StudentPhoto from "@/components/StudentPhoto";
 
 export const AdminApplications = () => {
@@ -451,7 +451,7 @@ export const AdminApplications = () => {
         </div>
 
         {filtered.map((row) => {
-          const needText = fmtAmount(row.amount, row.currency);
+          const needText = fmtAmountDual(row.amount, row.currency);
           const docs = docsByRow[row.id] || [];
 
           return (

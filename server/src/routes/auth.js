@@ -88,14 +88,14 @@ router.post("/login", authRateLimiter, validateLogin, handleValidationErrors, as
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH_INVALID_CREDENTIALS.code, requestId);
       logError(new Error("User not found during login"), { route: "/login", action: "login_not_found", body: { email } });
       return res.status(error.statusCode).json(error);
     }
 
     const ok = await bcrypt.compare(String(password), String(user.passwordHash || ""));
     if (!ok) {
-      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH.INVALID_CREDENTIALS, requestId);
+      const error = createAuthError("Invalid email or password", ErrorCodes.AUTH_INVALID_CREDENTIALS.code, requestId);
       logError(new Error("Password mismatch during login"), { route: "/login", action: "login_invalid_password", body: { email } });
       return res.status(error.statusCode).json(error);
     }
@@ -382,19 +382,19 @@ router.post("/reset-password", passwordResetRateLimiter, validatePasswordResetCo
     const pr = await prisma.passwordReset.findUnique({ where: { token } });
     
     if (!pr) {
-      const error = createAuthError("Invalid or expired token", ErrorCodes.AUTH.TOKEN_INVALID, requestId);
+      const error = createAuthError("Invalid or expired token", ErrorCodes.AUTH_INVALID_TOKEN.code, requestId);
       logError(new Error("Password reset token not found"), { route: "/reset-password", action: "reset_token_not_found" });
       return res.status(error.statusCode).json(error);
     }
     
     if (pr.used) {
-      const error = createAuthError("Invalid or expired token (already used)", ErrorCodes.AUTH.TOKEN_INVALID, requestId);
+      const error = createAuthError("Invalid or expired token (already used)", ErrorCodes.AUTH_INVALID_TOKEN.code, requestId);
       logError(new Error("Password reset token already used"), { route: "/reset-password", action: "reset_token_already_used" });
       return res.status(error.statusCode).json(error);
     }
     
     if (pr.expiresAt < new Date()) {
-      const error = createAuthError("Invalid or expired token (expired)", ErrorCodes.AUTH.TOKEN_EXPIRED, requestId);
+      const error = createAuthError("Invalid or expired token (expired)", ErrorCodes.AUTH_INVALID_TOKEN.code, requestId);
       logError(new Error("Password reset token expired"), { route: "/reset-password", action: "reset_token_expired" });
       return res.status(error.statusCode).json(error);
     }
