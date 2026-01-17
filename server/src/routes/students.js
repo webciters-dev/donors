@@ -198,10 +198,29 @@ router.get("/me", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
 
     const student = await prisma.student.findUnique({
       where: { id: studentId },
+      include: {
+        applications: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { id: true, status: true }
+        }
+      }
     });
 
     if (!student) return res.status(404).json({ error: "Student not found" });
-    res.json({ student });
+    
+    // Check if profile is locked (application submitted = status is not DRAFT)
+    const latestApp = student.applications?.[0];
+    const isProfileLocked = latestApp && latestApp.status !== 'DRAFT';
+    
+    // Remove applications from student object before sending (we only need the lock status)
+    const { applications, ...studentData } = student;
+    
+    res.json({ 
+      student: studentData,
+      isProfileLocked,
+      applicationStatus: latestApp?.status || null
+    });
   } catch (err) {
     console.error("GET /students/me error:", err);
     res.status(500).json({ error: "Failed to load student" });
@@ -319,6 +338,7 @@ router.put(
         university,
         program,
         gpa, // already coerced to number by validator
+        gradeType, // CGPA or PERCENTAGE
         gradYear, // already coerced to number by validator
         city,
         province,
@@ -396,6 +416,7 @@ router.put(
           ...(university !== undefined ? { university } : {}),
           ...(program !== undefined ? { program } : {}),
           ...(gpa !== undefined ? { gpa } : {}),
+          ...(gradeType !== undefined ? { gradeType } : {}),
           ...(gradYear !== undefined ? { gradYear } : {}),
           ...(city !== undefined ? { city } : {}),
           ...(province !== undefined ? { province } : {}),

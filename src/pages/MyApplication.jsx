@@ -9,6 +9,7 @@ import { Card as UiCard } from "@/components/ui/card";
 import { toast } from "sonner";
 import { CheckCircle2, Circle, MessageCircle, User } from "lucide-react";
 import DocumentUploader from "@/components/DocumentUploader";
+import SubmissionChecklistModal from "@/components/SubmissionChecklistModal";
 import { useAuth } from "@/lib/AuthContext";
 import { calculateProfileCompleteness } from "@/lib/profileValidation";
 import { API } from "@/lib/api";
@@ -62,6 +63,10 @@ export const MyApplication = () => {
   const [sendingReply, setSendingReply] = useState(false);
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState(null);
+
+  // Submission checklist modal state
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [savedChecklistItems, setSavedChecklistItems] = useState([]);
 
   // Load current application (polling)
   useEffect(() => {
@@ -1112,64 +1117,68 @@ export const MyApplication = () => {
                     {/* Required Documents */}
                     <div className="text-sm font-medium text-slate-700 mb-2">Required Documents</div>
                     {REQUIRED_DOCS.map((docType) => {
-                      const uploaded = docs.find(d => d.type === docType);
-                      const isUploaded = !!uploaded;
+                      const uploadedDocs = docs.filter(d => d.type === docType);
+                      const hasUploaded = uploadedDocs.length > 0;
                       
                       return (
                         <div
                           key={docType}
-                          className="flex items-center justify-between rounded-md border p-3 text-sm bg-white"
+                          className="rounded-md border p-3 text-sm bg-white"
                         >
-                          <div className="flex items-center gap-3">
-                            {isUploaded ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
-                            ) : (
-                              <Circle className="h-4 w-4 text-amber-600 flex-shrink-0" />
-                            )}
-                            <div className="flex-1">
-                              <div className="font-medium">{docType.replaceAll("_", " ")}</div>
-                              {isUploaded ? (
-                                <a
-                                  href={`${API.baseURL}${uploaded.url}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-green-700 hover:underline text-xs"
-                                >
-                                   {uploaded.originalName || 'Download'}
-                                </a>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {hasUploaded ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                               ) : (
-                                <span className="text-amber-600 text-xs">️ Required - Please upload</span>
+                                <Circle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                              )}
+                              <div className="font-medium">{docType.replaceAll("_", " ")}</div>
+                              {hasUploaded && (
+                                <span className="text-xs text-slate-500">({uploadedDocs.length} file{uploadedDocs.length > 1 ? 's' : ''})</span>
                               )}
                             </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-2xl"
+                              onClick={() => {
+                                setPreferredUploadType(docType);
+                                const anchor = document.getElementById("document-uploader-anchor");
+                                if (anchor) {
+                                  anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }
+                              }}
+                            >
+                              {hasUploaded ? 'Add More' : 'Upload'}
+                            </Button>
                           </div>
-                          <div className="flex gap-2">
-                            {!isUploaded && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-2xl"
-                                onClick={() => {
-                                  setPreferredUploadType(docType);
-                                  const anchor = document.getElementById("document-uploader-anchor");
-                                  if (anchor) {
-                                    anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-                                  }
-                                }}
-                              >
-                                Upload
-                              </Button>
-                            )}
-                            {isUploaded && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-2xl"
-                                onClick={() => deleteDoc(uploaded.id)}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
+                          {!hasUploaded && (
+                            <div className="text-amber-600 text-xs mt-1 ml-7">Required - Please upload</div>
+                          )}
+                          {hasUploaded && (
+                            <div className="mt-2 ml-7 space-y-1">
+                              {uploadedDocs.map((doc, idx) => (
+                                <div key={doc.id} className="flex items-center justify-between text-xs bg-slate-50 p-2 rounded">
+                                  <a
+                                    href={`${API.baseURL}${doc.url}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-green-700 hover:underline flex-1"
+                                  >
+                                    {idx + 1}. {doc.originalName || 'Download'}
+                                  </a>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => deleteDoc(doc.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1177,64 +1186,68 @@ export const MyApplication = () => {
                     {/* Optional Documents */}
                     <div className="text-sm font-medium text-slate-700 mb-2 mt-4">Optional Documents</div>
                     {currentDocChecklist.map((item) => {
-                      const uploaded = docs.find(d => d.type === item.key);
-                      const isUploaded = !!uploaded;
+                      const uploadedDocs = docs.filter(d => d.type === item.key);
+                      const hasUploaded = uploadedDocs.length > 0;
                       
                       return (
                         <div
                           key={item.key}
-                          className="flex items-center justify-between rounded-md border p-3 text-sm bg-slate-50"
+                          className="rounded-md border p-3 text-sm bg-slate-50"
                         >
-                          <div className="flex items-center gap-3">
-                            {isUploaded ? (
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                            ) : (
-                              <Circle className="h-4 w-4 text-slate-400 flex-shrink-0" />
-                            )}
-                            <div className="flex-1">
-                              <div className="font-medium">{item.label}</div>
-                              {isUploaded ? (
-                                <a
-                                  href={`${API.baseURL}${uploaded.url}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-emerald-700 hover:underline text-xs"
-                                >
-                                   {uploaded.originalName || 'Download'}
-                                </a>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {hasUploaded ? (
+                                <CheckCircle2 className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                               ) : (
-                                <span className="text-slate-500 text-xs">Optional document</span>
+                                <Circle className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                              )}
+                              <div className="font-medium">{item.label}</div>
+                              {hasUploaded && (
+                                <span className="text-xs text-slate-500">({uploadedDocs.length} file{uploadedDocs.length > 1 ? 's' : ''})</span>
                               )}
                             </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-2xl"
+                              onClick={() => {
+                                setPreferredUploadType(item.key);
+                                const anchor = document.getElementById("document-uploader-anchor");
+                                if (anchor) {
+                                  anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }
+                              }}
+                            >
+                              {hasUploaded ? 'Add More' : 'Upload'}
+                            </Button>
                           </div>
-                          <div className="flex gap-2">
-                            {!isUploaded && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-2xl"
-                                onClick={() => {
-                                  setPreferredUploadType(item.key);
-                                  const anchor = document.getElementById("document-uploader-anchor");
-                                  if (anchor) {
-                                    anchor.scrollIntoView({ behavior: "smooth", block: "start" });
-                                  }
-                                }}
-                              >
-                                Upload
-                              </Button>
-                            )}
-                            {isUploaded && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-2xl"
-                                onClick={() => deleteDoc(uploaded.id)}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
+                          {!hasUploaded && (
+                            <div className="text-slate-500 text-xs mt-1 ml-7">Optional document</div>
+                          )}
+                          {hasUploaded && (
+                            <div className="mt-2 ml-7 space-y-1">
+                              {uploadedDocs.map((doc, idx) => (
+                                <div key={doc.id} className="flex items-center justify-between text-xs bg-white p-2 rounded">
+                                  <a
+                                    href={`${API.baseURL}${doc.url}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-emerald-700 hover:underline flex-1"
+                                  >
+                                    {idx + 1}. {doc.originalName || 'Download'}
+                                  </a>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => deleteDoc(doc.id)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1377,7 +1390,7 @@ export const MyApplication = () => {
             </div>
             <Button 
               className={`rounded-2xl ${completeness.percent < 100 ? 'opacity-50 cursor-not-allowed' : ''}`}
-              onClick={completeness.percent < 100 ? undefined : submitApplication}
+              onClick={completeness.percent < 100 ? undefined : () => setShowChecklistModal(true)}
               disabled={completeness.percent < 100}
             >
               Submit for Review
@@ -1423,6 +1436,21 @@ export const MyApplication = () => {
           </div>
         </Card>
       )}
+
+      {/* Submission Checklist Modal */}
+      <SubmissionChecklistModal
+        isOpen={showChecklistModal}
+        onClose={() => setShowChecklistModal(false)}
+        onSubmit={() => {
+          setShowChecklistModal(false);
+          submitApplication();
+        }}
+        savedChecklist={savedChecklistItems}
+        onSaveProgress={(items) => {
+          setSavedChecklistItems(items);
+          toast.success("Checklist progress saved");
+        }}
+      />
     </div>
   );
 };

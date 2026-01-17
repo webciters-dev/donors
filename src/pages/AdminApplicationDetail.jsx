@@ -672,6 +672,24 @@ export default function AdminApplicationDetail() {
               </select>
             </div>
             
+            {/* Approved Amount - Admin can override */}
+            <div>
+              <label className="block text-sm font-medium text-blue-800 mb-2">
+                Approved AWAKE Amount ({app.currency || 'PKR'})
+              </label>
+              <Input
+                type="number"
+                min="0"
+                placeholder={`Approved amount (Student requested: ${app.amount?.toLocaleString() || 0})`}
+                value={app._approvedAmount ?? app.approvedAmount ?? app.amount ?? ""}
+                onChange={(e) => setApp(prev => ({ ...prev, _approvedAmount: e.target.value }))}
+                className="w-full"
+              />
+              <p className="text-xs text-blue-600 mt-1">
+                Student requested: {fmtAmount(app.amount, app.currency)}. Modify if AWAKE approves a different amount.
+              </p>
+            </div>
+            
             <div>
               <label className="block text-sm font-medium text-blue-800 mb-2">
                 Admin Notes
@@ -740,12 +758,17 @@ export default function AdminApplicationDetail() {
                 className="w-full bg-blue-600 hover:bg-blue-700"
                 onClick={async () => {
                   try {
+                    const approvedAmountValue = app._approvedAmount !== undefined 
+                      ? parseInt(app._approvedAmount) || null 
+                      : app.approvedAmount;
+                    
                     const res = await fetch(`${API.baseURL}/api/applications/${app.id}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json", ...authHeader },
                       body: JSON.stringify({
                         status: app._status || app.status,
-                        notes: app._notes || app.notes
+                        notes: app._notes || app.notes,
+                        approvedAmount: approvedAmountValue
                       })
                     });
                     
@@ -770,6 +793,7 @@ export default function AdminApplicationDetail() {
                             body: JSON.stringify({
                               status: app._status || app.status,
                               notes: (app._notes || app.notes) + "\n[FORCE APPROVED despite missing documents]",
+                              approvedAmount: approvedAmountValue,
                               forceApprove: true
                             })
                           });
@@ -796,7 +820,8 @@ export default function AdminApplicationDetail() {
                     setApp(prev => ({
                       ...prev,
                       status: prev._status || prev.status,
-                      notes: prev._notes || prev.notes
+                      notes: prev._notes || prev.notes,
+                      approvedAmount: approvedAmountValue
                     }));
                     
                     toast.success("Application updated successfully!");

@@ -344,6 +344,7 @@ export const ApplicationForm = () => {
       endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
       endYear: String(new Date().getFullYear()), // Program end year - default to current
       gpa: "",
+      gradeType: "CGPA", // CGPA or PERCENTAGE
       // Currency (auto-selected based on country)
       currency: "PKR", // Default to PKR for our primary market
       // Photo fields
@@ -705,7 +706,7 @@ export const ApplicationForm = () => {
     });
   };
 
-  // Handle scholarship amount change
+  // Handle scholarship amount change (no longer auto-updates amount - student enters manually)
   const handleScholarshipChange = (value) => {
     const total = Number(form.totalExpense || 0);
     const scholarship = Number(value || 0);
@@ -716,11 +717,9 @@ export const ApplicationForm = () => {
       return;
     }
     
-    const newAmount = calculateRequiredAmount(form.totalExpense, value, form.otherResources);
     setForm({
       ...form,
-      scholarshipAmount: value,
-      amount: newAmount.toString()
+      scholarshipAmount: value
     });
   };
 
@@ -737,11 +736,9 @@ export const ApplicationForm = () => {
       return;
     }
     
-    const newAmount = calculateRequiredAmount(form.totalExpense, form.scholarshipAmount, value);
     setForm({
       ...form,
-      otherResources: value,
-      amount: newAmount.toString()
+      otherResources: value
     });
   };
 
@@ -763,14 +760,18 @@ export const ApplicationForm = () => {
       return;
     }
 
-    // Validate that if end date is provided, it's after start date
-    if (form.endMonth && form.endYear) {
-      const startDate = new Date(parseInt(form.startYear), parseInt(form.startMonth) - 1);
-      const endDate = new Date(parseInt(form.endYear), parseInt(form.endMonth) - 1);
-      if (endDate <= startDate) {
-        toast.error("Program end date must be after start date.");
-        return;
-      }
+    // Validate program end date (required)
+    if (!form.endMonth || !form.endYear) {
+      toast.error("Please specify expected graduation date.");
+      return;
+    }
+
+    // Validate that end date is after start date
+    const startDate = new Date(parseInt(form.startYear), parseInt(form.startMonth) - 1);
+    const endDate = new Date(parseInt(form.endYear), parseInt(form.endMonth) - 1);
+    if (endDate <= startDate) {
+      toast.error("Expected graduation date must be after program start date.");
+      return;
     }
 
     // Validate financial fields
@@ -846,6 +847,7 @@ export const ApplicationForm = () => {
         field: form.field.trim(),
         program: form.program.trim(),
         gpa: Number(form.gpa),
+        gradeType: form.gradeType || "CGPA",
         programStartDate,
         programEndDate
       };
@@ -1296,12 +1298,13 @@ export const ApplicationForm = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Expected Graduation Date <span className="text-gray-500 font-normal">(Optional)</span></label>
+                  <label className="block text-sm font-medium mb-2">Expected Graduation Date <span className="text-red-500">*</span></label>
                   <div className="flex gap-2">
                     <select
                       value={form.endMonth}
                       onChange={(e) => setForm({ ...form, endMonth: e.target.value })}
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     >
                       <option value="">Month</option>
                       {months.map((month) => (
@@ -1314,6 +1317,7 @@ export const ApplicationForm = () => {
                       value={form.endYear}
                       onChange={(e) => setForm({ ...form, endYear: e.target.value })}
                       className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
                     >
                       <option value="">Year</option>
                       {years.map((year) => (
@@ -1324,29 +1328,38 @@ export const ApplicationForm = () => {
                     </select>
                   </div>
                 </div>
-                
-                {/* Informational note about program dates */}
-                <div className="sm:col-span-2">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <p className="text-sm text-blue-800">
-                      <strong>Note:</strong> Program dates are currently optional and for informational purposes. 
-                      You can proceed without specifying them and add this information later if needed.
-                    </p>
-                  </div>
-                </div>
               </>
             )}
 
-            {/* GPA Field - Last Position */}
-            <div className="space-y-1">
-              <Input
-                placeholder="Enter CGPA (0-4) or Percentage (0-100)"
-                value={form.gpa}
-                onChange={(e) => setForm({ ...form, gpa: e.target.value })}
-                required
-                className="min-h-[44px]"
-              />
-              <p className="text-xs text-gray-500">Pakistani Matric/FSc uses percentage (0-100). University typically uses CGPA (0-4).</p>
+            {/* GPA/Percentage Field with Type Selector */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">Academic Result <span className="text-rose-500">*</span></label>
+              <div className="flex gap-2">
+                <select
+                  value={form.gradeType}
+                  onChange={(e) => setForm({ ...form, gradeType: e.target.value })}
+                  className="w-32 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="CGPA">CGPA</option>
+                  <option value="PERCENTAGE">Percentage</option>
+                </select>
+                <Input
+                  placeholder={form.gradeType === "CGPA" ? "Enter CGPA (0-4)" : "Enter Percentage (0-100)"}
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max={form.gradeType === "CGPA" ? "4" : "100"}
+                  value={form.gpa}
+                  onChange={(e) => setForm({ ...form, gpa: e.target.value })}
+                  required
+                  className="flex-1 min-h-[44px]"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                {form.gradeType === "CGPA" 
+                  ? "University/College typically uses CGPA on a 4.0 scale" 
+                  : "Pakistani Matric/FSc uses percentage (0-100)"}
+              </p>
             </div>
 
             <div className="sm:col-span-2 flex flex-col sm:flex-row justify-between gap-3">
@@ -1362,32 +1375,35 @@ export const ApplicationForm = () => {
                     form.degreeLevel &&
                     form.field &&
                     form.program && 
-                    // Program dates made optional until database schema supports them
-                    // form.startMonth &&
-                    // form.startYear &&
-                    // form.endMonth &&
-                    // form.endYear &&
+                    form.startMonth &&
+                    form.startYear &&
+                    form.endMonth &&
+                    form.endYear &&
                     form.gpa;
                   
                   if (!isFormValid) {
-                    toast.error("Please complete all required fields before proceeding.");
+                    toast.error("Please complete all required fields including program dates before proceeding.");
                     return;
                   }
                   
                   try {
                     setLoading(true);
                     
-                    // Save Step 2 data before redirecting - only fields that exist in current schema
+                    // Save Step 2 data before redirecting
                     const finalUniversity = form.university === "Other" ? form.customUniversity : form.university;
+                    const programStartDate = `${form.startMonth}/${form.startYear}`;
+                    const programEndDate = `${form.endMonth}/${form.endYear}`;
                     
                     const step2Payload = {
                       country: form.country.trim(),
                       university: finalUniversity.trim(),
-                      degreeLevel: form.degreeLevel, // Include degreeLevel - it exists in schema
+                      degreeLevel: form.degreeLevel,
                       field: form.field.trim(),
                       program: form.program.trim(),
-                      gpa: Number(form.gpa)
-                      // Note: programStartDate and programEndDate removed - not in database schema
+                      gpa: Number(form.gpa),
+                      gradeType: form.gradeType || "CGPA",
+                      programStartDate,
+                      programEndDate
                     };
                     
                     console.log(' Step 2 save debug - current form state:', {
@@ -1482,11 +1498,10 @@ export const ApplicationForm = () => {
                   !form.degreeLevel ||
                   !form.field ||
                   !form.program || 
-                  // Program dates made optional until database schema supports them
-                  // !form.startMonth ||
-                  // !form.startYear ||
-                  // !form.endMonth ||
-                  // !form.endYear ||
+                  !form.startMonth ||
+                  !form.startYear ||
+                  !form.endMonth ||
+                  !form.endYear ||
                   !form.gpa
                 }
                 className="min-h-[44px] w-full sm:w-auto"
@@ -1735,25 +1750,22 @@ export const ApplicationForm = () => {
                 </p>
               </div>
 
-              {/* Required Amount (Auto-calculated) */}
+              {/* Amount Requested from AWAKE (Manual entry - open-end) */}
               <div className="space-y-2">
                 <label className="text-xs sm:text-sm font-medium text-slate-700">
-                  Required Amount ({form.currency})
+                  Amount Requested from AWAKE ({form.currency}) <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <Input
-                    placeholder={`Amount you need (${form.currency})`}
-                    type="number"
-                    value={form.amount}
-                    readOnly
-                    className="bg-gray-50 cursor-not-allowed min-h-[44px]"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <span className="text-xs text-green-600 font-medium">Auto-calculated</span>
-                  </div>
-                </div>
-                <p className="text-xs text-green-600">
-                   This amount is automatically calculated: Total Expense - Scholarship - Other Resources
+                <Input
+                  placeholder={`Enter the amount you need from AWAKE (${form.currency})`}
+                  type="number"
+                  min="0"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                  required
+                  className="min-h-[44px]"
+                />
+                <p className="text-xs text-slate-500">
+                  Enter the total amount you are requesting from AWAKE for your education loan
                 </p>
               </div>
 
@@ -1778,7 +1790,7 @@ export const ApplicationForm = () => {
                     )}
                     <hr className="border-blue-300" />
                     <div className="flex justify-between font-semibold">
-                      <span>Required Amount:</span>
+                      <span>Amount Requested from AWAKE:</span>
                       <span className="text-blue-800">{Number(form.amount || 0).toLocaleString()} {form.currency}</span>
                     </div>
                   </div>

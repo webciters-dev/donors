@@ -283,7 +283,7 @@ router.post("/", async (req, res) => {
 router.patch("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, amount, currency, forceApprove } = req.body;
+    const { status, notes, amount, currency, approvedAmount, forceApprove } = req.body;
 
     // Document validation for APPROVED status
     if (status === "APPROVED") {
@@ -331,6 +331,9 @@ router.patch("/:id", async (req, res) => {
     if (currency) data.currency = currency;
     if (amount !== undefined) {
       data.amount = amount === null || amount === "" ? null : parseInt(amount, 10);
+    }
+    if (approvedAmount !== undefined) {
+      data.approvedAmount = approvedAmount === null || approvedAmount === "" ? null : parseInt(approvedAmount, 10);
     }
 
     // If amount/currency provided, recompute snapshot

@@ -21,6 +21,7 @@ model Student {
   program               String
   degreeLevel           String?           // Degree level: Associate, Bachelor's, Master's, etc.
   gpa                   Float
+  gradeType             String?           @default("CGPA") // CGPA or PERCENTAGE
   gradYear              Int
   programStartDate      String?           // Program start date in MM/YYYY format
   programEndDate        String?           // Expected program end date in MM/YYYY format
@@ -91,7 +92,8 @@ model Application {
   id                 String            @id @default(cuid())
   studentId          String
   term               String
-  amount             Int               // Required: Education cost in specified currency
+  amount             Int               // Required: Requested amount from AWAKE
+  approvedAmount     Int?              // Admin-approved amount (may differ from requested)
   currency           Currency          // Required: Currency of the education cost
   status             ApplicationStatus @default(PENDING)
   submittedAt        DateTime          @default(now())

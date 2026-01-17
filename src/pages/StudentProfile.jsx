@@ -132,6 +132,8 @@ export default function StudentProfile() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [documents, setDocuments] = useState([]);
+  const [isProfileLocked, setIsProfileLocked] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState(null);
 
   // University academics hook for dropdowns
   const [selectedUniversityId, setSelectedUniversityId] = useState(null);
@@ -176,6 +178,12 @@ export default function StudentProfile() {
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
         const s = data?.student || {};
+        
+        // Set profile lock status
+        if (!dead) {
+          setIsProfileLocked(data.isProfileLocked || false);
+          setApplicationStatus(data.applicationStatus || null);
+        }
 
         const initial = {
           cnic: s.cnic || "",
@@ -343,6 +351,13 @@ export default function StudentProfile() {
 
   async function onSubmit(e) {
     e.preventDefault();
+    
+    // Check if profile is locked
+    if (isProfileLocked) {
+      toast.error("Your profile is locked because your application has been submitted. Contact support to request changes.");
+      return;
+    }
+    
     if (!validateAll()) {
       toast.error("Please fix the highlighted fields.");
       return;
@@ -404,6 +419,22 @@ export default function StudentProfile() {
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-0 min-h-screen">
       <h1 className="text-xl sm:text-2xl font-semibold">My Profile</h1>
 
+      {/* Profile Locked Banner */}
+      {isProfileLocked && (
+        <Card className="p-4 bg-amber-50 border-amber-300">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔒</span>
+            <div>
+              <h3 className="font-semibold text-amber-900">Profile Locked</h3>
+              <p className="text-sm text-amber-700">
+                Your profile has been submitted for review (Status: {applicationStatus?.replace(/_/g, ' ')}) and is now locked. 
+                To request changes, please contact support at <a href="mailto:op.executive@akhuwat.org.pk" className="underline">op.executive@akhuwat.org.pk</a>
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Pakistan-only filter message */}
       {(() => {
         const filterMessage = getFilterMessage();
@@ -439,7 +470,8 @@ export default function StudentProfile() {
       </Card>
 
       <Card className="p-4 sm:p-6">
-        <form onSubmit={onSubmit} className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+        <form onSubmit={onSubmit}>
+          <fieldset disabled={isProfileLocked} className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
           {/* CNIC */}
           <div>
             <label className="block text-xs sm:text-sm mb-1">CNIC</label>
@@ -1042,10 +1074,11 @@ export default function StudentProfile() {
           </div>
 
           <div className="sm:col-span-2 flex flex-col sm:flex-row justify-end">
-            <Button type="submit" disabled={saving} className="rounded-2xl min-h-[44px] w-full sm:w-auto">
-              {saving ? "Saving…" : "Save Profile"}
+            <Button type="submit" disabled={saving || isProfileLocked} className="rounded-2xl min-h-[44px] w-full sm:w-auto">
+              {isProfileLocked ? "Profile Locked" : saving ? "Saving…" : "Save Profile"}
             </Button>
           </div>
+          </fieldset>
         </form>
       </Card>
     </div>
