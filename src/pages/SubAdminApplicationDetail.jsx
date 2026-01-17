@@ -548,16 +548,52 @@ export default function SubAdminApplicationDetail() {
             <h4 className="font-medium text-slate-700 text-xs sm:text-sm uppercase tracking-wide mb-3">Financial Breakdown</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
               <div className="space-y-2">
-                {application?.universityFee && (
+                {application?.tuitionFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">University Fee</span>
-                    <span className="font-medium">+{application.currency === "PKR" ? `₨${application.universityFee.toLocaleString()}` : `$${application.universityFee.toLocaleString()}`}</span>
+                    <span className="text-slate-600">Tuition Fee</span>
+                    <span className="font-medium">+{fmtAmountDual(application.tuitionFee, application.currency)}</span>
                   </div>
                 )}
-                {application?.livingExpenses && (
+                {application?.hostelFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Books & Living</span>
-                    <span className="font-medium">+{application.currency === "PKR" ? `₨${application.livingExpenses.toLocaleString()}` : `$${application.livingExpenses.toLocaleString()}`}</span>
+                    <span className="text-slate-600">Hostel Fee</span>
+                    <span className="font-medium">+{fmtAmountDual(application.hostelFee, application.currency)}</span>
+                  </div>
+                )}
+                {application?.stationeryExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Stationery</span>
+                    <span className="font-medium">+{fmtAmountDual(application.stationeryExpense, application.currency)}</span>
+                  </div>
+                )}
+                {application?.booksExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Books</span>
+                    <span className="font-medium">+{fmtAmountDual(application.booksExpense, application.currency)}</span>
+                  </div>
+                )}
+                {application?.messExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Mess/Food</span>
+                    <span className="font-medium">+{fmtAmountDual(application.messExpense, application.currency)}</span>
+                  </div>
+                )}
+                {application?.computerLaptop > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Computer/Laptop</span>
+                    <span className="font-medium">+{fmtAmountDual(application.computerLaptop, application.currency)}</span>
+                  </div>
+                )}
+                {application?.travelExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Travel</span>
+                    <span className="font-medium">+{fmtAmountDual(application.travelExpense, application.currency)}</span>
+                  </div>
+                )}
+                {application?.otherExpenses > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Other{application?.otherExpenseDesc ? ` (${application.otherExpenseDesc})` : ''}</span>
+                    <span className="font-medium">+{fmtAmountDual(application.otherExpenses, application.currency)}</span>
                   </div>
                 )}
               </div>

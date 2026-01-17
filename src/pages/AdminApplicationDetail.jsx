@@ -558,33 +558,69 @@ export default function AdminApplicationDetail() {
             </div>
           </div>
           
-          {/* Enhanced Financial Breakdown */}
+          {/* Enhanced Financial Breakdown - 8 expense fields */}
           <div className="space-y-2">
-            {(app?.universityFee || app?.livingExpenses || app?.totalExpense) ? (
+            {(app?.tuitionFee || app?.hostelFee || app?.totalExpense || app?.universityFee) ? (
               <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
                 <h4 className="font-medium text-slate-700 text-xs uppercase tracking-wide">Financial Breakdown</h4>
-                {app?.universityFee && (
+                {app?.tuitionFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">University Fee</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `Rs ${app.universityFee.toLocaleString()}` : `$${app.universityFee.toLocaleString()}`}</span>
+                    <span className="text-slate-600">Tuition Fee</span>
+                    <span className="font-medium">+{fmtAmount(app.tuitionFee, app.currency)}</span>
                   </div>
                 )}
-                {app?.livingExpenses && (
+                {app?.hostelFee > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-slate-600">Books & Living</span>
-                    <span className="font-medium">+{app.currency === "PKR" ? `Rs ${app.livingExpenses.toLocaleString()}` : `$${app.livingExpenses.toLocaleString()}`}</span>
+                    <span className="text-slate-600">Hostel Fee</span>
+                    <span className="font-medium">+{fmtAmount(app.hostelFee, app.currency)}</span>
+                  </div>
+                )}
+                {app?.stationeryExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Stationery</span>
+                    <span className="font-medium">+{fmtAmount(app.stationeryExpense, app.currency)}</span>
+                  </div>
+                )}
+                {app?.booksExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Books</span>
+                    <span className="font-medium">+{fmtAmount(app.booksExpense, app.currency)}</span>
+                  </div>
+                )}
+                {app?.messExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Mess/Food</span>
+                    <span className="font-medium">+{fmtAmount(app.messExpense, app.currency)}</span>
+                  </div>
+                )}
+                {app?.computerLaptop > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Computer/Laptop</span>
+                    <span className="font-medium">+{fmtAmount(app.computerLaptop, app.currency)}</span>
+                  </div>
+                )}
+                {app?.travelExpense > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Travel</span>
+                    <span className="font-medium">+{fmtAmount(app.travelExpense, app.currency)}</span>
+                  </div>
+                )}
+                {app?.otherExpenses > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Other{app?.otherExpenseDesc ? ` (${app.otherExpenseDesc})` : ''}</span>
+                    <span className="font-medium">+{fmtAmount(app.otherExpenses, app.currency)}</span>
                   </div>
                 )}
                 {app?.totalExpense && (
                   <div className="flex justify-between border-t pt-2">
                     <span className="text-slate-700 font-medium">Total Expense</span>
-                    <span className="font-semibold">{app.currency === "PKR" ? `Rs ${app.totalExpense.toLocaleString()}` : `$${app.totalExpense.toLocaleString()}`}</span>
+                    <span className="font-semibold">{fmtAmount(app.totalExpense, app.currency)}</span>
                   </div>
                 )}
-                {app?.scholarshipAmount && (
+                {app?.scholarshipAmount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-600">Scholarship</span>
-                    <span className="font-medium text-green-600">-{app.currency === "PKR" ? `Rs ${app.scholarshipAmount.toLocaleString()}` : `$${app.scholarshipAmount.toLocaleString()}`}</span>
+                    <span className="font-medium text-green-600">-{fmtAmount(app.scholarshipAmount, app.currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-2">

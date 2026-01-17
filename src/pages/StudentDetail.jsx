@@ -398,20 +398,56 @@ export const StudentDetail = ({ id, goBack }) => {
                 <span className="font-medium">{currency}</span>
               </div>
               
-              {/* Enhanced Financial Breakdown */}
-              {(application?.universityFee || application?.livingExpenses || application?.totalExpense) ? (
+              {/* Enhanced Financial Breakdown - 8 expense fields */}
+              {(application?.tuitionFee || application?.hostelFee || application?.totalExpense || application?.universityFee) ? (
                 <div className="space-y-2 bg-slate-50 p-3 rounded-lg">
                   <h4 className="font-medium text-slate-700 text-xs uppercase tracking-wide">Financial Breakdown</h4>
-                  {application?.universityFee && (
+                  {application?.tuitionFee > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-slate-600">University Fee</span>
-                      <span className="font-medium">+{fmtAmountDual(application.universityFee, currency)}</span>
+                      <span className="text-slate-600">Tuition Fee</span>
+                      <span className="font-medium">+{fmtAmountDual(application.tuitionFee, currency)}</span>
                     </div>
                   )}
-                  {application?.livingExpenses && (
+                  {application?.hostelFee > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Books & Living</span>
-                      <span className="font-medium">+{fmtAmountDual(application.livingExpenses, currency)}</span>
+                      <span className="text-slate-600">Hostel Fee</span>
+                      <span className="font-medium">+{fmtAmountDual(application.hostelFee, currency)}</span>
+                    </div>
+                  )}
+                  {application?.stationeryExpense > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Stationery</span>
+                      <span className="font-medium">+{fmtAmountDual(application.stationeryExpense, currency)}</span>
+                    </div>
+                  )}
+                  {application?.booksExpense > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Books</span>
+                      <span className="font-medium">+{fmtAmountDual(application.booksExpense, currency)}</span>
+                    </div>
+                  )}
+                  {application?.messExpense > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Mess/Food</span>
+                      <span className="font-medium">+{fmtAmountDual(application.messExpense, currency)}</span>
+                    </div>
+                  )}
+                  {application?.computerLaptop > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Computer/Laptop</span>
+                      <span className="font-medium">+{fmtAmountDual(application.computerLaptop, currency)}</span>
+                    </div>
+                  )}
+                  {application?.travelExpense > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Travel</span>
+                      <span className="font-medium">+{fmtAmountDual(application.travelExpense, currency)}</span>
+                    </div>
+                  )}
+                  {application?.otherExpenses > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Other{application?.otherExpenseDesc ? ` (${application.otherExpenseDesc})` : ''}</span>
+                      <span className="font-medium">+{fmtAmountDual(application.otherExpenses, currency)}</span>
                     </div>
                   )}
                   {application?.totalExpense && (
@@ -420,7 +456,7 @@ export const StudentDetail = ({ id, goBack }) => {
                       <span className="font-semibold">{fmtAmountDual(application.totalExpense, currency)}</span>
                     </div>
                   )}
-                  {application?.scholarshipAmount && (
+                  {application?.scholarshipAmount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-slate-600">Scholarship</span>
                       <span className="font-medium text-green-600">-{fmtAmountDual(application.scholarshipAmount, currency)}</span>
