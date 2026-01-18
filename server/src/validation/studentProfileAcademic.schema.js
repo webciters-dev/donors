@@ -35,10 +35,10 @@ export const studentProfileAcademicSchema = z
     province: z.string().min(1, "Province is required"),
     university: z.string().min(1, "University is required"),
     program: z.string().min(1, "Program is required"),
+    gradeType: z.enum(["CGPA", "PERCENTAGE"]).optional().default("CGPA"),
     gpa: z
       .coerce.number({ invalid_type_error: "GPA must be a number" })
-      .min(0, "GPA must be between 0.00 and 4.00")
-      .max(4, "GPA must be between 0.00 and 4.00"),
+      .min(0, "GPA must be a positive number"),
     gradYear: z
       .coerce.number({ invalid_type_error: "Graduation year must be a number" })
       .int("Graduation year must be an integer")
@@ -74,5 +74,35 @@ export const studentProfileAcademicSchema = z
     {
       message: "At least one phone number is required (Student or Guardian)",
       path: ["phone"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Validate GPA based on gradeType
+      const gradeType = data.gradeType || "CGPA";
+      const gpa = data.gpa;
+      
+      if (gpa === null || gpa === undefined || isNaN(gpa)) return true; // Optional field
+      
+      if (gradeType === "PERCENTAGE") {
+        return gpa >= 0 && gpa <= 100;
+      } else {
+        // CGPA (default)
+        return gpa >= 0 && gpa <= 4.00;
+      }
+    },
+    (data) => {
+      const gradeType = data.gradeType || "CGPA";
+      if (gradeType === "PERCENTAGE") {
+        return {
+          message: "Percentage must be between 0 and 100",
+          path: ["gpa"],
+        };
+      } else {
+        return {
+          message: "CGPA must be between 0.00 and 4.00",
+          path: ["gpa"],
+        };
+      }
     }
   );

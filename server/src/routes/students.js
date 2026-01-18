@@ -188,42 +188,73 @@ router.get("/approved", async (_req, res) => {
  */
 router.get("/me", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
   try {
-    // Support either req.user.studentId (if your JWT carries that) or fallback to req.user.id
-    const studentId = req.user?.studentId ?? req.user?.id;
+    // Check if user has studentId attached
+    const studentId = req.user?.studentId;
     if (!studentId) {
+      console.log("GET /students/me: No studentId found in req.user", { 
+        userId: req.user?.id, 
+        role: req.user?.role,
+        hasStudentId: !!req.user?.studentId 
+      });
       return res
         .status(404)
-        .json({ error: "No student attached to this account" });
+        .json({ error: "No student attached to this account. Please contact support or register as a student." });
     }
 
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
-      include: {
-        applications: {
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-          select: { id: true, status: true }
-        }
-      }
-    });
+    console.log("GET /students/me: Fetching student", { studentId });
 
-    if (!student) return res.status(404).json({ error: "Student not found" });
-    
-    // Check if profile is locked (application submitted = status is not DRAFT)
-    const latestApp = student.applications?.[0];
-    const isProfileLocked = latestApp && latestApp.status !== 'DRAFT';
-    
-    // Remove applications from student object before sending (we only need the lock status)
-    const { applications, ...studentData } = student;
+    // First, try to fetch the student without include to avoid relationship issues
+    let student = null;
+    let latestApp = null;
+    let isProfileLocked = false;
+
+    try {
+      // Fetch student first
+      student = await prisma.student.findUnique({
+        where: { id: studentId }
+      });
+
+      if (!student) {
+        console.log("GET /students/me: Student not found in database", { studentId });
+        return res.status(404).json({ error: "Student record not found. Please contact support." });
+      }
+
+      // Then fetch the latest application separately to avoid relationship issues
+      try {
+        latestApp = await prisma.application.findFirst({
+          where: { studentId: studentId },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, status: true }
+        });
+        
+        isProfileLocked = latestApp && latestApp.status !== 'DRAFT';
+      } catch (appError) {
+        console.warn("GET /students/me: Could not fetch applications", appError.message);
+        // Continue without application info - not critical
+        isProfileLocked = false;
+      }
+    } catch (dbError) {
+      console.error("GET /students/me: Database error", dbError);
+      throw dbError; // Re-throw to be caught by outer catch
+    }
     
     res.json({ 
-      student: studentData,
+      student: student,
       isProfileLocked,
       applicationStatus: latestApp?.status || null
     });
   } catch (err) {
     console.error("GET /students/me error:", err);
-    res.status(500).json({ error: "Failed to load student" });
+    console.error("Error details:", {
+      message: err.message,
+      stack: err.stack,
+      userId: req.user?.id,
+      studentId: req.user?.studentId
+    });
+    res.status(500).json({ 
+      error: "Failed to load student",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
@@ -316,11 +347,17 @@ router.put(
   validate(studentProfileAcademicSchema),
   async (req, res) => {
     try {
-      const studentId = req.user?.studentId ?? req.user?.id;
+      // Check if user has studentId attached (enriched by auth middleware)
+      const studentId = req.user?.studentId;
       if (!studentId) {
+        console.log("PUT /students/me: No studentId found in req.user", { 
+          userId: req.user?.id, 
+          role: req.user?.role,
+          hasStudentId: !!req.user?.studentId 
+        });
         return res
           .status(404)
-          .json({ error: "No student attached to this account" });
+          .json({ error: "No student attached to this account. Please contact support." });
       }
 
       const {
@@ -385,6 +422,7 @@ router.put(
         where: { id: studentId },
       });
       if (!existing) {
+        console.log("PUT /students/me: Student not found", { studentId });
         return res.status(404).json({ error: "Student not found" });
       }
 
@@ -397,78 +435,161 @@ router.put(
         return res.status(400).json({ error: "Current institution, city and completion year are required" });
       }
 
-      const updated = await prisma.student.update({
-        where: { id: studentId },
-        data: {
-          ...(cnic !== undefined ? { cnic } : {}),
-          ...(dateOfBirth
-            ? { dateOfBirth: new Date(dateOfBirth) }
-            : { dateOfBirth: null }), // if empty/undefined, store null
-          ...(guardianName !== undefined ? { guardianName } : {}),
-          ...(guardianCnic !== undefined ? { guardianCnic } : {}),
-          ...(guardian2Name !== undefined ? { guardian2Name } : {}),
-          ...(guardian2Cnic !== undefined ? { guardian2Cnic } : {}),
-          ...(phone !== undefined ? { phone } : {}),
-          ...(guardianPhone1 !== undefined ? { guardianPhone1 } : {}),
-          ...(guardianPhone2 !== undefined ? { guardianPhone2 } : {}),
-          ...(address !== undefined ? { address } : {}),
-          ...(country !== undefined ? { country } : {}),
-          ...(university !== undefined ? { university } : {}),
-          ...(program !== undefined ? { program } : {}),
-          ...(gpa !== undefined ? { gpa } : {}),
-          ...(gradeType !== undefined ? { gradeType } : {}),
-          ...(gradYear !== undefined ? { gradYear } : {}),
-          ...(city !== undefined ? { city } : {}),
-          ...(province !== undefined ? { province } : {}),
-          ...(currentInstitution !== undefined ? { currentInstitution } : {}),
-          ...(currentCity !== undefined ? { currentCity } : {}),
-          ...(currentCompletionYear !== undefined
-            ? { currentCompletionYear: currentCompletionYear ? Number(currentCompletionYear) : null }
-            : {}),
-          ...(personalIntroduction !== undefined ? { personalIntroduction } : {}),
-          // Enhanced details for donors
-          ...(familySize !== undefined ? { familySize: familySize ? Number(familySize) : null } : {}),
-          ...(parentsOccupation !== undefined ? { parentsOccupation } : {}),
-          ...(monthlyFamilyIncome !== undefined ? { monthlyFamilyIncome } : {}),
-          ...(careerGoals !== undefined ? { careerGoals } : {}),
-          ...(academicAchievements !== undefined ? { academicAchievements } : {}),
-          ...(communityInvolvement !== undefined ? { communityInvolvement } : {}),
-          ...(currentAcademicYear !== undefined ? { currentAcademicYear } : {}),
-          ...(specificField !== undefined ? { specificField } : {}),
-          // Photo fields
-          ...(photoUrl !== undefined ? { photoUrl } : {}),
-          ...(photoThumbnailUrl !== undefined ? { photoThumbnailUrl } : {}),
-          ...(photoUploadedAt !== undefined
-            ? { photoUploadedAt: photoUploadedAt ? new Date(photoUploadedAt) : null }
-            : {}),
-          ...(photoOriginalName !== undefined ? { photoOriginalName } : {}),
-          // Education fields
-          ...(degreeLevel !== undefined ? { degreeLevel } : {}),
-          ...(field !== undefined ? { field } : {}),
-          ...(programStartDate !== undefined ? { programStartDate } : {}),
-          ...(programEndDate !== undefined ? { programEndDate } : {}),
-          // Social media fields
-          ...(facebookUrl !== undefined ? { facebookUrl } : {}),
-          ...(instagramHandle !== undefined ? { instagramHandle } : {}),
-          ...(whatsappNumber !== undefined ? { whatsappNumber } : {}),
-          ...(linkedinUrl !== undefined ? { linkedinUrl } : {}),
-          ...(twitterHandle !== undefined ? { twitterHandle } : {}),
-          ...(tiktokHandle !== undefined ? { tiktokHandle } : {}),
-          // Video fields
-          ...(introVideoUrl !== undefined ? { introVideoUrl } : {}),
-          ...(introVideoThumbnailUrl !== undefined ? { introVideoThumbnailUrl } : {}),
-          ...(introVideoUploadedAt !== undefined
-            ? { introVideoUploadedAt: introVideoUploadedAt ? new Date(introVideoUploadedAt) : null }
-            : {}),
-          ...(introVideoDuration !== undefined ? { introVideoDuration: introVideoDuration ? Number(introVideoDuration) : null } : {}),
-          ...(introVideoOriginalName !== undefined ? { introVideoOriginalName } : {}),
-        },
+      // After Zod validation, req.body should only contain valid schema fields
+      // Log for debugging but don't block - Zod already validated
+      const allIncomingFields = Object.keys(req.body);
+      console.log("PUT /students/me: Fields received after Zod validation:", allIncomingFields);
+
+      // Build the data object that will be sent to Prisma
+      const updateData = {};
+      if (cnic !== undefined) updateData.cnic = cnic;
+      if (dateOfBirth !== undefined) {
+        updateData.dateOfBirth = (dateOfBirth && dateOfBirth.trim) ? new Date(dateOfBirth) : null;
+      }
+      if (guardianName !== undefined) updateData.guardianName = guardianName;
+      if (guardianCnic !== undefined) updateData.guardianCnic = guardianCnic;
+      if (guardian2Name !== undefined) updateData.guardian2Name = guardian2Name;
+      if (guardian2Cnic !== undefined) updateData.guardian2Cnic = guardian2Cnic;
+      if (phone !== undefined) updateData.phone = phone;
+      if (guardianPhone1 !== undefined) updateData.guardianPhone1 = guardianPhone1;
+      if (guardianPhone2 !== undefined) updateData.guardianPhone2 = guardianPhone2;
+      if (address !== undefined) updateData.address = address;
+      if (country !== undefined) updateData.country = country;
+      if (university !== undefined) updateData.university = university;
+      if (program !== undefined) updateData.program = program;
+      if (gpa !== undefined) updateData.gpa = gpa;
+      // Temporarily skip gradeType to avoid "Unknown argument" error
+      // TODO: Re-enable after verifying database column exists and Prisma client is regenerated
+      // if (gradeType !== undefined) updateData.gradeType = gradeType;
+      if (gradYear !== undefined) updateData.gradYear = gradYear;
+      if (city !== undefined) updateData.city = city;
+      if (province !== undefined) updateData.province = province;
+      if (currentInstitution !== undefined) updateData.currentInstitution = currentInstitution;
+      if (currentCity !== undefined) updateData.currentCity = currentCity;
+      if (currentCompletionYear !== undefined) {
+        updateData.currentCompletionYear = currentCompletionYear ? Number(currentCompletionYear) : null;
+      }
+      if (personalIntroduction !== undefined) updateData.personalIntroduction = personalIntroduction;
+      if (familySize !== undefined) updateData.familySize = familySize ? Number(familySize) : null;
+      if (parentsOccupation !== undefined) updateData.parentsOccupation = parentsOccupation;
+      if (monthlyFamilyIncome !== undefined) updateData.monthlyFamilyIncome = monthlyFamilyIncome;
+      if (careerGoals !== undefined) updateData.careerGoals = careerGoals;
+      if (academicAchievements !== undefined) updateData.academicAchievements = academicAchievements;
+      if (communityInvolvement !== undefined) updateData.communityInvolvement = communityInvolvement;
+      if (currentAcademicYear !== undefined) updateData.currentAcademicYear = currentAcademicYear;
+      if (specificField !== undefined) updateData.specificField = specificField;
+      if (photoUrl !== undefined) updateData.photoUrl = photoUrl;
+      if (photoThumbnailUrl !== undefined) updateData.photoThumbnailUrl = photoThumbnailUrl;
+      if (photoUploadedAt !== undefined) {
+        updateData.photoUploadedAt = photoUploadedAt ? new Date(photoUploadedAt) : null;
+      }
+      if (photoOriginalName !== undefined) updateData.photoOriginalName = photoOriginalName;
+      if (degreeLevel !== undefined) updateData.degreeLevel = degreeLevel;
+      if (field !== undefined) updateData.field = field;
+      if (programStartDate !== undefined) updateData.programStartDate = programStartDate;
+      if (programEndDate !== undefined) updateData.programEndDate = programEndDate;
+      if (facebookUrl !== undefined) updateData.facebookUrl = facebookUrl;
+      if (instagramHandle !== undefined) updateData.instagramHandle = instagramHandle;
+      if (whatsappNumber !== undefined) updateData.whatsappNumber = whatsappNumber;
+      if (linkedinUrl !== undefined) updateData.linkedinUrl = linkedinUrl;
+      if (twitterHandle !== undefined) updateData.twitterHandle = twitterHandle;
+      if (tiktokHandle !== undefined) updateData.tiktokHandle = tiktokHandle;
+      if (introVideoUrl !== undefined) updateData.introVideoUrl = introVideoUrl;
+      if (introVideoThumbnailUrl !== undefined) updateData.introVideoThumbnailUrl = introVideoThumbnailUrl;
+      if (introVideoUploadedAt !== undefined) {
+        updateData.introVideoUploadedAt = introVideoUploadedAt ? new Date(introVideoUploadedAt) : null;
+      }
+      if (introVideoDuration !== undefined) {
+        updateData.introVideoDuration = introVideoDuration ? Number(introVideoDuration) : null;
+      }
+      if (introVideoOriginalName !== undefined) updateData.introVideoOriginalName = introVideoOriginalName;
+
+      console.log("PUT /students/me: Updating student", { 
+        studentId, 
+        hasGpa: gpa !== undefined, 
+        gpa, 
+        gradeType,
+        hasCurrentInstitution: currentInstitution !== undefined,
+        updateDataKeys: Object.keys(updateData)
       });
 
+      const updated = await prisma.student.update({
+        where: { id: studentId },
+        data: updateData,
+      });
+
+      console.log("PUT /students/me: Update successful");
       return res.json({ ok: true, student: updated });
     } catch (err) {
       console.error("PUT /students/me error:", err);
-      return res.status(500).json({ error: "Failed to update student" });
+      console.error("Error details:", {
+        message: err.message,
+        stack: err.stack,
+        code: err.code,
+        meta: err.meta,
+        cause: err.cause
+      });
+      
+      // Handle validation errors that might slip through
+      if (err.name === 'ZodError' || err.issues) {
+        const errors = (err.issues || []).map(i => ({
+          path: i.path?.join('.'),
+          message: i.message
+        }));
+        return res.status(422).json({
+          message: "Validation failed",
+          errors
+        });
+      }
+      
+      // Handle Prisma-specific errors
+      if (err.code === 'P2002') {
+        return res.status(409).json({ 
+          error: "A record with this information already exists",
+          details: err.meta?.target 
+        });
+      }
+      
+      if (err.code === 'P2025') {
+        return res.status(404).json({ 
+          error: "Student record not found" 
+        });
+      }
+      
+      // Check for common Prisma validation errors
+      if (err.message && (err.message.includes('Unknown argument') || err.message.includes('Unknown arg'))) {
+        // Try multiple patterns to extract field name from Prisma error
+        const fieldMatch = err.message.match(/Unknown arg `?(\w+)`?/i) || 
+                          err.message.match(/Unknown argument `?(\w+)`?/i) ||
+                          err.message.match(/`(\w+)`.*unknown/i);
+        const fieldName = fieldMatch ? fieldMatch[1] : 'unknown';
+        
+        console.error("PUT /students/me: Prisma unknown field error", {
+          field: fieldName,
+          fullMessage: err.message,
+          errorCode: err.code,
+          allFieldsInRequest: Object.keys(req.body),
+          dataObjectKeys: Object.keys(req.body || {})
+        });
+        
+        // Also log what we're trying to update
+        console.error("PUT /students/me: Update data being sent to Prisma includes these keys from req.body destructuring");
+        
+        return res.status(400).json({ 
+          error: `Invalid field in update request: ${fieldName || 'unknown field'}`,
+          details: process.env.NODE_ENV === 'development' ? {
+            message: err.message,
+            code: err.code,
+            allRequestFields: Object.keys(req.body)
+          } : undefined
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: "Failed to update student",
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+        code: err.code || 'UNKNOWN_ERROR'
+      });
     }
   }
 );

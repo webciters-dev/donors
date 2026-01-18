@@ -99,6 +99,7 @@ export default function StudentProfile() {
     field: "", // Add the missing field
     degreeLevel: "", // Add degree level field
     program: "",
+    gradeType: "CGPA", // Default to CGPA
     gpa: "",
     gradYear: "",
     // Personal Introduction
@@ -172,10 +173,44 @@ export default function StudentProfile() {
     let dead = false;
     async function load() {
       try {
+        // Check if user is logged in and has studentId
+        if (!user || !user.studentId) {
+          console.error("StudentProfile: User not logged in or no studentId attached");
+          if (!dead) {
+            toast.error("Please log in as a student to access your profile");
+            setLoading(false);
+          }
+          return;
+        }
+
         const res = await fetch(`${API.baseURL}/api/students/me`, {
           headers: { ...authHeader },
         });
-        if (!res.ok) throw new Error(await res.text());
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          let errorMessage = "Failed to load profile";
+          
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.error || errorMessage;
+          } catch {
+            errorMessage = errorText || errorMessage;
+          }
+          
+          // If 404, student might not exist yet - this is okay for new students
+          if (res.status === 404) {
+            console.log("StudentProfile: Student record not found - will create on save");
+            if (!dead) {
+              setLoading(false);
+              // Don't show error for new students, just load empty form
+              return;
+            }
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
         const data = await res.json();
         const s = data?.student || {};
         
@@ -208,6 +243,7 @@ export default function StudentProfile() {
           field: s.field || "", // Add the missing field
           degreeLevel: s.degreeLevel || deriveDegreeLevel(s.program) || "", // Auto-derive from program if not set
           program: s.program || "",
+          gradeType: s.gradeType || (s.gpa && s.gpa > 4 ? "PERCENTAGE" : "CGPA") || "CGPA", // Infer from gpa value if not set
           gpa: s.gpa ?? "",
           gradYear: s.gradYear ?? "",
           // Personal Introduction - filter out default placeholder text
@@ -241,8 +277,12 @@ export default function StudentProfile() {
         };
         if (!dead) setForm((prev) => ({ ...prev, ...initial }));
       } catch (e) {
-        console.error(e);
-        toast.error("Failed to load profile");
+        console.error("StudentProfile load error:", e);
+        if (!dead) {
+          const errorMsg = e.message || "Failed to load profile";
+          toast.error(errorMsg);
+          setLoading(false);
+        }
       } finally {
         if (!dead) setLoading(false);
       }
@@ -252,7 +292,7 @@ export default function StudentProfile() {
       dead = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, user]);
 
   // Load documents for completion calculation
   useEffect(() => {
@@ -370,25 +410,102 @@ export default function StudentProfile() {
         ? form.customUniversity 
         : form.university;
 
+      // Build payload explicitly with only valid Prisma schema fields
+      // Required fields must be included even if empty (validation will catch them)
       const payload = {
-        ...form,
-        university: finalUniversity, // Use the final university value
-        // coerce numeric and normalize before send
-        gpa: form.gpa === "" ? null : Number(form.gpa),
-        gradYear: form.gradYear === "" ? null : Number(form.gradYear),
-        currentCompletionYear: form.currentCompletionYear === "" ? null : Number(form.currentCompletionYear),
-        dateOfBirth: form.dateOfBirth
-          ? new Date(form.dateOfBirth).toISOString()
-          : null,
+        // Personal Information - REQUIRED fields must always be included
+        cnic: form.cnic || "",
+        dateOfBirth: form.dateOfBirth ? new Date(form.dateOfBirth).toISOString() : null,
+        guardianName: form.guardianName || "",
+        guardianCnic: form.guardianCnic || "",
+        phone: form.phone || "",
+        guardianPhone1: form.guardianPhone1 || "",
+        address: form.address || "",
+        city: form.city || "",
+        province: form.province || "",
+        country: form.country || "Pakistan", // Default to Pakistan
+        
+        // Education fields - REQUIRED fields must always be included
+        university: finalUniversity || "",
+        // Note: 'field' is not in validation schema but is in Prisma schema - don't send it to avoid issues
+        // field: form.field || "", 
+        degreeLevel: form.degreeLevel || "",
+        program: form.program || "",
+        gradeType: form.gradeType || (form.gpa && Number(form.gpa) > 4 ? "PERCENTAGE" : "CGPA") || "CGPA",
+        gpa: form.gpa === "" ? 0 : Number(form.gpa), // Required - use 0 if empty, validation will catch invalid values
+        gradYear: form.gradYear === "" ? 0 : Number(form.gradYear), // Required - use 0 if empty, validation will catch invalid values
+        
+        // Previous Academic Record - REQUIRED fields must always be included
+        currentInstitution: form.currentInstitution || "",
+        currentCity: form.currentCity || "",
+        currentCompletionYear: form.currentCompletionYear === "" ? 0 : Number(form.currentCompletionYear), // Required
+        
+        // Profile Details - Optional fields
+        personalIntroduction: form.personalIntroduction || "",
+        familySize: form.familySize === "" ? undefined : (form.familySize ? Number(form.familySize) : undefined),
+        parentsOccupation: form.parentsOccupation || "",
+        monthlyFamilyIncome: form.monthlyFamilyIncome || "",
+        careerGoals: form.careerGoals || "",
+        academicAchievements: form.academicAchievements || "",
+        communityInvolvement: form.communityInvolvement || "",
+        specificField: form.specificField || "",
       };
+      
+      // Add optional photo/social/video fields only if they have values
+      if (form.photoUrl) payload.photoUrl = form.photoUrl;
+      if (form.photoThumbnailUrl) payload.photoThumbnailUrl = form.photoThumbnailUrl;
+      if (form.photoUploadedAt) payload.photoUploadedAt = new Date(form.photoUploadedAt).toISOString();
+      if (form.facebookUrl) payload.facebookUrl = form.facebookUrl;
+      if (form.instagramHandle) payload.instagramHandle = form.instagramHandle;
+      if (form.whatsappNumber) payload.whatsappNumber = form.whatsappNumber;
+      if (form.linkedinUrl) payload.linkedinUrl = form.linkedinUrl;
+      if (form.twitterHandle) payload.twitterHandle = form.twitterHandle;
+      if (form.tiktokHandle) payload.tiktokHandle = form.tiktokHandle;
+      if (form.introVideoUrl) payload.introVideoUrl = form.introVideoUrl;
+      if (form.introVideoThumbnailUrl) payload.introVideoThumbnailUrl = form.introVideoThumbnailUrl;
+      if (form.introVideoUploadedAt) payload.introVideoUploadedAt = new Date(form.introVideoUploadedAt).toISOString();
+      if (form.introVideoDuration !== null && form.introVideoDuration !== "") payload.introVideoDuration = Number(form.introVideoDuration);
+      
+      // Remove undefined values (but keep empty strings for required fields)
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
 
       const res = await fetch(`${API.baseURL}/api/students/me`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error(await res.text());
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        let errorMessage = "Failed to save profile";
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.errors && Array.isArray(errorJson.errors)) {
+            // Validation errors from Zod - show field names
+            const errorDetails = errorJson.errors.map(e => {
+              const fieldName = e.path ? e.path.join('.') : 'unknown field';
+              return `${fieldName}: ${e.message}`;
+            }).join("; ");
+            errorMessage = `Validation failed: ${errorDetails}`;
+          } else if (errorJson.error) {
+            errorMessage = errorJson.error;
+          } else if (errorJson.message) {
+            errorMessage = errorJson.message;
+          }
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        
+        console.error("Profile save error:", errorMessage);
+        throw new Error(errorMessage);
+      }
 
+      const data = await res.json();
       toast.success("Profile updated");
       
       // Redirect to My Application after successful profile save
@@ -397,8 +514,9 @@ export default function StudentProfile() {
       }, 1000); // Small delay to let user see the success message
       
     } catch (e) {
-      console.error(e);
-      toast.error("Failed to save profile");
+      console.error("Profile save error:", e);
+      const errorMsg = e.message || "Failed to save profile";
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }
