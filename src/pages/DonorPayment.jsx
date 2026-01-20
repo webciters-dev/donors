@@ -31,19 +31,13 @@ function DonorPayment() {
   const [processing, setProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [currency, setCurrency] = useState("USD"); // Default to USD, will be updated when student data loads
-  const [paymentFrequency, setPaymentFrequency] = useState("one-time");
 
-  // Payment frequency options
-  const frequencyOptions = [
-    { value: "one-time", label: "One-time Payment", description: "Pay the full amount immediately" },
-    { value: "monthly", label: "Monthly Pledge", description: "24 monthly payments over 2 years" },
-    { value: "quarterly", label: "Quarterly Pledge", description: "8 quarterly payments over 2 years" },
-    { value: "bi-annually", label: "Bi-annual Pledge", description: "4 bi-annual payments over 2 years" },
-    { value: "annually", label: "Annual Pledge", description: "2 annual payments over 2 years" },
-  ];
+  // Payment is always one-time full amount
+  const paymentFrequency = "one-time";
 
   const getPaymentAmount = () => {
     // Calculate full education cost from application (supports all currencies)
+    // Complete sponsorship model: always pay the full education cost in one payment
     let fullEducationCost = 0;
     if (student?.applications?.length > 0) {
       const approvedApp = student.applications.find(app => app.status === 'APPROVED');
@@ -56,49 +50,7 @@ function DonorPayment() {
       fullEducationCost = student?.application?.amount || 0;
     }
     
-    // Complete sponsorship model: always pay the full education cost
-    // No partial payments - one donor sponsors entire education
-    switch (paymentFrequency) {
-      case "monthly":
-        return Math.ceil(fullEducationCost / 24); // 24 months over 2 years
-      case "quarterly":
-        return Math.ceil(fullEducationCost / 8);  // 8 quarters over 2 years
-      case "bi-annually":
-        return Math.ceil(fullEducationCost / 4);  // 4 payments over 2 years
-      case "annually":
-        return Math.ceil(fullEducationCost / 2);  // 2 payments over 2 years
-      default:
-        return fullEducationCost; // One-time payment for full amount
-    }
-  };
-
-  // Calculate payment amount for a specific frequency (not the currently selected one)
-  const getAmountForFrequency = (frequency) => {
-    // Use the same logic as totalNeed calculation (supports all currencies)
-    let amount = 0;
-    if (student?.applications?.length > 0) {
-      const approvedApp = student.applications.find(app => app.status === 'APPROVED');
-      if (approvedApp) {
-        amount = approvedApp.amount || 0; // Single currency system
-      } else {
-        amount = student?.application?.amount || 0;
-      }
-    } else {
-      amount = student?.application?.amount || 0;
-    }
-    
-    switch (frequency) {
-      case "monthly":
-        return Math.ceil(totalNeed / 24); // 24 months over 2 years
-      case "quarterly":
-        return Math.ceil(totalNeed / 8);  // 8 quarters over 2 years
-      case "bi-annually":
-        return Math.ceil(totalNeed / 4);  // 4 payments over 2 years
-      case "annually":
-        return Math.ceil(amount / 2);  // 2 payments over 2 years
-      default:
-        return amount; // One-time payment
-    }
+    return fullEducationCost; // One-time payment for full amount
   };
 
   // Load student data
@@ -447,38 +399,8 @@ function DonorPayment() {
                       {fmtAmountDual(totalNeed, currency)}
                     </div>
                     <div className="text-xs sm:text-sm text-slate-600">
-                      Complete education sponsorship
+                      Complete education sponsorship - One-time payment
                     </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-3">
-                    Payment Schedule
-                  </label>
-                  <div className="space-y-2">
-                    {frequencyOptions.map((option) => (
-                      <label key={option.value} className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border cursor-pointer hover:bg-slate-50 min-h-[44px]">
-                        <input
-                          type="radio"
-                          name="frequency"
-                          value={option.value}
-                          checked={paymentFrequency === option.value}
-                          onChange={(e) => setPaymentFrequency(e.target.value)}
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-0">
-                            <span className="text-sm sm:text-base font-medium text-slate-900">{option.label}</span>
-                            <span className="text-sm sm:text-base font-semibold text-emerald-600">
-                              {fmtAmount(getAmountForFrequency(option.value), currency)}
-                              {option.value !== "one-time" && <span className="text-xs text-slate-500">/{option.value.replace("-", " ")}</span>}
-                            </span>
-                          </div>
-                          <div className="text-xs text-slate-600 mt-1">{option.description}</div>
-                        </div>
-                      </label>
-                    ))}
                   </div>
                 </div>
               </div>

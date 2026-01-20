@@ -135,9 +135,8 @@ const PaymentFormInner = ({
         });
 
         if (confirmRes.ok) {
-          const successMessage = paymentFrequency === "one-time" 
-            ? `Payment successful! Thank you for sponsoring ${student.name}'s education.`
-            : `${paymentFrequency} payment plan set up successfully! Thank you for sponsoring ${student.name}'s education.`;
+          // Always one-time payment now
+          const successMessage = `Payment successful! Thank you for sponsoring ${student.name}'s education.`;
           
           onSuccess(successMessage);
         } else {
@@ -212,10 +211,7 @@ const PaymentFormInner = ({
         ) : (
           <>
             <Lock className="h-4 w-4 mr-2" />
-            {paymentFrequency === "one-time" 
-              ? `Pay ${fmtAmount(totalNeed, currency)}` 
-              : `Setup ${paymentFrequency.replace(/^./, c => c.toUpperCase())} - ${fmtAmount(getPaymentAmount(), currency)}`
-            }
+            Pay {fmtAmount(totalNeed, currency)}
           </>
         )}
       </Button>

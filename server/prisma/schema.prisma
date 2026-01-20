@@ -17,9 +17,13 @@ model Student {
   gender                String
   university            String            // Keep as string for backward compatibility
   universityId          String?           // New: reference to University model
+  customUniversity      String?           // Custom university name when "Other" is selected
   field                 String
+  customFieldOfStudy    String?           // Custom field when "Other" is selected
   program               String
+  customProgram         String?           // Custom program when "Other" is selected
   degreeLevel           String?           // Degree level: Associate, Bachelor's, Master's, etc.
+  customDegreeLevel     String?           // Custom degree level when "Other" is selected
   gpa                   Float
   gradeType             String?           @default("CGPA") // CGPA or PERCENTAGE
   gradYear              Int

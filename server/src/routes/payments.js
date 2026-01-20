@@ -133,106 +133,39 @@ router.post('/create-payment-intent', async (req, res) => {
 
     let paymentIntent;
 
-    if (paymentFrequency === 'one-time') {
-      // Use original currency - NO conversion needed
-      const stripeAmount = parseFloat(amount);
-      const stripeCurrency = appCurrency.toLowerCase(); // Stripe uses lowercase
-      const stripeDescription = `Full sponsorship for ${student.name} - ${student.program} at ${student.university}`;
-      
-      // Create one-time payment intent in original currency
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(stripeAmount * 100), // Convert to cents/pence/smallest unit
-        currency: stripeCurrency, // Use original currency (usd, gbp, eur, cad, pkr)
-        customer: customer.id,
-        metadata: {
-          studentId,
-          userId,
-          studentName: student.name,
-          paymentFrequency: 'one-time',
-          originalAmount: amount,
-          originalCurrency: appCurrency
-        },
-        description: stripeDescription
+    // Only one-time payments are supported
+    if (paymentFrequency !== 'one-time') {
+      return res.status(400).json({ 
+        error: 'Only one-time payments are supported. Recurring payments have been removed.' 
       });
-    } else {
-      // Create subscription for recurring payments
-      const intervalMapping = {
-        'monthly': 'month',
-        'quarterly': { interval: 'month', interval_count: 3 },
-        'bi-annually': { interval: 'month', interval_count: 6 },
-        'annually': 'year'
-      };
-
-      const interval = intervalMapping[paymentFrequency];
-      
-      // Calculate amount per interval for 2-year program
-      // Use original amount - NO conversion
-      const baseAmount = parseFloat(amount);
-      const stripeCurrency = appCurrency.toLowerCase(); // Stripe uses lowercase
-      
-      let amountPerInterval;
-      if (paymentFrequency === 'monthly') {
-        amountPerInterval = Math.round((baseAmount / 24) * 100); // 24 months over 2 years
-      } else if (paymentFrequency === 'quarterly') {
-        amountPerInterval = Math.round((baseAmount / 8) * 100);  // 8 quarters over 2 years
-      } else if (paymentFrequency === 'bi-annually') {
-        amountPerInterval = Math.round((baseAmount / 4) * 100);  // 4 payments over 2 years
-      } else if (paymentFrequency === 'annually') {
-        amountPerInterval = Math.round((baseAmount / 2) * 100);  // 2 payments over 2 years
-      }
-
-      // Create product and price for subscription
-      const product = await stripe.products.create({
-        name: `Sponsorship for ${student.name}`,
-        description: `${paymentFrequency} sponsorship for ${student.program} at ${student.university}`,
-        metadata: {
-          studentId,
-          userId,
-          studentName: student.name
-        }
-      });
-
-      const price = await stripe.prices.create({
-        unit_amount: amountPerInterval,
-        currency: stripeCurrency, // Use original currency
-        recurring: typeof interval === 'object' ? interval : { interval },
-        product: product.id,
-        metadata: {
-          studentId,
-          userId,
-          paymentFrequency,
-          totalAmount: amount,
-          originalAmount: amount,
-          originalCurrency: appCurrency
-        }
-      });
-
-      // Create subscription
-      const subscription = await stripe.subscriptions.create({
-        customer: customer.id,
-        items: [{
-          price: price.id,
-        }],
-        payment_behavior: 'default_incomplete',
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        expand: ['latest_invoice.payment_intent'],
-        metadata: {
-          studentId,
-          userId,
-          studentName: student.name,
-          paymentFrequency,
-          totalAmount: amount
-        }
-      });
-
-      paymentIntent = subscription.latest_invoice.payment_intent;
     }
+
+    // Use original currency - NO conversion needed
+    const stripeAmount = parseFloat(amount);
+    const stripeCurrency = appCurrency.toLowerCase(); // Stripe uses lowercase
+    const stripeDescription = `Full sponsorship for ${student.name} - ${student.program} at ${student.university}`;
+    
+    // Create one-time payment intent in original currency
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(stripeAmount * 100), // Convert to cents/pence/smallest unit
+      currency: stripeCurrency, // Use original currency (usd, gbp, eur, cad, pkr)
+      customer: customer.id,
+      metadata: {
+        studentId,
+        userId,
+        studentName: student.name,
+        paymentFrequency: 'one-time',
+        originalAmount: amount,
+        originalCurrency: appCurrency
+      },
+      description: stripeDescription
+    });
 
     res.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
       customerId: customer.id,
-      isSubscription: paymentFrequency !== 'one-time'
+      isSubscription: false
     });
 
   } catch (error) {
