@@ -34,15 +34,12 @@ router.get("/", async (req, res) => {
       },
       distinct: ['university'],
       where: {
-        studentPhase: "ACTIVE",
-        university: {
-          not: null,
-          not: ""
-        }
+        studentPhase: "ACTIVE"
       }
     });
 
-    const universitiesCount = universities.length;
+    // Filter out null/empty universities in JS
+    const universitiesCount = universities.filter(u => u.university && u.university.trim()).length;
 
     // Calculate success rate (active students / total students who completed APPLICATION)
     const totalCompletedApplications = await prisma.student.count({
@@ -140,8 +137,7 @@ router.get("/sponsored-students", async (req, res) => {
           },
           select: {
             amount: true,
-            currency: true,
-            approvedAmount: true
+            currency: true
           },
           take: 1
         }
@@ -163,7 +159,7 @@ router.get("/sponsored-students", async (req, res) => {
         degreeLevel: student.degreeLevel,
         country: student.country,
         photoThumbnailUrl: student.photoThumbnailUrl,
-        sponsoredAmount: approvedApp?.approvedAmount || approvedApp?.amount || 0,
+        sponsoredAmount: approvedApp?.amount || 0,
         currency: approvedApp?.currency || 'USD'
       };
     });
@@ -192,10 +188,7 @@ router.get("/universities", async (req, res) => {
     // Get universities from ACTIVE students
     const studentsWithUniversities = await prisma.student.findMany({
       where: {
-        studentPhase: "ACTIVE",
-        university: {
-          not: null
-        }
+        studentPhase: "ACTIVE"
       },
       select: {
         university: true,
@@ -203,7 +196,7 @@ router.get("/universities", async (req, res) => {
       }
     });
 
-    // Group by university and count
+    // Group by university and count (filter out null/empty in JS)
     const universityMap = new Map();
     studentsWithUniversities.forEach(student => {
       if (student.university && student.university.trim()) {
