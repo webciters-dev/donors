@@ -27,6 +27,13 @@ export const AdminApplications = () => {
   const [savingId, setSavingId] = useState(null);
   const [activeTab, setActiveTab] = useState("pending");
 
+  // Sponsor Manually tab state
+  const [donors, setDonors] = useState([]);
+  const [selectedDonorId, setSelectedDonorId] = useState("");
+  const [selectedStudentIds, setSelectedStudentIds] = useState(new Set());
+  const [studentAmounts, setStudentAmounts] = useState({}); // studentId -> amount (string)
+  const [isSubmittingSponsorships, setIsSubmittingSponsorships] = useState(false);
+
   // docs state
   const [expandedId, setExpandedId] = useState(null);
   const [docsByRow, setDocsByRow] = useState({}); // app.id -> documents[]
@@ -53,6 +60,51 @@ export const AdminApplications = () => {
   // ---------------------------
   // Load applications (polling)
   // ---------------------------
+  const load = async () => {
+    try {
+      const res = await fetch(`${API.baseURL}/api/applications?limit=500`, {
+        headers: { ...authHeader },
+      });
+
+      if (res.status === 401) {
+        toast.error("Your session expired. Please sign in again.");
+        logout?.();
+        return;
+      }
+
+      const data = await res.json();
+      const list = Array.isArray(data?.applications)
+        ? data.applications
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      // add editable fields locally
+      const withLocal = list.map((a) => ({
+        ...a,
+        _status: a.status,
+        _notes: a.notes ?? "",
+      }));
+      setApps(withLocal);
+
+      // Load officers list (for case worker assignment)
+      try {
+        const ofRes = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, {
+          headers: { ...authHeader },
+        });
+        if (ofRes.ok) {
+          const ofData = await ofRes.json();
+          setOfficers(Array.isArray(ofData?.users) ? ofData.users : []);
+        }
+      } catch (e) {
+        console.error("Failed to load officers:", e);
+      }
+    } catch (e) {
+      console.error(e);
+      setApps([]);
+    }
+  };
+
   useEffect(() => {
     if (!isAdmin) return;
     let dead = false;
@@ -60,41 +112,10 @@ export const AdminApplications = () => {
 
     async function load() {
       try {
-        const res = await fetch(`${API.baseURL}/api/applications?limit=500`, {
-          headers: { ...authHeader },
-        });
-
-        if (res.status === 401) {
-          toast.error("Your session expired. Please sign in again.");
-          logout?.();
-          return;
-        }
-
-        const data = await res.json();
-        const list = Array.isArray(data?.applications)
-          ? data.applications
-          : Array.isArray(data)
-          ? data
-          : [];
-
-        // add editable fields locally
-        const withLocal = list.map((a) => ({
-          ...a,
-          _status: a.status,
-          _notes: a.notes ?? "",
-        }));
-        if (!dead) setApps(withLocal);
-
-        // Load officers list (for case worker assignment)
-        try {
-          const ofRes = await fetch(`${API.baseURL}/api/users?role=SUB_ADMIN`, { headers: { ...authHeader } });
-          if (ofRes.ok) {
-            const ofData = await ofRes.json();
-            if (!dead) setOfficers(Array.isArray(ofData?.users) ? ofData.users : []);
-          }
-        } catch (e) {
-          console.error("Failed to load officers:", e);
-        }
+        await (async () => {
+          if (dead) return;
+          await load();
+        })();
       } catch (e) {
         console.error(e);
         if (!dead) setApps([]);
@@ -107,6 +128,34 @@ export const AdminApplications = () => {
     return () => {
       dead = true;
       if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, token]);
+
+  // Load donors for Sponsor Manually tab
+  useEffect(() => {
+    if (!isAdmin) return;
+    let dead = false;
+    (async () => {
+      try {
+        const res = await fetch(`${API.baseURL}/api/donors?limit=500`, {
+          headers: { ...authHeader },
+        });
+        if (res.status === 401) {
+          toast.error("Your session expired. Please sign in again.");
+          logout?.();
+          return;
+        }
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const list = Array.isArray(data?.donors) ? data.donors : [];
+        if (!dead) setDonors(list);
+      } catch (e) {
+        console.error("Failed to load donors:", e);
+      }
+    })();
+    return () => {
+      dead = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, token]);
@@ -366,6 +415,37 @@ export const AdminApplications = () => {
     });
   }, [apps, query, activeTab]);
 
+  // Sponsor Manually list: unsponsored students (deduped by studentId)
+  const sponsorManuallyList = useMemo(() => {
+    const t = query.toLowerCase();
+    const base = apps.filter((a) => {
+      const isSponsored = a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0);
+      // default: skip rejected students; admin can approve+sponsor from pending/processing/approved
+      const isRejected = a.status === "REJECTED";
+      return !isSponsored && !isRejected;
+    });
+
+    // de-dup by studentId (keep the first occurrence = most recent due to backend ordering)
+    const seen = new Set();
+    const deduped = [];
+    for (const a of base) {
+      if (!a.studentId) continue;
+      if (seen.has(a.studentId)) continue;
+      seen.add(a.studentId);
+      deduped.push(a);
+    }
+
+    return deduped.filter((a) => {
+      const s = a.student || {};
+      return (
+        !t ||
+        s.name?.toLowerCase().includes(t) ||
+        s.university?.toLowerCase().includes(t) ||
+        a.term?.toLowerCase().includes(t)
+      );
+    });
+  }, [apps, query]);
+
   // Statistics for tab badges
   const stats = useMemo(() => ({
     all: apps.length,
@@ -373,6 +453,7 @@ export const AdminApplications = () => {
     approved: apps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0))).length,
     rejected: apps.filter(a => a.status === "REJECTED").length,
     sponsored: apps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)).length,
+    sponsorManually: sponsorManuallyList.length,
   }), [apps]);
 
   if (!isAdmin) {
@@ -396,7 +477,7 @@ export const AdminApplications = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 gap-1">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 gap-1">
           <TabsTrigger value="pending" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
             <span>Pending Review</span>
             {stats.pending > 0 && (
@@ -437,9 +518,254 @@ export const AdminApplications = () => {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="sponsor-manually" className="flex flex-col sm:flex-row items-center gap-1 text-xs sm:text-sm p-2">
+            <span>Sponsor Manually</span>
+            {stats.sponsorManually > 0 && (
+              <Badge variant="default" className="bg-purple-100 text-purple-800 text-xs">
+                {stats.sponsorManually}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab}>
+          {activeTab === "sponsor-manually" ? (
+            <Card className="p-6">
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b pb-4">
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold mb-2">Manual Sponsorship Assignment</h2>
+                    <p className="text-sm text-gray-600">
+                      Select one or more students, choose a donor, then sponsor them. This will mark students as sponsored and set their latest application to APPROVED.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <select
+                      className="px-4 py-2 border rounded-lg text-sm min-w-[220px]"
+                      value={selectedDonorId}
+                      onChange={(e) => setSelectedDonorId(e.target.value)}
+                      disabled={isSubmittingSponsorships}
+                    >
+                      <option value="">Select a Donor...</option>
+                      {donors.map((donor) => (
+                        <option key={donor.id} value={donor.id}>
+                          {donor.name} {donor.organization ? `(${donor.organization})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      disabled={!selectedDonorId || selectedStudentIds.size === 0 || isSubmittingSponsorships}
+                      onClick={async () => {
+                        if (!selectedDonorId || selectedStudentIds.size === 0) {
+                          toast.error("Please select a donor and at least one student");
+                          return;
+                        }
+
+                        // Validate amounts
+                        const invalidAmounts = Array.from(selectedStudentIds).filter((studentId) => {
+                          const amount = studentAmounts[studentId];
+                          const numAmount = Number(amount || "0");
+                          return !amount || isNaN(numAmount) || numAmount <= 0;
+                        });
+
+                        if (invalidAmounts.length > 0) {
+                          toast.error("Please enter a valid transaction amount (greater than 0) for all selected students.");
+                          setIsSubmittingSponsorships(false);
+                          return;
+                        }
+
+                        setIsSubmittingSponsorships(true);
+                        try {
+                          // Build student amounts map
+                          const studentAmountsMap = {};
+                          Array.from(selectedStudentIds).forEach((studentId) => {
+                            const amount = studentAmounts[studentId] || "0";
+                            studentAmountsMap[studentId] = Number(amount);
+                          });
+
+                          const res = await fetch(`${API.baseURL}/api/sponsorships/admin/bulk`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                              ...authHeader,
+                            },
+                            body: JSON.stringify({
+                              donorId: selectedDonorId,
+                              studentIds: Array.from(selectedStudentIds),
+                              amounts: studentAmountsMap, // Send custom amounts
+                            }),
+                          });
+
+                          if (res.status === 401) {
+                            toast.error("Your session expired. Please sign in again.");
+                            logout?.();
+                            return;
+                          }
+
+                          const result = await res.json();
+                          if (res.ok) {
+                            toast.success(`Successfully sponsored ${result.created} students!`);
+                            if (Array.isArray(result.errors) && result.errors.length > 0) {
+                              result.errors.forEach((err) => {
+                                toast.error(`Failed: ${err.studentName}: ${err.error}`);
+                              });
+                            }
+
+                            // Refresh data and clear selection
+                            await load();
+                            setSelectedStudentIds(new Set());
+                            setStudentAmounts({});
+                            setSelectedDonorId("");
+                          } else {
+                            toast.error(result.error || "Failed to create sponsorships");
+                          }
+                        } catch (error) {
+                          console.error("Bulk sponsorship error:", error);
+                          toast.error("An unexpected error occurred during bulk sponsorship.");
+                        } finally {
+                          setIsSubmittingSponsorships(false);
+                        }
+                      }}
+                    >
+                      {isSubmittingSponsorships ? "Sponsoring..." : `Sponsor Selected (${selectedStudentIds.size})`}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Select All */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="selectAllStudents"
+                    className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                    checked={selectedStudentIds.size === sponsorManuallyList.length && sponsorManuallyList.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allIds = sponsorManuallyList.map((app) => app.studentId);
+                        setSelectedStudentIds(new Set(allIds));
+                        // Initialize amounts to 0 for all students
+                        const initialAmounts = {};
+                        allIds.forEach((id) => {
+                          initialAmounts[id] = "0";
+                        });
+                        setStudentAmounts(initialAmounts);
+                      } else {
+                        setSelectedStudentIds(new Set());
+                        setStudentAmounts({});
+                      }
+                    }}
+                  />
+                  <label htmlFor="selectAllStudents" className="text-sm font-medium text-gray-700">
+                    Select All ({selectedStudentIds.size}/{sponsorManuallyList.length})
+                  </label>
+                </div>
+
+                {/* Student Grid */}
+                {sponsorManuallyList.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No non-sponsored students found.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {sponsorManuallyList.map((app) => (
+                      <Card
+                        key={app.studentId}
+                        className={`p-4 flex flex-col gap-3 transition-all duration-200 ${
+                          selectedStudentIds.has(app.studentId)
+                            ? "border-purple-500 ring-2 ring-purple-200 bg-purple-50"
+                            : "border-gray-200 hover:border-purple-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4 cursor-pointer" onClick={() => {
+                          setSelectedStudentIds((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(app.studentId)) {
+                              next.delete(app.studentId);
+                              // Remove amount when unselected
+                              setStudentAmounts((prevAmounts) => {
+                                const newAmounts = { ...prevAmounts };
+                                delete newAmounts[app.studentId];
+                                return newAmounts;
+                              });
+                            } else {
+                              next.add(app.studentId);
+                              // Initialize amount to 0 when selected
+                              setStudentAmounts((prevAmounts) => ({
+                                ...prevAmounts,
+                                [app.studentId]: prevAmounts[app.studentId] || "0",
+                              }));
+                            }
+                            return next;
+                          });
+                        }}>
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                            checked={selectedStudentIds.has(app.studentId)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              setSelectedStudentIds((prev) => {
+                                const next = new Set(prev);
+                                if (e.target.checked) {
+                                  next.add(app.studentId);
+                                  // Initialize amount to 0 when selected
+                                  setStudentAmounts((prevAmounts) => ({
+                                    ...prevAmounts,
+                                    [app.studentId]: prevAmounts[app.studentId] || "0",
+                                  }));
+                                } else {
+                                  next.delete(app.studentId);
+                                  // Remove amount when unselected
+                                  setStudentAmounts((prevAmounts) => {
+                                    const newAmounts = { ...prevAmounts };
+                                    delete newAmounts[app.studentId];
+                                    return newAmounts;
+                                  });
+                                }
+                                return next;
+                              });
+                            }}
+                          />
+                          <StudentPhoto student={app.student} size="medium" />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{app.student?.name}</h3>
+                            <p className="text-sm text-gray-600">
+                              {app.student?.program} at {app.student?.university}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Status: {app.status} · Term: {app.term} · Need: {fmtAmountDual(app.amount, app.currency)}
+                            </p>
+                          </div>
+                        </div>
+                        {selectedStudentIds.has(app.studentId) && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Transaction Amount ({app.currency || "PKR"})
+                            </label>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              placeholder="0"
+                              value={studentAmounts[app.studentId] || "0"}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setStudentAmounts((prev) => ({
+                                  ...prev,
+                                  [app.studentId]: value,
+                                }));
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full min-h-[36px] text-sm"
+                            />
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          ) : (
 
       <Card className="divide-y">
         <div className="grid grid-cols-1 lg:grid-cols-11 gap-3 px-4 py-3 text-sm font-medium text-gray-600">
@@ -689,6 +1015,7 @@ export const AdminApplications = () => {
           );
         })}
       </Card>
+          )}
         </TabsContent>
       </Tabs>
     </div>

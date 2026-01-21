@@ -1,7 +1,7 @@
 // server/src/routes/sponsorships.js
 import express from "express";
 import prisma from "../prismaClient.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, onlyRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -230,6 +230,150 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to create sponsorship" });
+  }
+});
+
+/**
+ * POST /api/sponsorships/admin/bulk
+ * body: { donorId, studentIds[] }
+ * - ADMIN only
+ * - Creates sponsorships for selected students against selected donor
+ * - Marks students as sponsored
+ * - Ensures the latest application for each student is APPROVED
+ */
+router.post("/admin/bulk", requireAuth, onlyRoles("ADMIN"), async (req, res) => {
+  try {
+    const { donorId, studentIds, amounts } = req.body || {};
+
+    if (!donorId || !Array.isArray(studentIds) || studentIds.length === 0) {
+      return res.status(400).json({ error: "donorId and non-empty studentIds array required" });
+    }
+
+    const donor = await prisma.donor.findUnique({
+      where: { id: String(donorId) },
+      select: { id: true, name: true },
+    });
+
+    if (!donor) {
+      return res.status(404).json({ error: "Donor not found" });
+    }
+
+    const students = await prisma.student.findMany({
+      where: { id: { in: studentIds.map(String) } },
+      include: {
+        sponsorships: {
+          where: { status: "active" },
+          select: { id: true, donorId: true },
+          take: 1,
+        },
+        applications: {
+          orderBy: { submittedAt: "desc" },
+          take: 1, // latest application
+        },
+      },
+    });
+
+    if (students.length === 0) {
+      return res.status(400).json({ error: "No eligible students found" });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const student of students) {
+      try {
+        if (student.sponsored || (student.sponsorships && student.sponsorships.length > 0)) {
+          errors.push({ studentId: student.id, studentName: student.name, error: "Already sponsored" });
+          continue;
+        }
+
+        const app = student.applications?.[0] || null;
+        if (!app) {
+          errors.push({ studentId: student.id, studentName: student.name, error: "No application found" });
+          continue;
+        }
+
+        // Use custom amount if provided, otherwise fall back to application amount
+        let amount = 0;
+        if (amounts && typeof amounts === 'object' && amounts[student.id] !== undefined) {
+          amount = Number(amounts[student.id]);
+        } else {
+          amount = Number(app.approvedAmount ?? app.amount ?? 0);
+        }
+
+        if (!amount || isNaN(amount) || amount <= 0) {
+          errors.push({ studentId: student.id, studentName: student.name, error: "Invalid or missing transaction amount" });
+          continue;
+        }
+
+        const sponsorship = await prisma.$transaction(async (tx) => {
+          const created = await tx.sponsorship.create({
+            data: {
+              donorId: donor.id,
+              studentId: student.id,
+              amount: Math.floor(amount),
+              status: "active",
+            },
+            include: {
+              student: { select: { id: true, name: true } },
+              donor: { select: { id: true, name: true } },
+            },
+          });
+
+          await tx.student.update({
+            where: { id: student.id },
+            data: { sponsored: true },
+          });
+
+          // Ensure application is approved when manually sponsoring
+          // Use custom amount if provided, otherwise use existing approvedAmount or application amount
+          const approvedAmount = (amounts && typeof amounts === 'object' && amounts[student.id] !== undefined)
+            ? Number(amounts[student.id])
+            : (app.approvedAmount ?? app.amount);
+
+          if (app.status !== "APPROVED") {
+            await tx.application.update({
+              where: { id: app.id },
+              data: {
+                status: "APPROVED",
+                approvedAmount: approvedAmount,
+              },
+            });
+          } else {
+            // Update approvedAmount even if already approved (to use custom amount)
+            await tx.application.update({
+              where: { id: app.id },
+              data: { approvedAmount: approvedAmount },
+            });
+          }
+
+          return created;
+        });
+
+        results.push({
+          studentId: student.id,
+          studentName: student.name,
+          applicationId: app.id,
+          amount,
+          sponsorshipId: sponsorship.id,
+          donorId: donor.id,
+          donorName: donor.name,
+        });
+      } catch (err) {
+        console.error(`Error creating sponsorship for student ${student.id}:`, err);
+        errors.push({ studentId: student.id, studentName: student.name, error: err.message || "Failed" });
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      created: results.length,
+      results,
+      errors,
+    });
+  } catch (e) {
+    console.error("POST /sponsorships/admin/bulk error:", e);
+    return res.status(500).json({ error: "Failed to create bulk sponsorships" });
   }
 });
 

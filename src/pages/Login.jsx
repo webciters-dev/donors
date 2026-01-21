@@ -122,8 +122,14 @@ export default function Login() {
         await goHomeByRole(data.user.role, data.user, data.token);
       }
     } catch (err) {
-      console.error(err);
-      toast.error(err?.message || "Login failed");
+      console.error("Login error:", err);
+      // Handle network errors specifically
+      if (err.message === "Failed to fetch" || err.name === "TypeError" || err.message?.includes("fetch")) {
+        toast.error("Cannot connect to server. Please check if the backend server is running on port 3001.");
+        console.error("Network error - Backend may not be running or CORS issue:", err);
+      } else {
+        toast.error(err?.message || "Login failed");
+      }
     } finally {
       setLoading(false);
     }
