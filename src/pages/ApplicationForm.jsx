@@ -46,64 +46,78 @@ const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
 );
 
 export const ApplicationForm = () => {
-    // Robust state initialization
-    const initialForm = {
-      name: '',
-      email: '',
-      password: '',
-      confirm: '',
-      gender: '',
-      personalIntroduction: '',
-      photoUrl: '',
-      photoThumbnailUrl: '',
-      photoUploadedAt: '',
-      country: '',
-      university: '',
-      customUniversity: '',
-      degreeLevel: '',
-      field: '',
-      program: '',
-      startMonth: '',
-      startYear: '',
-      endMonth: '',
-      endYear: '',
-      gpa: '',
-      gradeType: 'CGPA',
-      transcripts: [],
-      certificates: [],
-      attachments: [],
-      currency: '',
-      tuitionFee: '',
-      hostelFee: '',
-      stationeryExpense: '',
-      booksExpense: '',
-      messExpense: '',
-      computerLaptop: '',
-      travelExpense: '',
-      otherExpenses: '',
-      universityFee: '',
-      livingExpenses: '',
-      totalExpense: '',
-      amount: '',
-      scholarshipAmount: '',
-      otherResources: '',
-    };
-    const [form, setForm] = useState(initialForm);
-    const [step, setStep] = useState(1);
-
-    // Fallback UI for missing state
-    if (!form || typeof step !== 'number') {
-      return <div style={{color:'red',padding:'2rem'}}>Critical error: Form or step state missing. Please reload or contact support.</div>;
-    }
-
-    // Catch-all error boundary for render errors
-    try {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, user, token } = useAuth();
+  
+  // Step state
+  const [step, setStep] = useState(1);
+  
+  // Loading state
+  const [loading, setLoading] = useState(false);
+  
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Refs for scroll behavior
+  const step2ContainerRef = useRef(null);
+  const step3ContainerRef = useRef(null);
+  
   // Profile lock state
   const [isLocked, setIsLocked] = useState(false);
   const [appStatus, setAppStatus] = useState('DRAFT');
+
+  // Form state - must be declared before any useCallback/useEffect that references it
+  const [form, setForm] = useState(() => ({
+    // Step 1 — identity + credentials
+    name: user?.name || "",
+    email: user?.email || "",
+    password: "",
+    confirm: "",
+    gender: "",
+    personalIntroduction: "", // Personal introduction about student and family
+    // Step 2 — education basics
+    country: "", // Country where university is located (required)
+    university: "",
+    customUniversity: "", // For "Other" option
+    degreeLevel: "", // Associate, Bachelor's, Master's, etc.
+    field: "", // Agriculture, Computer Science, etc.
+    program: "", // Specific program within the field
+    startMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program start month - default to current
+    startYear: String(new Date().getFullYear()), // Program start year - default to current
+    endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
+    endYear: String(new Date().getFullYear()), // Program end year - default to current
+    gpa: "",
+    gradeType: "CGPA", // CGPA or PERCENTAGE
+    // Currency (auto-selected based on country)
+    currency: "PKR", // Default to PKR for our primary market
+    // Photo fields
+    photoUrl: "",
+    photoThumbnailUrl: "",
+    photoUploadedAt: null,
+    // Document upload fields (multi-image arrays)
+    transcripts: [],
+    certificates: [],
+    attachments: [],
+    // Step 3 — financial details (8 expense breakdown fields)
+    tuitionFee: "0",          // Tuition Fee
+    hostelFee: "0",           // Hostel Fee
+    stationeryExpense: "0",   // Stationery expense
+    booksExpense: "0",        // Books expense
+    messExpense: "0",         // Mess (average food cost)
+    computerLaptop: "0",      // Computer/Laptop expense
+    travelExpense: "0",       // Travel expense
+    otherExpenses: "0",       // Other expenses (open-ended amount)
+    otherExpenseDesc: "",     // Other expenses description
+    // Legacy fields (kept for backward compatibility)
+    universityFee: "0",       // Will be calculated from tuitionFee for backward compat
+    livingExpenses: "0",      // Will be calculated from other expenses for backward compat
+    totalExpense: "0",        // Auto-calculated (sum of all 8 expense fields)
+    scholarshipAmount: "0",   // Default to 0
+    otherResources: "0",      // Other funding sources (family, work, savings)
+    amount: "0",              // This will be auto-calculated (totalExpense - scholarshipAmount - otherResources)
+  }));
 
   // Fetch current application status for lock logic
   useEffect(() => {
@@ -162,14 +176,6 @@ export const ApplicationForm = () => {
           gpa: studentData.gpa
         }
       });
-      console.log(' Current form state BEFORE update:', {
-        country: form.country,
-        university: form.university,
-        degreeLevel: form.degreeLevel,
-        field: form.field,
-        program: form.program,
-        gpa: form.gpa
-      });
       // Update form with existing data
       setForm(prevForm => {
         // Parse program dates from database if they exist, otherwise keep defaults
@@ -208,7 +214,7 @@ export const ApplicationForm = () => {
         return newFormData;
       });
     }
-  }, [token, form, setForm]);
+  }, [token]);
 
   // Additional effect to ensure data loading when step changes
   useEffect(() => {
@@ -251,60 +257,6 @@ export const ApplicationForm = () => {
       });
     }
   }, [step]);
-
-  const [form, setForm] = useState(() => ({
-    // Step 1 — identity + credentials
-    name: user?.name || "",
-    email: user?.email || "",
-    password: "",
-    confirm: "",
-    gender: "",
-    personalIntroduction: "", // Personal introduction about student and family
-    // Step 2 — education basics
-    country: "", // Country where university is located (required)
-    university: "",
-    customUniversity: "", // For "Other" option
-    degreeLevel: "", // Associate, Bachelor's, Master's, etc.
-    field: "", // Agriculture, Computer Science, etc.
-    program: "", // Specific program within the field
-    startMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program start month - default to current
-    startYear: String(new Date().getFullYear()), // Program start year - default to current
-    endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
-    endYear: String(new Date().getFullYear()), // Program end year - default to current
-    gpa: "",
-    gradeType: "CGPA", // CGPA or PERCENTAGE
-    // Currency (auto-selected based on country)
-    currency: "PKR", // Default to PKR for our primary market
-    // Photo fields
-    photoUrl: "",
-    photoThumbnailUrl: "",
-    photoUploadedAt: null,
-    // Document upload fields (multi-image arrays)
-    transcripts: [],
-    certificates: [],
-    attachments: [],
-    // Step 3 — financial details (8 expense breakdown fields)
-    tuitionFee: "0",          // Tuition Fee
-    hostelFee: "0",           // Hostel Fee
-    stationeryExpense: "0",   // Stationery expense
-    booksExpense: "0",        // Books expense
-    messExpense: "0",         // Mess (average food cost)
-    computerLaptop: "0",      // Computer/Laptop expense
-    travelExpense: "0",       // Travel expense
-    otherExpenses: "0",       // Other expenses (open-ended amount)
-    otherExpenseDesc: "",     // Other expenses description
-    // Legacy fields (kept for backward compatibility)
-    universityFee: "0",       // Will be calculated from tuitionFee for backward compat
-    livingExpenses: "0",      // Will be calculated from other expenses for backward compat
-    totalExpense: "0",        // Auto-calculated (sum of all 8 expense fields)
-    scholarshipAmount: "0",   // Default to 0
-    otherResources: "0",      // Other funding sources (family, work, savings)
-    amount: "0",              // This will be auto-calculated (totalExpense - scholarshipAmount - otherResources)
-  }));
-
-
-
-
 
   // Update form when user data loads or changes
   useEffect(() => {
@@ -1810,7 +1762,4 @@ export const ApplicationForm = () => {
       </Card>
     </div>
     );
-  } catch (err) {
-    return <div style={{color:'red',padding:'2rem'}}>A rendering error occurred: {err && err.message ? err.message : String(err)}</div>;
-  }
 };

@@ -312,6 +312,8 @@ model FieldReview {
   status                       String                 @default("PENDING")
   notes                        String?
   recommendation               String?
+  recommendedAmount            Int?                   // Case Worker recommended sponsorship amount
+  recommendedAmountReason      String?                // Reason for recommending different amount
   homeVisitDate                DateTime?
   homeVisitNotes               String?
   familyInterviewNotes         String?

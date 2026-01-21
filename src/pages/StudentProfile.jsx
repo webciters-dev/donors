@@ -1043,10 +1043,14 @@ export default function StudentProfile() {
               currentDuration={form.introVideoDuration}
               onVideoSelect={(videoData, metadata) => {
                 // Video has been uploaded to server, update form with URLs
-                setVal('introVideoUrl', videoData.url);
-                setVal('introVideoThumbnailUrl', videoData.thumbnailUrl);
-                setVal('introVideoDuration', videoData.duration);
-                setVal('introVideoUploadedAt', videoData.uploadedAt);
+                // Update all video fields in a single state update to avoid race conditions
+                setForm(prev => ({
+                  ...prev,
+                  introVideoUrl: videoData.url,
+                  introVideoThumbnailUrl: videoData.thumbnailUrl,
+                  introVideoDuration: videoData.duration,
+                  introVideoUploadedAt: videoData.uploadedAt
+                }));
               }}
               onVideoRemove={async () => {
                 try {
@@ -1060,10 +1064,14 @@ export default function StudentProfile() {
                   });
                   
                   if (response.ok) {
-                    setVal('introVideoUrl', '');
-                    setVal('introVideoThumbnailUrl', '');
-                    setVal('introVideoDuration', null);
-                    setVal('introVideoUploadedAt', null);
+                    // Update all video fields in a single state update
+                    setForm(prev => ({
+                      ...prev,
+                      introVideoUrl: '',
+                      introVideoThumbnailUrl: '',
+                      introVideoDuration: null,
+                      introVideoUploadedAt: null
+                    }));
                     toast.success('Video removed successfully');
                   } else {
                     toast.error('Failed to remove video');
