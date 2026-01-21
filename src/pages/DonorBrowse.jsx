@@ -58,7 +58,7 @@ export default function DonorBrowse() {
             onClick={() => navigate("/donor-signup")} 
             className="bg-green-600 hover:bg-green-700 px-6 min-h-[44px] w-full sm:w-auto"
           >
-            Join as Donor
+            Sponsor a Student
           </Button>
         </div>
         <p className="text-green-800 text-xs sm:text-sm max-w-2xl leading-relaxed">
@@ -84,7 +84,7 @@ export default function DonorBrowse() {
               onClick={() => navigate("/donor-signup")} 
               className="bg-green-600 hover:bg-green-700 px-6 min-h-[44px] w-full sm:w-auto"
             >
-              Donor Signup
+              Sponsor a Student
             </Button>
             <p className="text-xs sm:text-sm text-gray-500">
               Get notified when verified students are ready for sponsorship

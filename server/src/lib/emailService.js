@@ -773,3 +773,148 @@ export async function sendApplicationSubmissionNotificationEmail({
     return { success: false, error: error.message };
   }
 }
+
+// =============================
+// GENERAL DONATION EMAIL FUNCTIONS
+// =============================
+
+export async function sendGeneralDonationConfirmationEmail({
+  email,
+  donorName,
+  amount,
+  donationId,
+  transactionId
+}) {
+  try {
+    const transporter = createTransporter();
+    
+    const landingUrl = 'https://aircrew.nl';
+    const formattedAmount = `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const donationDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || 'AWAKE Connect <noreply@aircrew.nl>',
+      to: email,
+      subject: `Thank You for Your Generous Donation of ${formattedAmount}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);">
+          <div style="background-color: white; padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #059669; font-size: 32px; margin: 0; font-weight: bold;">Thank You!</h1>
+              <p style="color: #6b7280; font-size: 16px; margin: 10px 0 0 0;">Your Generosity Makes a Difference</p>
+            </div>
+            
+            <!-- Greeting -->
+            <p style="color: #374151; font-size: 16px; margin: 0 0 20px 0;">Dear ${donorName.split(' ')[0]},</p>
+            
+            <p style="color: #374151; font-size: 15px; line-height: 1.6; margin: 0 0 15px 0;">
+              <strong>Thank you for your generous donation to AWAKE Connect!</strong> Your support helps us sponsor students 
+              and provide educational opportunities to those in need.
+            </p>
+            
+            <!-- Donation Receipt Box -->
+            <div style="background-color: #ecfdf5; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #059669;">
+              <h3 style="color: #047857; margin: 0 0 15px 0; font-size: 18px;">📄 Donation Receipt</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0;"><strong>Donor Name:</strong></td>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0; text-align: right;">${donorName}</td>
+                </tr>
+                <tr>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0;"><strong>Donation Amount:</strong></td>
+                  <td style="color: #059669; font-size: 18px; font-weight: bold; padding: 8px 0; text-align: right;">${formattedAmount}</td>
+                </tr>
+                <tr>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0;"><strong>Donation Date:</strong></td>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0; text-align: right;">${donationDate}</td>
+                </tr>
+                <tr>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0;"><strong>Donation ID:</strong></td>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0; text-align: right;">
+                    <code style="background-color: #f0fdf4; padding: 2px 6px; border-radius: 3px;">${donationId}</code>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0;"><strong>Transaction ID:</strong></td>
+                  <td style="color: #374151; font-size: 14px; padding: 8px 0; text-align: right;">
+                    <code style="background-color: #f0fdf4; padding: 2px 6px; border-radius: 3px;">${transactionId}</code>
+                  </td>
+                </tr>
+              </table>
+            </div>
+            
+            <!-- Tax Information -->
+            <div style="background-color: #dbeafe; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #2563eb;">
+              <h4 style="color: #1e40af; margin: 0 0 10px 0; font-size: 14px;">📋 Tax Information</h4>
+              <p style="color: #1e40af; font-size: 13px; margin: 0; line-height: 1.6;">
+                AWAKE is a project by Akhuwat. Please retain this receipt for your tax records. 
+                For tax deduction purposes, consult with your tax advisor regarding the deductibility of your donation.
+              </p>
+            </div>
+            
+            <!-- Impact Section -->
+            <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #d97706;">
+              <h4 style="color: #92400e; margin: 0 0 10px 0; font-size: 15px;">💡 Your Impact</h4>
+              <p style="color: #78350f; font-size: 14px; margin: 0; line-height: 1.6;">
+                Your donation directly supports:
+              </p>
+              <ul style="color: #78350f; font-size: 14px; margin: 10px 0 0 20px; padding: 0; line-height: 1.8;">
+                <li>Student scholarships and educational sponsorships</li>
+                <li>Verification and field review processes</li>
+                <li>Platform maintenance and student support</li>
+                <li>Connecting deserving students with compassionate donors</li>
+              </ul>
+            </div>
+            
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${landingUrl}" 
+                 style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(5, 150, 105, 0.3);">
+                 Visit AWAKE Connect
+              </a>
+            </div>
+            
+            <!-- Support Section -->
+            <div style="background-color: #f0fdf4; padding: 15px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #059669;">
+              <p style="color: #166534; font-size: 13px; margin: 0; line-height: 1.6;">
+                <strong>Questions about your donation?</strong><br>
+                Contact us at <strong>op.executive@akhuwat.org.pk</strong> and reference your Donation ID.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="text-align: center; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+              <p style="color: #374151; font-size: 14px; margin: 0 0 10px 0;">
+                <strong>Thank you for believing in the power of education!</strong>
+              </p>
+              <p style="color: #6b7280; font-size: 12px; margin: 15px 0 0 0; line-height: 1.5;">
+                AWAKE Connect - Empowering Education Through Compassionate Giving<br>
+                <strong>A Project by Akhuwat</strong>
+              </p>
+              <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
+                This email was sent to ${email} as confirmation of your donation.
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      `
+    };
+    
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ General Donation Confirmation Email sent successfully to:', email);
+    console.log('Message ID:', info.messageId);
+    
+    return { success: true, messageId: info.messageId };
+    
+  } catch (error) {
+    console.error('❌ Failed to send general donation confirmation email:', error);
+    return { success: false, error: error.message };
+  }
+}

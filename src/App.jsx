@@ -8,6 +8,8 @@ import StudentProfile from "@/pages/StudentProfile";
 import StudentRegister from "@/pages/StudentRegister";
 import DonorRegister from "@/pages/DonorRegister";
 import { ThankYou } from "@/pages/ThankYou";
+import { Donate } from "@/pages/Donate";
+import { DonationSuccess } from "@/pages/DonationSuccess";
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -74,6 +76,7 @@ const pathFromKey = {
   donor: "/donor",
   donor_portal: "/donor/portal",
   browse: "/browse",
+  donate: "/donate",
 
   preferences: "/preferences",
   receipts: "/receipts",
@@ -95,6 +98,7 @@ const pathFromKey = {
 function keyFromPath(pathname) {
   if (pathname === "/" || pathname === "/#/" || pathname === "") return "home";
   if (pathname.startsWith("/browse")) return "browse";
+  if (pathname.startsWith("/donate") || pathname.startsWith("/donation-success")) return "donate";
   if (pathname.startsWith("/students/")) return "student";
   if (pathname.startsWith("/student/active")) return "activestudent";
   if (pathname.startsWith("/student/dashboard")) return "studentdashboard";
@@ -211,6 +215,10 @@ function Shell() {
             
             {/* Public browse page for potential donors */}
             <Route path="/browse" element={<DonorBrowse />} />
+
+            {/* General Donations - Public */}
+            <Route path="/donate" element={<Donate />} />
+            <Route path="/donation-success" element={<DonationSuccess />} />
 
             {/* Auth flows (public) */}
             <Route path="/donor-signup" element={<DonorSignup />} />
@@ -409,16 +417,27 @@ function Shell() {
         </main>
 
         <footer className="border-t border-slate-200 bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600 flex items-center justify-between">
-            <span>© {new Date().getFullYear()} Akhuwat · AWAKE Connect</span>
-            <a
-              href="https://webciters.com"
-              target="_blank"
-              rel="noreferrer"
-              className="text-emerald-700 hover:underline"
-            >
-              Powered by WebCiters
-            </a>
+          <div className="mx-auto max-w-7xl px-4 py-6 text-sm text-slate-600">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <span>© {new Date().getFullYear()} Akhuwat · AWAKE Connect</span>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/donate')}
+                  className="text-emerald-700 hover:underline font-medium"
+                >
+                  Donate
+                </button>
+                <span className="text-slate-300">|</span>
+                <a
+                  href="https://webciters.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-700 hover:underline"
+                >
+                  Powered by WebCiters
+                </a>
+              </div>
+            </div>
           </div>
         </footer>
 

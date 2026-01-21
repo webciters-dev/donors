@@ -7,7 +7,7 @@ export const CMS_CONTENT_DEFAULTS = {
     title: "Compassionate Giving",
     subtitle: "Connect with deserving students across Pakistan and help them achieve their educational dreams. Transparent funding platform by Akhuwat with 100% secure donations.",
     primaryButton: "Apply for Sponsorship",
-    secondaryButton: "Donor Signup"
+    secondaryButton: "Sponsor a Student"
   },
 
   // Features Section (3 main boxes)

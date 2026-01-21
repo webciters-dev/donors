@@ -56,6 +56,7 @@ import interviewsRouter from "./routes/interviews.js";
 import superAdminRouter from "./routes/superAdmin.js";
 import auditLogsRouter from "./routes/auditLogs.js";
 import ipWhitelistRouter from "./routes/ipWhitelist.js";
+import generalDonationsRouter from "./routes/generalDonations.js";
 
 // Audit logging middleware
 import { auditLogin } from "./middleware/auditMiddleware.js";
@@ -192,6 +193,7 @@ app.use("/api/photos", photosRouter);
 app.use("/api/videos", videosRouter);
 app.use("/api/board-members", boardMembersRouter);
 app.use("/api/interviews", interviewsRouter);
+app.use("/api/general-donations", generalDonationsRouter);
 
 // Security routes (SUPER_ADMIN only)
 app.use("/api/audit-logs", auditLogsRouter);

@@ -13,6 +13,7 @@ import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
 import AdminSettings from "@/components/AdminSettings";
 import InterviewManager from "@/components/InterviewManager";
+import AdminGeneralDonations from "@/components/AdminGeneralDonations";
 
 export const AdminHub = ({ go }) => {
   const navigate = useNavigate();
@@ -434,11 +435,12 @@ export const AdminHub = ({ go }) => {
       </div>
 
       <Tabs defaultValue="approved">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7">
           <TabsTrigger value="approved" className="text-xs sm:text-sm">Approved Students</TabsTrigger>
           <TabsTrigger value="sponsored" className="text-xs sm:text-sm">Sponsored Students</TabsTrigger>
           <TabsTrigger value="communications" className="text-xs sm:text-sm">Communications</TabsTrigger>
           <TabsTrigger value="applications" className="text-xs sm:text-sm">All Applications</TabsTrigger>
+          <TabsTrigger value="donations" className="text-xs sm:text-sm">General Donations</TabsTrigger>
           <TabsTrigger value="interviews" className="text-xs sm:text-sm">Interviews</TabsTrigger>
           <TabsTrigger value="settings" className="text-xs sm:text-sm">Settings</TabsTrigger>
         </TabsList>
@@ -815,6 +817,17 @@ export const AdminHub = ({ go }) => {
           </div>
           
           <InterviewManager />
+        </TabsContent>
+
+        <TabsContent value="donations" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">💚 General Donations</h3>
+            <Badge variant="outline" className="bg-green-50 text-green-700">
+              Admin Only
+            </Badge>
+          </div>
+          
+          <AdminGeneralDonations />
         </TabsContent>
         
         <TabsContent value="settings" className="space-y-4">

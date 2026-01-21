@@ -13,6 +13,9 @@ export const Nav = ({ active, setActive }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Build tabs based on role
+  // Donate is now a separate action button, not a navigation tab
+  const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
+  
   const baseTabs = [
     { key: "home", label: "Home" },
   ];
@@ -117,13 +120,20 @@ export const Nav = ({ active, setActive }) => {
               </>
             ) : (
               <>
-                {/* Desktop Auth Buttons */}
+                {/* Desktop Action Buttons */}
+                <Button
+                  variant="outline"
+                  className="hidden sm:inline-flex border-green-600 text-green-600 hover:bg-green-50"
+                  onClick={() => setActive("donate")}
+                >
+                  Donate
+                </Button>
                 <Button
                   variant="outline"
                   className="hidden sm:inline-flex"
                   onClick={() => navigate("/donor-signup")}
                 >
-                  Become a Donor
+                  Sponsor a Student
                 </Button>
                 <Button 
                   className="bg-green-600 hover:bg-green-700 hidden sm:inline-flex" 
@@ -202,12 +212,22 @@ export const Nav = ({ active, setActive }) => {
                   <Button
                     variant="outline"
                     onClick={() => {
+                      setActive("donate");
+                      setMobileMenuOpen(false);
+                    }}
+                    className="w-full justify-start border-green-600 text-green-600"
+                  >
+                    Donate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
                       navigate("/donor-signup");
                       setMobileMenuOpen(false);
                     }}
                     className="w-full justify-start"
                   >
-                    Become a Donor
+                    Sponsor a Student
                   </Button>
                 </div>
               )}

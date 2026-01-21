@@ -366,6 +366,46 @@ model StudentProgress {
   @@map("student_progress")
 }
 
+// General Donations - standalone donations not tied to students
+model GeneralDonation {
+  id                    String                @id @default(cuid())
+  
+  // Donor Information (US Tax Compliance)
+  fullName              String                // Legal name for tax receipt
+  email                 String                // For confirmation & receipt
+  phone                 String?               // Optional phone number
+  streetAddress         String                // Street address for tax documentation
+  city                  String                // City for tax documentation
+  state                 String                // US State (dropdown selection)
+  zipCode               String                // ZIP code for tax documentation
+  message               String?               // Optional donor message/note
+  
+  // Payment Details
+  amount                Float                 // Donation amount
+  currency              String                @default("USD") // Currency code
+  stripePaymentIntentId String?               // Stripe payment intent ID
+  stripeSessionId       String?               // Stripe checkout session ID
+  paymentStatus         GeneralDonationStatus @default(PENDING)
+  
+  // Timestamps
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  paidAt                DateTime?             // When payment was completed
+  
+  @@index([email])
+  @@index([paymentStatus])
+  @@index([createdAt])
+  @@index([paidAt])
+  @@map("general_donations")
+}
+
+enum GeneralDonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 enum ApplicationStatus {
   PENDING
   PROCESSING
