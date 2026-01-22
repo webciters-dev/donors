@@ -12,7 +12,8 @@ export default function PhotoUpload({
   currentThumbnailUrl = null,
   onPhotoChange,
   required = false,
-  className = "" 
+  className = "",
+  label = "Upload Your Photo"
 }) {
   const { token } = useAuth();
   const [uploading, setUploading] = useState(false);
@@ -208,7 +209,7 @@ export default function PhotoUpload({
             <Camera className="w-12 h-12 text-gray-400 mx-auto" />
             <div>
               <p className="text-sm font-medium text-gray-900">
-                {previewUrl ? 'Change Photo' : 'Upload Your Photo'}
+                {previewUrl ? `Change ${label.replace('Upload ', '')}` : label}
                 {required && <span className="text-red-500 ml-1">*</span>}
               </p>
               <p className="text-xs text-gray-500 mt-1">

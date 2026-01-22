@@ -125,7 +125,7 @@ export default function StudentDashboard() {
           try {
             const [sponsorshipRes, progressRes] = await Promise.all([
               fetch(`${API.baseURL}/api/sponsorships?studentId=${user.studentId}`, { headers: authHeader }),
-              fetch(`${API.baseURL}/api/donor-messages/${user.studentId}/progress`, { headers: authHeader })
+              fetch(`${API.baseURL}/api/student-progress/${user.studentId}`, { headers: authHeader })
             ]);
 
             if (sponsorshipRes.ok) {
