@@ -58,10 +58,13 @@ export default function PhotoUpload({
       const endpoint = token ? '/api/photos/upload' : '/api/photos/upload-temp';
       
       // Prepare headers - only add Authorization if token exists
+      // Note: Don't set Content-Type for FormData - browser will set it with boundary
       const headers = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
+
+      console.log('PhotoUpload: Attempting upload to:', `${API.baseURL}${endpoint}`, { hasToken: !!token });
 
       const response = await fetch(`${API.baseURL}${endpoint}`, {
         method: 'POST',
@@ -69,9 +72,24 @@ export default function PhotoUpload({
         body: formData
       });
 
+      console.log('PhotoUpload: Response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (parseError) {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            errorMessage = errorText || errorMessage;
+          } catch (textError) {
+            // If we can't read the response, use status text
+            errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -94,7 +112,18 @@ export default function PhotoUpload({
 
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error(error.message || 'Failed to upload photo');
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || 'Failed to upload photo';
+      
+      // Check for network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        errorMessage = 'Cannot connect to server. Please check if the backend server is running on port 3001.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error: Cannot connect to server. Please check your connection and ensure the backend server is running.';
+      }
+      
+      toast.error(errorMessage);
       
       // Reset preview on error
       setPreviewUrl(currentPhotoUrl);

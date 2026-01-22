@@ -15,10 +15,10 @@ import UniversitySelector from "@/components/UniversitySelector";
 import PhotoUpload from "@/components/PhotoUpload";
 import RecaptchaProtection from "@/components/RecaptchaProtection";
 import { 
-  useUniversityAcademics,
-  generateMonthYearOptions
+  useUniversityAcademics
 } from "@/hooks/useUniversityAcademics";
 import { getPakistanOnlyDatalist, getFilterMessage } from "@/lib/countryFilter";
+import { DatePicker } from "@/components/ui/date-picker";
 
 // Fallback university ID (LUMS) for when "Other" is selected
 // This allows users selecting "Other" to still pick from common degree levels, fields, and programs
@@ -105,6 +105,8 @@ export const ApplicationForm = () => {
     startYear: String(new Date().getFullYear()), // Program start year - default to current
     endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
     endYear: String(new Date().getFullYear()), // Program end year - default to current
+    startDate: "", // Program start date (YYYY-MM-DD format)
+    endDate: "", // Expected graduation date (YYYY-MM-DD format)
     gpa: "",
     gradeType: "CGPA", // CGPA or PERCENTAGE
     // Currency (auto-selected based on country)
@@ -225,15 +227,26 @@ export const ApplicationForm = () => {
         let startYear = prevForm.startYear;
         let endMonth = prevForm.endMonth;
         let endYear = prevForm.endYear;
+        let startDate = prevForm.startDate;
+        let endDate = prevForm.endDate;
+        
         if (studentData.programStartDate) {
           const [sMonth, sYear] = studentData.programStartDate.split('/');
           startMonth = sMonth || prevForm.startMonth;
           startYear = sYear || prevForm.startYear;
+          // Convert month/year to date string (YYYY-MM-DD) - use first day of month
+          if (startMonth && startYear) {
+            startDate = `${startYear}-${startMonth.padStart(2, '0')}-01`;
+          }
         }
         if (studentData.programEndDate) {
           const [eMonth, eYear] = studentData.programEndDate.split('/');
           endMonth = eMonth || prevForm.endMonth;
           endYear = eYear || prevForm.endYear;
+          // Convert month/year to date string (YYYY-MM-DD) - use first day of month
+          if (endMonth && endYear) {
+            endDate = `${endYear}-${endMonth.padStart(2, '0')}-01`;
+          }
         }
         const newFormData = {
           ...prevForm,
@@ -251,7 +264,9 @@ export const ApplicationForm = () => {
           startMonth,
           startYear,
           endMonth,
-          endYear
+          endYear,
+          startDate,
+          endDate
         };
         return newFormData;
       });
@@ -468,8 +483,7 @@ export const ApplicationForm = () => {
     return false;
   };
 
-  // Generate month/year options for dropdowns
-  const { months, years } = generateMonthYearOptions();
+  // Month/year options no longer needed - using DatePicker calendar instead
   
   // Get university ID from selected university name
   const [selectedUniversityId, setSelectedUniversityId] = useState(null);
@@ -692,11 +706,11 @@ export const ApplicationForm = () => {
       toast.error("Please complete all required fields: country, university, degree level, field, program, and CGPA.");
       return;
     }
-    if (!form.startMonth || !form.startYear) {
+    if (!form.startDate && (!form.startMonth || !form.startYear)) {
       toast.error("Please specify program start date.");
       return;
     }
-    if (!form.endMonth || !form.endYear) {
+    if (!form.endDate && (!form.endMonth || !form.endYear)) {
       toast.error("Please specify expected graduation date.");
       return;
     }
@@ -750,8 +764,11 @@ export const ApplicationForm = () => {
         country: form.country.trim(),
         university: finalUniversity.trim(),
         degreeLevel: form.degreeLevel,
+        customDegreeLevel: form.degreeLevel === "Other" ? form.customDegreeLevel : undefined,
         field: form.field.trim(),
+        customFieldOfStudy: form.field === "Other" ? form.customField : undefined,
         program: form.program.trim(),
+        customProgram: form.program === "Other" ? form.customProgram : undefined,
         gpa: Number(form.gpa),
         gradeType: form.gradeType || "CGPA",
         programStartDate,
@@ -1222,66 +1239,48 @@ export const ApplicationForm = () => {
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2">Program Start Date <span className="text-red-500">*</span></label>
-                  <div className="flex gap-2">
-                    <select
-                      value={form.startMonth}
-                      onChange={(e) => setForm({ ...form, startMonth: e.target.value })}
-                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Month</option>
-                      {months.map((month) => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={form.startYear}
-                      onChange={(e) => setForm({ ...form, startYear: e.target.value })}
-                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Year</option>
-                      {years.map((year) => (
-                        <option key={year.value} value={year.value}>
-                          {year.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <DatePicker
+                    value={form.startDate}
+                    onChange={(date) => {
+                      // Update both the date field and month/year fields for backward compatibility
+                      const newForm = { ...form, startDate: date };
+                      if (date) {
+                        const d = new Date(date);
+                        newForm.startMonth = String(d.getMonth() + 1).padStart(2, '0');
+                        newForm.startYear = String(d.getFullYear());
+                      } else {
+                        newForm.startMonth = "";
+                        newForm.startYear = "";
+                      }
+                      setForm(newForm);
+                    }}
+                    placeholder="Select program start date"
+                    className="min-h-[44px]"
+                    // No minDate restriction - allows all dates including past years
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Expected Graduation Date <span className="text-red-500">*</span></label>
-                  <div className="flex gap-2">
-                    <select
-                      value={form.endMonth}
-                      onChange={(e) => setForm({ ...form, endMonth: e.target.value })}
-                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Month</option>
-                      {months.map((month) => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={form.endYear}
-                      onChange={(e) => setForm({ ...form, endYear: e.target.value })}
-                      className="flex-1 min-h-[44px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    >
-                      <option value="">Year</option>
-                      {years.map((year) => (
-                        <option key={year.value} value={year.value}>
-                          {year.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <DatePicker
+                    value={form.endDate}
+                    onChange={(date) => {
+                      // Update both the date field and month/year fields for backward compatibility
+                      const newForm = { ...form, endDate: date };
+                      if (date) {
+                        const d = new Date(date);
+                        newForm.endMonth = String(d.getMonth() + 1).padStart(2, '0');
+                        newForm.endYear = String(d.getFullYear());
+                      } else {
+                        newForm.endMonth = "";
+                        newForm.endYear = "";
+                      }
+                      setForm(newForm);
+                    }}
+                    placeholder="Select expected graduation date"
+                    className="min-h-[44px]"
+                    minDate={new Date().toISOString().split('T')[0]} // Only allow future dates (today and later) - no previous years
+                  />
                 </div>
               </>
             )}
@@ -1317,42 +1316,44 @@ export const ApplicationForm = () => {
               </p>
             </div>
 
-            {/* Document Uploads */}
-            <div className="sm:col-span-2 space-y-4 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Transcripts (upload all relevant marksheets, transcripts, etc.)</label>
-                <PhotoUpload
-                  currentPhotos={form.transcripts}
-                  onPhotoChange={(photos) => setForm({ ...form, transcripts: photos })}
-                  maxFiles={5}
-                  required={false}
-                  className="mt-2"
-                  label="Upload Transcripts"
-                />
+            {/* Document Uploads - Hidden per user request */}
+            {false && (
+              <div className="sm:col-span-2 space-y-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Transcripts (upload all relevant marksheets, transcripts, etc.)</label>
+                  <PhotoUpload
+                    currentPhotos={form.transcripts}
+                    onPhotoChange={(photos) => setForm({ ...form, transcripts: photos })}
+                    maxFiles={5}
+                    required={false}
+                    className="mt-2"
+                    label="Upload Transcripts"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Certificates (upload degree, awards, or other certificates)</label>
+                  <PhotoUpload
+                    currentPhotos={form.certificates}
+                    onPhotoChange={(photos) => setForm({ ...form, certificates: photos })}
+                    maxFiles={5}
+                    required={false}
+                    className="mt-2"
+                    label="Upload Certificates"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Other Attachments (optional)</label>
+                  <PhotoUpload
+                    currentPhotos={form.attachments}
+                    onPhotoChange={(photos) => setForm({ ...form, attachments: photos })}
+                    maxFiles={5}
+                    required={false}
+                    className="mt-2"
+                    label="Upload Attachments"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Certificates (upload degree, awards, or other certificates)</label>
-                <PhotoUpload
-                  currentPhotos={form.certificates}
-                  onPhotoChange={(photos) => setForm({ ...form, certificates: photos })}
-                  maxFiles={5}
-                  required={false}
-                  className="mt-2"
-                  label="Upload Certificates"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Other Attachments (optional)</label>
-                <PhotoUpload
-                  currentPhotos={form.attachments}
-                  onPhotoChange={(photos) => setForm({ ...form, attachments: photos })}
-                  maxFiles={5}
-                  required={false}
-                  className="mt-2"
-                  label="Upload Attachments"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="sm:col-span-2 flex flex-col sm:flex-row justify-between gap-3">
               <Button variant="outline" onClick={back} disabled={user ? false : true} className="min-h-[44px] w-full sm:w-auto">
@@ -1367,10 +1368,8 @@ export const ApplicationForm = () => {
                     form.degreeLevel &&
                     form.field &&
                     form.program && 
-                    form.startMonth &&
-                    form.startYear &&
-                    form.endMonth &&
-                    form.endYear &&
+                    (form.startDate || (form.startMonth && form.startYear)) &&
+                    (form.endDate || (form.endMonth && form.endYear)) &&
                     form.gpa;
                   
                   if (!isFormValid) {
@@ -1383,27 +1382,53 @@ export const ApplicationForm = () => {
                     
                     // Save Step 2 data before redirecting
                     const finalUniversity = form.university === "Other" ? form.customUniversity : form.university;
+                    const finalField = form.field === "Other" ? form.customField : form.field;
+                    const finalProgram = form.program === "Other" ? form.customProgram : form.program;
+                    
                     const programStartDate = `${form.startMonth}/${form.startYear}`;
                     const programEndDate = `${form.endMonth}/${form.endYear}`;
+                    
+                    // Ensure we have valid values for required fields
+                    const finalFieldValue = form.field === "Other" 
+                      ? (form.customField?.trim() || "Other") 
+                      : form.field.trim();
+                    const finalProgramValue = form.program === "Other" 
+                      ? (form.customProgram?.trim() || "Other") 
+                      : form.program.trim();
                     
                     const step2Payload = {
                       country: form.country.trim(),
                       university: finalUniversity.trim(),
-                      degreeLevel: form.degreeLevel,
-                      field: form.field.trim(),
-                      program: form.program.trim(),
-                      gpa: Number(form.gpa),
-                      gradeType: form.gradeType || "CGPA",
-                      programStartDate,
-                      programEndDate
+                      // Store the actual degree level value (or "Other" if selected)
+                      degreeLevel: form.degreeLevel || undefined,
+                      customDegreeLevel: form.degreeLevel === "Other" && form.customDegreeLevel ? form.customDegreeLevel.trim() : undefined,
+                      // Store the actual field value (use custom if "Other" was selected)
+                      field: finalFieldValue,
+                      customFieldOfStudy: form.field === "Other" && form.customField ? form.customField.trim() : undefined,
+                      // Store the actual program value (use custom if "Other" was selected)
+                      program: finalProgramValue,
+                      customProgram: form.program === "Other" && form.customProgram ? form.customProgram.trim() : undefined,
+                      gpa: Number(form.gpa) || 0,
+                      programStartDate: programStartDate || undefined,
+                      programEndDate: programEndDate || undefined
                     };
+                    
+                    // Remove undefined values from payload (but keep empty strings for required fields if needed)
+                    Object.keys(step2Payload).forEach(key => {
+                      if (step2Payload[key] === undefined) {
+                        delete step2Payload[key];
+                      }
+                    });
+                    
+                    console.log(' Step 2 payload after cleanup:', step2Payload);
                     
                     console.log(' Step 2 save debug - current form state:', {
                       degreeLevel: form.degreeLevel,
-                      degreeLevelType: typeof form.degreeLevel,
-                      isEmpty: form.degreeLevel === '',
-                      isNull: form.degreeLevel === null,
-                      isUndefined: form.degreeLevel === undefined,
+                      customDegreeLevel: form.customDegreeLevel,
+                      field: form.field,
+                      customField: form.customField,
+                      program: form.program,
+                      customProgram: form.customProgram,
                       fullPayload: step2Payload
                     });
                     
@@ -1424,9 +1449,17 @@ export const ApplicationForm = () => {
                     });
                     
                     if (!step2Res.ok) {
-                      const errorText = await step2Res.text();
-                      console.error(' Step 2 save failed:', step2Res.status, errorText);
-                      throw new Error(errorText || "Failed to save education details");
+                      let errorMessage = "Failed to save education details";
+                      try {
+                        const errorData = await step2Res.json();
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                        console.error(' Step 2 save failed:', step2Res.status, errorData);
+                      } catch (parseError) {
+                        const errorText = await step2Res.text();
+                        errorMessage = errorText || errorMessage;
+                        console.error(' Step 2 save failed (non-JSON):', step2Res.status, errorText);
+                      }
+                      throw new Error(errorMessage);
                     }
                     
                     //  Update local form state with saved data to ensure Step 3 displays correctly
@@ -1477,7 +1510,8 @@ export const ApplicationForm = () => {
                     
                   } catch (error) {
                     console.error("Failed to save Step 2 data:", error);
-                    toast.error("Failed to save education details. Please try again.");
+                    const errorMessage = error.message || "Failed to save education details. Please try again.";
+                    toast.error(errorMessage);
                   } finally {
                     setLoading(false);
                   }
@@ -1490,10 +1524,8 @@ export const ApplicationForm = () => {
                   !form.degreeLevel ||
                   !form.field ||
                   !form.program || 
-                  !form.startMonth ||
-                  !form.startYear ||
-                  !form.endMonth ||
-                  !form.endYear ||
+                  !(form.startDate || (form.startMonth && form.startYear)) ||
+                  !(form.endDate || (form.endMonth && form.endYear)) ||
                   !form.gpa
                 }
                 className="min-h-[44px] w-full sm:w-auto"

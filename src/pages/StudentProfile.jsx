@@ -88,17 +88,30 @@ export default function StudentProfile() {
     photoUrl: "",
     photoThumbnailUrl: "",
     photoUploadedAt: null,
-    // Previous Academic Record fields
-    currentInstitution: "",
-    currentCity: "",
-    currentCompletionYear: "",
+    // Previous Academic Record fields - now an array to support multiple records
+    previousAcademicRecords: [
+      {
+        institution: "",
+        city: "",
+        completionYear: "",
+        program: "",
+        educationBoard: "",
+        totalMarks: "",
+        obtainedMarks: "",
+        gradeType: "%", // %/CGPA/Grade
+        gradeValue: ""
+      }
+    ],
     // Future Education fields
     country: "Pakistan", // Default to Pakistan for existing users
     university: "",
     customUniversity: "",
     field: "", // Add the missing field
+    customFieldOfStudy: "", // Custom field value when "Other" is selected (matches Prisma schema)
     degreeLevel: "", // Add degree level field
+    customDegreeLevel: "", // Custom degree level value when "Other" is selected
     program: "",
+    customProgram: "", // Custom program value when "Other" is selected
     gradeType: "CGPA", // Default to CGPA
     gpa: "",
     gradYear: "",
@@ -214,6 +227,18 @@ export default function StudentProfile() {
         const data = await res.json();
         const s = data?.student || {};
         
+        // Debug: Log the student data to see what we're getting
+        console.log('StudentProfile: Loaded student data:', {
+          degreeLevel: s.degreeLevel,
+          customDegreeLevel: s.customDegreeLevel,
+          field: s.field,
+          customFieldOfStudy: s.customFieldOfStudy,
+          program: s.program,
+          customProgram: s.customProgram,
+          university: s.university,
+          customUniversity: s.customUniversity
+        });
+        
         // Set profile lock status
         if (!dead) {
           setIsProfileLocked(data.isProfileLocked || false);
@@ -232,17 +257,52 @@ export default function StudentProfile() {
           address: s.address || "",
           city: s.city || "",
           province: s.province || "",
-          // Previous Academic Record fields
-          currentInstitution: s.currentInstitution || "",
-          currentCity: s.currentCity || "",
-          currentCompletionYear: s.currentCompletionYear ?? "",
+          // Previous Academic Record fields - handle both old single record and new array format
+          previousAcademicRecords: s.previousAcademicRecords && Array.isArray(s.previousAcademicRecords) && s.previousAcademicRecords.length > 0
+            ? s.previousAcademicRecords.map(record => ({
+                institution: record.institution || record.currentInstitution || "",
+                city: record.city || record.currentCity || "",
+                completionYear: record.completionYear || record.currentCompletionYear || "",
+                program: record.program || "",
+                educationBoard: record.educationBoard || "",
+                totalMarks: record.totalMarks || "",
+                obtainedMarks: record.obtainedMarks || "",
+                gradeType: record.gradeType || "%",
+                gradeValue: record.gradeValue || ""
+              }))
+            : s.currentInstitution || s.currentCity || s.currentCompletionYear
+              ? [{
+                  institution: s.currentInstitution || "",
+                  city: s.currentCity || "",
+                  completionYear: s.currentCompletionYear ?? "",
+                  program: "",
+                  educationBoard: "",
+                  totalMarks: "",
+                  obtainedMarks: "",
+                  gradeType: "%",
+                  gradeValue: ""
+                }]
+              : [{
+                  institution: "",
+                  city: "",
+                  completionYear: "",
+                  program: "",
+                  educationBoard: "",
+                  totalMarks: "",
+                  obtainedMarks: "",
+                  gradeType: "%",
+                  gradeValue: ""
+                }],
           // Future Education fields  
           country: s.country || "Pakistan", // Default to Pakistan
           university: s.university || "",
           customUniversity: s.customUniversity || "",
           field: s.field || "", // Add the missing field
+          customFieldOfStudy: s.customFieldOfStudy || "", // Custom field value when "Other" is selected (matches Prisma schema)
           degreeLevel: s.degreeLevel || deriveDegreeLevel(s.program) || "", // Auto-derive from program if not set
+          customDegreeLevel: s.customDegreeLevel || "", // Custom degree level value when "Other" is selected
           program: s.program || "",
+          customProgram: s.customProgram || "", // Custom program value when "Other" is selected
           gradeType: s.gradeType || (s.gpa && s.gpa > 4 ? "PERCENTAGE" : "CGPA") || "CGPA", // Infer from gpa value if not set
           gpa: s.gpa ?? "",
           gradYear: s.gradYear ?? "",
@@ -361,22 +421,62 @@ export default function StudentProfile() {
   }
 
   function validateAll() {
-    const result = studentProfileAcademicSchema.safeParse(form);
+    // Create a clean form object for validation, excluding legacy fields that aren't in the form state
+    const formForValidation = { ...form };
+    // Remove any legacy fields that might have been accidentally added
+    // These fields are not part of the new form structure
+    delete formForValidation.currentInstitution;
+    delete formForValidation.currentCity;
+    delete formForValidation.currentCompletionYear;
+    
+    // Also ensure these are not set to empty strings (in case they were added somehow)
+    if (formForValidation.currentInstitution === "") delete formForValidation.currentInstitution;
+    if (formForValidation.currentCity === "") delete formForValidation.currentCity;
+    if (formForValidation.currentCompletionYear === "" || formForValidation.currentCompletionYear === null) {
+      delete formForValidation.currentCompletionYear;
+    }
+    
+    const result = studentProfileAcademicSchema.safeParse(formForValidation);
     if (result.success) {
       setErrors({});
-      return true;
+      return { valid: true, errors: {} };
     }
     const next = {};
     for (const issue of result.error.issues) {
-      const key = issue.path?.[0];
-      if (key && !next[key]) next[key] = issue.message; // keep first message per field
+      // Handle nested paths like "previousAcademicRecords.0.institution"
+      const path = issue.path || [];
+      if (path.length > 0) {
+        // For nested paths, create a key like "previousAcademicRecords.0.institution"
+        const key = path.join('.');
+        if (!next[key]) {
+          next[key] = issue.message;
+        }
+        // For array fields, also set error on the specific field
+        if (path.length >= 3 && path[0] === 'previousAcademicRecords') {
+          const recordIndex = path[1];
+          const fieldName = path[2];
+          const fieldKey = `previousAcademicRecords.${recordIndex}.${fieldName}`;
+          if (!next[fieldKey]) {
+            next[fieldKey] = issue.message;
+          }
+        } else if (path.length === 1 && path[0] === 'previousAcademicRecords') {
+          // General error for the array itself (e.g., "At least one previous academic record is required")
+          next['previousAcademicRecords'] = issue.message;
+        }
+      } else {
+        // For top-level fields
+        const key = issue.path?.[0];
+        if (key && !next[key]) next[key] = issue.message;
+      }
     }
     
     // Debug: Log validation errors to console
     console.log("Validation errors:", next);
+    console.log("Full validation result:", result.error.issues);
+    console.log("Form data:", form);
     
     setErrors(next);
-    return false;
+    return { valid: false, errors: next };
   }
 
   // Handlers
@@ -398,8 +498,49 @@ export default function StudentProfile() {
       return;
     }
     
-    if (!validateAll()) {
-      toast.error("Please fix the highlighted fields.");
+    const validationResult = validateAll();
+    if (!validationResult.valid) {
+      // Use errors from validation result, not state (state might not be updated yet)
+      const validationErrors = validationResult.errors;
+      
+      // Show specific error messages
+      const errorMessages = Object.entries(validationErrors)
+        .filter(([key, value]) => value) // Only include fields with errors
+        .map(([key, value]) => {
+          // Format field names for display
+          let fieldName = key;
+          // Handle nested paths like "previousAcademicRecords.0.institution"
+          if (key.startsWith('previousAcademicRecords.')) {
+            const match = key.match(/previousAcademicRecords\.(\d+)\.(.+)/);
+            if (match) {
+              const recordNum = parseInt(match[1]) + 1;
+              const field = match[2];
+              fieldName = `Record ${recordNum} - ${field.charAt(0).toUpperCase() + field.slice(1)}`;
+            } else if (key === 'previousAcademicRecords') {
+              fieldName = 'Previous Academic Records';
+            }
+          } else {
+            // Capitalize first letter and add spaces
+            fieldName = key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1');
+          }
+          return `${fieldName}: ${value}`;
+        })
+        .slice(0, 5); // Show first 5 errors
+      
+      if (errorMessages.length > 0) {
+        const errorText = errorMessages.length === 1 
+          ? errorMessages[0]
+          : `Please fix the following:\n${errorMessages.join('\n')}`;
+        toast.error(errorText, {
+          duration: 8000,
+        });
+      } else {
+        toast.error("Please fix the highlighted fields.");
+      }
+      
+      // Also log to console for debugging
+      console.log("Validation failed. Errors:", validationErrors);
+      console.log("Form data being validated:", form);
       return;
     }
 
@@ -435,10 +576,37 @@ export default function StudentProfile() {
         gpa: form.gpa === "" ? 0 : Number(form.gpa), // Required - use 0 if empty, validation will catch invalid values
         gradYear: form.gradYear === "" ? 0 : Number(form.gradYear), // Required - use 0 if empty, validation will catch invalid values
         
-        // Previous Academic Record - REQUIRED fields must always be included
-        currentInstitution: form.currentInstitution || "",
-        currentCity: form.currentCity || "",
-        currentCompletionYear: form.currentCompletionYear === "" ? 0 : Number(form.currentCompletionYear), // Required
+        // Previous Academic Record - send as array
+        // Filter out empty records and ensure required fields are present
+        previousAcademicRecords: form.previousAcademicRecords
+          .filter(record => {
+            // Only include records that have at least the required fields filled
+            return record.institution && record.institution.trim() && 
+                   record.city && record.city.trim() && 
+                   record.completionYear && record.completionYear !== "";
+          })
+          .map(record => ({
+            institution: record.institution.trim(),
+            city: record.city.trim(),
+            completionYear: Number(record.completionYear),
+            program: record.program?.trim() || undefined,
+            educationBoard: record.educationBoard?.trim() || undefined,
+            totalMarks: record.totalMarks && record.totalMarks !== "" ? Number(record.totalMarks) : undefined,
+            obtainedMarks: record.obtainedMarks && record.obtainedMarks !== "" ? Number(record.obtainedMarks) : undefined,
+            gradeType: record.gradeType || undefined,
+            gradeValue: record.gradeValue && record.gradeValue !== "" 
+              ? (isNaN(Number(record.gradeValue)) ? record.gradeValue : Number(record.gradeValue))
+              : undefined
+          }))
+          .filter(record => {
+            // Remove undefined values from each record
+            Object.keys(record).forEach(key => {
+              if (record[key] === undefined) {
+                delete record[key];
+              }
+            });
+            return true;
+          }),
         
         // Profile Details - Optional fields
         personalIntroduction: form.personalIntroduction || "",
@@ -743,49 +911,245 @@ export default function StudentProfile() {
           {/* Previous Academic Record Section Header */}
           <div className="sm:col-span-2">
             <h3 className="text-base sm:text-lg font-semibold text-blue-800 mb-3">Previous Academic Record</h3>
-          </div>
-
-          {/* Previous Institution */}
-          <div>
-            <label className="block text-xs sm:text-sm mb-1">Previous Institution</label>
-            <Input
-              value={form.currentInstitution}
-              onChange={(e) => setVal("currentInstitution", e.target.value)}
-              className={`rounded-2xl min-h-[44px] ${errors.currentInstitution ? 'border-red-500 focus:border-red-500' : ''}`}
-              placeholder="e.g., ABC College"
-            />
-            {errors.currentInstitution && (
-              <p className="text-xs text-rose-600 mt-1">{errors.currentInstitution}</p>
+            {errors['previousAcademicRecords'] && (
+              <p className="text-xs text-rose-600 mt-1 mb-2">{errors['previousAcademicRecords']}</p>
             )}
           </div>
 
-          {/* Previous City */}
-          <div>
-            <label className="block text-xs sm:text-sm mb-1">Previous Institution City</label>
-            <Input
-              value={form.currentCity}
-              onChange={(e) => setVal("currentCity", e.target.value)}
-              className={`rounded-2xl min-h-[44px] ${errors.currentCity ? 'border-red-500 focus:border-red-500' : ''}`}
-              placeholder="e.g., Lahore"
-            />
-            {errors.currentCity && (
-              <p className="text-xs text-rose-600 mt-1">{errors.currentCity}</p>
-            )}
-          </div>
+          {/* Multiple Previous Academic Records */}
+          {form.previousAcademicRecords.map((record, index) => (
+            <div key={index} className="sm:col-span-2 border border-gray-200 rounded-lg p-4 space-y-4 mb-4">
+              {form.previousAcademicRecords.length > 1 && (
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="text-sm font-medium text-gray-700">Record #{index + 1}</h4>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newRecords = form.previousAcademicRecords.filter((_, i) => i !== index);
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
 
-          {/* Previous Year */}
-          <div className="md:col-span-2">
-            <label className="block text-sm mb-1">Year of Completion (Previous Academic Record)</label>
-            <Input
-              type="number"
-              value={form.currentCompletionYear}
-              onChange={(e) => setVal("currentCompletionYear", e.target.value)}
-              className={`rounded-2xl ${errors.currentCompletionYear ? 'border-red-500 focus:border-red-500' : ''}`}
-              placeholder="e.g., 2024"
-            />
-            {errors.currentCompletionYear && (
-              <p className="text-xs text-rose-600 mt-1">{errors.currentCompletionYear}</p>
-            )}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Previous Institution */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Previous Institution <span className="text-red-500">*</span></label>
+                  <Input
+                    value={record.institution}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].institution = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                      // Clear error when user starts typing
+                      const errorKey = `previousAcademicRecords.${index}.institution`;
+                      if (errors[errorKey]) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[errorKey];
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    className={`rounded-2xl min-h-[44px] ${errors[`previousAcademicRecords.${index}.institution`] ? 'border-red-500' : ''}`}
+                    placeholder="e.g., ABC College"
+                  />
+                  {errors[`previousAcademicRecords.${index}.institution`] && (
+                    <p className="text-xs text-rose-600 mt-1">{errors[`previousAcademicRecords.${index}.institution`]}</p>
+                  )}
+                </div>
+
+                {/* Previous City */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Previous Institution City <span className="text-red-500">*</span></label>
+                  <Input
+                    value={record.city}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].city = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                      // Clear error when user starts typing
+                      const errorKey = `previousAcademicRecords.${index}.city`;
+                      if (errors[errorKey]) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[errorKey];
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    className={`rounded-2xl min-h-[44px] ${errors[`previousAcademicRecords.${index}.city`] ? 'border-red-500' : ''}`}
+                    placeholder="e.g., Lahore"
+                  />
+                  {errors[`previousAcademicRecords.${index}.city`] && (
+                    <p className="text-xs text-rose-600 mt-1">{errors[`previousAcademicRecords.${index}.city`]}</p>
+                  )}
+                </div>
+
+                {/* Year of Completion */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Year of Completion <span className="text-red-500">*</span></label>
+                  <Input
+                    type="number"
+                    value={record.completionYear}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].completionYear = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                      // Clear error when user starts typing
+                      const errorKey = `previousAcademicRecords.${index}.completionYear`;
+                      if (errors[errorKey]) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors[errorKey];
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    className={`rounded-2xl min-h-[44px] ${errors[`previousAcademicRecords.${index}.completionYear`] ? 'border-red-500' : ''}`}
+                    placeholder="e.g., 2024"
+                  />
+                  {errors[`previousAcademicRecords.${index}.completionYear`] && (
+                    <p className="text-xs text-rose-600 mt-1">{errors[`previousAcademicRecords.${index}.completionYear`]}</p>
+                  )}
+                </div>
+
+                {/* Program */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Program</label>
+                  <Input
+                    value={record.program}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].program = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl min-h-[44px]"
+                    placeholder="e.g., Matric, FSc, A-Levels"
+                  />
+                </div>
+
+                {/* Education Board */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Education Board</label>
+                  <Input
+                    value={record.educationBoard}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].educationBoard = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl min-h-[44px]"
+                    placeholder="e.g., Lahore Board, Cambridge"
+                  />
+                </div>
+
+                {/* Total Marks */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Total Marks</label>
+                  <Input
+                    type="number"
+                    value={record.totalMarks}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].totalMarks = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl min-h-[44px]"
+                    placeholder="e.g., 1100"
+                  />
+                </div>
+
+                {/* Obtained Marks */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Obtained Marks</label>
+                  <Input
+                    type="number"
+                    value={record.obtainedMarks}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].obtainedMarks = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl min-h-[44px]"
+                    placeholder="e.g., 950"
+                  />
+                </div>
+
+                {/* Grade Type */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">Grade Type</label>
+                  <select
+                    value={record.gradeType}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].gradeType = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl border border-gray-300 px-3 py-2 text-sm w-full min-h-[44px]"
+                  >
+                    <option value="%">Percentage (%)</option>
+                    <option value="CGPA">CGPA</option>
+                    <option value="Grade">Grade</option>
+                  </select>
+                </div>
+
+                {/* Grade Value */}
+                <div>
+                  <label className="block text-xs sm:text-sm mb-1">
+                    {record.gradeType === "%" ? "Percentage" : record.gradeType === "CGPA" ? "CGPA" : "Grade"}
+                  </label>
+                  <Input
+                    type={record.gradeType === "Grade" ? "text" : "number"}
+                    step={record.gradeType === "CGPA" ? "0.01" : "1"}
+                    value={record.gradeValue}
+                    onChange={(e) => {
+                      const newRecords = [...form.previousAcademicRecords];
+                      newRecords[index].gradeValue = e.target.value;
+                      setForm({ ...form, previousAcademicRecords: newRecords });
+                    }}
+                    className="rounded-2xl min-h-[44px]"
+                    placeholder={record.gradeType === "%" ? "e.g., 85" : record.gradeType === "CGPA" ? "e.g., 3.5" : "e.g., A+"}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* ADD MORE Button */}
+          <div className="sm:col-span-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setForm({
+                  ...form,
+                  previousAcademicRecords: [
+                    ...form.previousAcademicRecords,
+                    {
+                      institution: "",
+                      city: "",
+                      completionYear: "",
+                      program: "",
+                      educationBoard: "",
+                      totalMarks: "",
+                      obtainedMarks: "",
+                      gradeType: "%",
+                      gradeValue: ""
+                    }
+                  ]
+                });
+              }}
+              className="w-full sm:w-auto min-h-[44px]"
+            >
+              + ADD MORE
+            </Button>
           </div>
 
           {/* Future Education Section Header */}
@@ -814,19 +1178,46 @@ export default function StudentProfile() {
               {/* Degree Level Display */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Degree Level</label>
-                <p className="text-sm text-gray-800">{form.degreeLevel || "Not specified"}</p>
+                <p className="text-sm text-gray-800">
+                  {(() => {
+                    // If "Other" was selected, show custom value
+                    if (form.degreeLevel === "Other") {
+                      return form.customDegreeLevel || "Not specified";
+                    }
+                    // Otherwise show the regular value
+                    return form.degreeLevel || "Not specified";
+                  })()}
+                </p>
               </div>
 
               {/* Field of Study Display */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Field of Study</label>
-                <p className="text-sm text-gray-800">{form.field || "Not specified"}</p>
+                <p className="text-sm text-gray-800">
+                  {(() => {
+                    // If "Other" was selected, show custom value
+                    if (form.field === "Other") {
+                      return form.customFieldOfStudy || "Not specified";
+                    }
+                    // Otherwise show the regular value
+                    return form.field || "Not specified";
+                  })()}
+                </p>
               </div>
 
               {/* Program Display */}
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">Program</label>
-                <p className="text-sm text-gray-800">{form.program || "Not specified"}</p>
+                <p className="text-sm text-gray-800">
+                  {(() => {
+                    // If "Other" was selected, show custom value
+                    if (form.program === "Other") {
+                      return form.customProgram || "Not specified";
+                    }
+                    // Otherwise show the regular value
+                    return form.program || "Not specified";
+                  })()}
+                </p>
               </div>
 
               {/* GPA Display */}

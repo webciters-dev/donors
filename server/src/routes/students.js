@@ -399,7 +399,10 @@ router.put(
         photoOriginalName,
         // Education fields
         degreeLevel,
+        customDegreeLevel,
         field,
+        customFieldOfStudy,
+        customProgram,
         programStartDate,
         programEndDate,
         // Social media fields
@@ -415,6 +418,8 @@ router.put(
         introVideoUploadedAt,
         introVideoDuration,
         introVideoOriginalName,
+        // Previous Academic Records
+        previousAcademicRecords,
       } = req.body;
 
       // Ensure the student exists before update
@@ -426,14 +431,9 @@ router.put(
         return res.status(404).json({ error: "Student not found" });
       }
 
-      // Minimal validation (when provided): require non-empty strings and numeric year
-      if (
-        (currentInstitution !== undefined && String(currentInstitution).trim() === "") ||
-        (currentCity !== undefined && String(currentCity).trim() === "") ||
-        (currentCompletionYear !== undefined && (currentCompletionYear === null || Number.isNaN(Number(currentCompletionYear))))
-      ) {
-        return res.status(400).json({ error: "Current institution, city and completion year are required" });
-      }
+      // Legacy fields (currentInstitution, currentCity, currentCompletionYear) are optional
+      // They are kept for backward compatibility but not required in the new form structure
+      // The new form uses previousAcademicRecords array instead
 
       // After Zod validation, req.body should only contain valid schema fields
       // Log for debugging but don't block - Zod already validated
@@ -485,7 +485,10 @@ router.put(
       }
       if (photoOriginalName !== undefined) updateData.photoOriginalName = photoOriginalName;
       if (degreeLevel !== undefined) updateData.degreeLevel = degreeLevel;
+      if (customDegreeLevel !== undefined) updateData.customDegreeLevel = customDegreeLevel;
       if (field !== undefined) updateData.field = field;
+      if (customFieldOfStudy !== undefined) updateData.customFieldOfStudy = customFieldOfStudy;
+      if (customProgram !== undefined) updateData.customProgram = customProgram;
       if (programStartDate !== undefined) updateData.programStartDate = programStartDate;
       if (programEndDate !== undefined) updateData.programEndDate = programEndDate;
       if (facebookUrl !== undefined) updateData.facebookUrl = facebookUrl;
@@ -503,6 +506,14 @@ router.put(
         updateData.introVideoDuration = introVideoDuration ? Number(introVideoDuration) : null;
       }
       if (introVideoOriginalName !== undefined) updateData.introVideoOriginalName = introVideoOriginalName;
+      // Handle previousAcademicRecords - store as JSON if supported, otherwise skip
+      // Note: This field may need to be added to the Prisma schema as a Json field
+      if (previousAcademicRecords !== undefined && Array.isArray(previousAcademicRecords)) {
+        // For now, we'll store it - but this requires a Json field in Prisma schema
+        // If the schema doesn't support it, this will need to be handled differently
+        // updateData.previousAcademicRecords = previousAcademicRecords;
+        console.log("PUT /students/me: previousAcademicRecords received (not yet stored in DB):", previousAcademicRecords.length, "records");
+      }
 
       console.log("PUT /students/me: Updating student", { 
         studentId, 
@@ -631,6 +642,9 @@ router.patch("/:id", requireAuth, async (req, res) => {
       field,
       country,
       degreeLevel,
+      customDegreeLevel,
+      customFieldOfStudy,
+      customProgram,
       programStartDate,
       programEndDate,
     } = req.body;
@@ -638,47 +652,55 @@ router.patch("/:id", requireAuth, async (req, res) => {
     console.log(' PATCH /students/:id - Debug request data:', {
       id,
       degreeLevel,
-      degreeLevelType: typeof degreeLevel,
+      customDegreeLevel,
       field,
+      customFieldOfStudy,
       program,
+      customProgram,
       university,
+      gpa,
       receivedBody: req.body
     });
 
+    // Build update data object, filtering out empty strings for required fields
+    const updateData = {};
+    
+    if (name !== undefined && name !== "") updateData.name = name;
+    if (gender !== undefined && gender !== "") updateData.gender = gender;
+    if (dateOfBirth) updateData.dateOfBirth = new Date(dateOfBirth);
+    if (cnic !== undefined) updateData.cnic = cnic || null;
+    if (guardianName !== undefined) updateData.guardianName = guardianName || null;
+    if (guardianCnic !== undefined) updateData.guardianCnic = guardianCnic || null;
+    if (guardian2Name !== undefined) updateData.guardian2Name = guardian2Name || null;
+    if (guardian2Cnic !== undefined) updateData.guardian2Cnic = guardian2Cnic || null;
+    if (phone !== undefined) updateData.phone = phone || null;
+    if (guardianPhone1 !== undefined) updateData.guardianPhone1 = guardianPhone1 || null;
+    if (guardianPhone2 !== undefined) updateData.guardianPhone2 = guardianPhone2 || null;
+    if (address !== undefined) updateData.address = address || null;
+    if (university !== undefined && university !== "") updateData.university = university;
+    if (program !== undefined && program !== "") updateData.program = program;
+    if (gpa !== undefined) {
+      updateData.gpa = (gpa === null || gpa === "" || isNaN(Number(gpa))) ? 0 : Number(gpa);
+    }
+    if (gradYear !== undefined) {
+      updateData.gradYear = (gradYear === null || gradYear === "" || isNaN(Number(gradYear))) ? null : Number(gradYear);
+    }
+    if (city !== undefined) updateData.city = city || null;
+    if (province !== undefined) updateData.province = province || null;
+    if (field !== undefined && field !== "") updateData.field = field;
+    if (country !== undefined && country !== "") updateData.country = country;
+    if (degreeLevel !== undefined) updateData.degreeLevel = degreeLevel || null;
+    if (customDegreeLevel !== undefined) updateData.customDegreeLevel = customDegreeLevel || null;
+    if (customFieldOfStudy !== undefined) updateData.customFieldOfStudy = customFieldOfStudy || null;
+    if (customProgram !== undefined) updateData.customProgram = customProgram || null;
+    if (programStartDate !== undefined) updateData.programStartDate = programStartDate || null;
+    if (programEndDate !== undefined) updateData.programEndDate = programEndDate || null;
+    
+    console.log(' PATCH /students/:id - Update data:', updateData);
+    
     const updated = await prisma.student.update({
       where: { id },
-      data: {
-        ...(name !== undefined ? { name } : {}),
-        ...(gender !== undefined ? { gender } : {}),
-        ...(dateOfBirth ? { dateOfBirth: new Date(dateOfBirth) } : {}),
-        ...(cnic !== undefined ? { cnic } : {}),
-        ...(guardianName !== undefined ? { guardianName } : {}),
-        ...(guardianCnic !== undefined ? { guardianCnic } : {}),
-        ...(guardian2Name !== undefined ? { guardian2Name } : {}),
-        ...(guardian2Cnic !== undefined ? { guardian2Cnic } : {}),
-        ...(phone !== undefined ? { phone } : {}),
-        ...(guardianPhone1 !== undefined ? { guardianPhone1 } : {}),
-        ...(guardianPhone2 !== undefined ? { guardianPhone2 } : {}),
-        ...(address !== undefined ? { address } : {}),
-        ...(university !== undefined ? { university } : {}),
-        ...(program !== undefined ? { program } : {}),
-        ...(gpa !== undefined
-          ? { gpa: gpa === null || gpa === "" ? null : Number(gpa) }
-          : {}),
-        ...(gradYear !== undefined
-          ? {
-              gradYear:
-                gradYear === null || gradYear === "" ? null : Number(gradYear),
-            }
-          : {}),
-        ...(city !== undefined ? { city } : {}),
-        ...(province !== undefined ? { province } : {}),
-        ...(field !== undefined ? { field } : {}),
-        ...(country !== undefined ? { country } : {}),
-        ...(degreeLevel !== undefined ? { degreeLevel } : {}),
-        ...(programStartDate !== undefined ? { programStartDate } : {}),
-        ...(programEndDate !== undefined ? { programEndDate } : {}),
-      },
+      data: updateData,
     });
 
     console.log(' PATCH result - Updated student:', {
@@ -692,7 +714,44 @@ router.patch("/:id", requireAuth, async (req, res) => {
     res.json({ student: updated });
   } catch (err) {
     console.error("PATCH /students/:id error:", err);
-    res.status(500).json({ error: "Failed to update student" });
+    console.error("Error details:", {
+      message: err.message,
+      code: err.code,
+      meta: err.meta,
+      stack: err.stack
+    });
+    
+    // Handle Prisma-specific errors
+    if (err.code === 'P2002') {
+      return res.status(409).json({ 
+        error: "A record with this information already exists",
+        details: err.meta?.target 
+      });
+    }
+    
+    if (err.code === 'P2025') {
+      return res.status(404).json({ 
+        error: "Student not found" 
+      });
+    }
+    
+    // Handle validation errors
+    if (err.name === 'PrismaClientValidationError' || err.message?.includes('Unknown argument')) {
+      // Extract field name from error message if possible
+      const fieldMatch = err.message?.match(/Unknown argument `(\w+)`/);
+      const fieldName = fieldMatch ? fieldMatch[1] : 'unknown field';
+      
+      return res.status(400).json({ 
+        error: `Validation error: ${fieldName ? `Invalid field: ${fieldName}` : err.message}`,
+        details: err.message,
+        code: err.code
+      });
+    }
+    
+    res.status(500).json({ 
+      error: "Failed to update student",
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 

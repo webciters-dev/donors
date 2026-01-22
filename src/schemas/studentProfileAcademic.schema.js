@@ -60,20 +60,44 @@ export const studentProfileAcademicSchema = z
       .int("Graduation year must be an integer")
       .min(THIS_YEAR - 1, `Enter a valid graduation year (${THIS_YEAR - 1}–${THIS_YEAR + 10})`)
       .max(THIS_YEAR + 10, `Enter a valid graduation year (${THIS_YEAR - 1}–${THIS_YEAR + 10})`),
-    // Current Education fields
-    currentInstitution: z.string().min(1, "Current institution is required"),
-    currentCity: z.string().min(1, "Current institution city is required"),
-    currentCompletionYear: z
-      .coerce.number({
-        invalid_type_error: "Current completion year must be a number",
-      })
-      .int("Current completion year must be an integer")
-      .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
-      .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
+    // Previous Academic Records - array format
+    previousAcademicRecords: z
+      .array(
+        z.object({
+          institution: z.string().min(1, "Institution is required"),
+          city: z.string().min(1, "City is required"),
+          completionYear: z
+            .coerce.number({
+              invalid_type_error: "Completion year must be a number",
+            })
+            .int("Completion year must be an integer")
+            .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
+            .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
+          program: z.string().optional(),
+          educationBoard: z.string().optional(),
+          totalMarks: z.coerce.number().min(0).optional(),
+          obtainedMarks: z.coerce.number().min(0).optional(),
+          gradeType: z.enum(["%", "CGPA", "Grade"]).optional(),
+          gradeValue: z.union([z.string(), z.coerce.number()]).optional(),
+        })
+      )
+      .min(1, "At least one previous academic record is required"),
+    // Legacy fields for backward compatibility (optional)
+    // These fields are not used in the new form - accept anything or nothing
+    currentInstitution: z.any().optional(),
+    currentCity: z.any().optional(),
+    currentCompletionYear: z.any().optional(),
     // Personal Introduction
     personalIntroduction: z.string().min(1, "Personal introduction is required").max(1000, "Personal introduction must be 1000 characters or less"),
     // Enhanced details for donors
-    familySize: z.coerce.number().min(1).max(20).optional(),
+    familySize: z.preprocess(
+      (val) => {
+        if (val === "" || val === null || val === undefined) return undefined;
+        const num = Number(val);
+        return isNaN(num) ? undefined : num;
+      },
+      z.number().min(1).max(20).optional()
+    ),
     parentsOccupation: z.string().max(200).optional(),
     monthlyFamilyIncome: z.string().max(50).optional(),
     careerGoals: z.string().max(500).optional(),
