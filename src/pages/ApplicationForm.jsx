@@ -20,6 +20,12 @@ import {
 } from "@/hooks/useUniversityAcademics";
 import { getPakistanOnlyDatalist, getFilterMessage } from "@/lib/countryFilter";
 
+// Fallback university ID (LUMS) for when "Other" is selected
+// This allows users selecting "Other" to still pick from common degree levels, fields, and programs
+const FALLBACK_UNIVERSITY_ID = "cmhnd78i0004xbt5mrglb252v"; // LUMS ID
+const FALLBACK_DEGREE_LEVEL = "Bachelor's"; // Default degree level for fetching fields when "Other" is selected
+const FALLBACK_FIELD = "Business"; // Default field for fetching programs when "Other" is selected
+
 
 // Password input component with visibility toggle
 const PasswordInput = ({ placeholder, value, onChange, show, setShow }) => (
@@ -50,8 +56,12 @@ export const ApplicationForm = () => {
   const location = useLocation();
   const { login, user, token } = useAuth();
   
-  // Step state
-  const [step, setStep] = useState(1);
+  // Step state - initialize from URL if present (for returning users)
+  const [step, setStep] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    const stepFromUrl = parseInt(params.get('step'), 10);
+    return (stepFromUrl >= 1 && stepFromUrl <= 3) ? stepFromUrl : 1;
+  });
   
   // Loading state
   const [loading, setLoading] = useState(false);
@@ -68,6 +78,10 @@ export const ApplicationForm = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [appStatus, setAppStatus] = useState('DRAFT');
 
+  // Registration tracking state
+  const [isRegistered, setIsRegistered] = useState(!!user); // If user exists, they're already registered
+  const [studentId, setStudentId] = useState(user?.studentId || null);
+
   // Form state - must be declared before any useCallback/useEffect that references it
   const [form, setForm] = useState(() => ({
     // Step 1 — identity + credentials
@@ -82,8 +96,11 @@ export const ApplicationForm = () => {
     university: "",
     customUniversity: "", // For "Other" option
     degreeLevel: "", // Associate, Bachelor's, Master's, etc.
+    customDegreeLevel: "", // For "Other" option
     field: "", // Agriculture, Computer Science, etc.
+    customField: "", // For "Other" option
     program: "", // Specific program within the field
+    customProgram: "", // For "Other" option
     startMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program start month - default to current
     startYear: String(new Date().getFullYear()), // Program start year - default to current
     endMonth: String(new Date().getMonth() + 1).padStart(2, '0'), // Program end month - default to current
@@ -118,6 +135,31 @@ export const ApplicationForm = () => {
     otherResources: "0",      // Other funding sources (family, work, savings)
     amount: "0",              // This will be auto-calculated (totalExpense - scholarshipAmount - otherResources)
   }));
+
+  // Effect to restore step for logged-in users
+  // If user has a studentId (account created), they should be at least on step 2
+  useEffect(() => {
+    if (user && user.studentId && token) {
+      // User is logged in with a student account - set registration state
+      setIsRegistered(true);
+      setStudentId(user.studentId);
+      
+      // Check URL for step param first
+      const params = new URLSearchParams(location.search);
+      const stepFromUrl = parseInt(params.get('step'), 10);
+      
+      if (stepFromUrl >= 2 && stepFromUrl <= 3) {
+        // Restore to the step from URL
+        setStep(stepFromUrl);
+      } else if (step === 1) {
+        // User is logged in but on step 1 - move to step 2
+        setStep(2);
+      }
+      
+      // Load existing student data
+      loadExistingStudentData();
+    }
+  }, [user, token]); // Only run when user/token changes (login/logout)
 
   // Fetch current application status for lock logic
   useEffect(() => {
@@ -506,7 +548,12 @@ export const ApplicationForm = () => {
     });
     
     // Set the university ID for fetching academic data
-    setSelectedUniversityId(universityId);
+    // When "Other" is selected, use LUMS as fallback to provide common options
+    if (university === "Other") {
+      setSelectedUniversityId(FALLBACK_UNIVERSITY_ID);
+    } else {
+      setSelectedUniversityId(universityId);
+    }
   };
 
   // Handler for degree level change - resets dependent fields
@@ -525,8 +572,10 @@ export const ApplicationForm = () => {
     });
     
     // Fetch fields for the selected degree level
+    // When "Other" is selected, use fallback degree level to still show available fields
     if (degreeLevel) {
-      fetchFields(degreeLevel);
+      const degreeLevelForFetch = degreeLevel === "Other" ? FALLBACK_DEGREE_LEVEL : degreeLevel;
+      fetchFields(degreeLevelForFetch);
     }
   };
 
@@ -539,8 +588,11 @@ export const ApplicationForm = () => {
     });
     
     // Fetch programs for the selected degree level and field
+    // When "Other" is selected for either, use fallback values to still show available programs
     if (field && form.degreeLevel) {
-      fetchPrograms(form.degreeLevel, field);
+      const degreeLevelForFetch = form.degreeLevel === "Other" ? FALLBACK_DEGREE_LEVEL : form.degreeLevel;
+      const fieldForFetch = field === "Other" ? FALLBACK_FIELD : field;
+      fetchPrograms(degreeLevelForFetch, fieldForFetch);
     }
   };
 
@@ -1067,7 +1119,23 @@ export const ApplicationForm = () => {
                       {level}
                     </option>
                   ))}
+                  <option value="Other">Other</option>
                 </select>
+                {/* Custom degree level input when Other is selected */}
+                {form.degreeLevel === "Other" && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Enter your degree level"
+                      value={form.customDegreeLevel}
+                      onChange={(e) => setForm({ ...form, customDegreeLevel: e.target.value })}
+                      required
+                      className="min-h-[44px]"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      This will be submitted as a custom degree level for admin review
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1090,7 +1158,23 @@ export const ApplicationForm = () => {
                       {field}
                     </option>
                   ))}
+                  <option value="Other">Other</option>
                 </select>
+                {/* Custom field input when Other is selected */}
+                {form.field === "Other" && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Enter your field of study"
+                      value={form.customField}
+                      onChange={(e) => setForm({ ...form, customField: e.target.value })}
+                      required
+                      className="min-h-[44px]"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      This will be submitted as a custom field for admin review
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1113,7 +1197,23 @@ export const ApplicationForm = () => {
                       {program}
                     </option>
                   ))}
+                  <option value="Other">Other</option>
                 </select>
+                {/* Custom program input when Other is selected */}
+                {form.program === "Other" && (
+                  <div className="mt-2">
+                    <Input
+                      placeholder="Enter your specific program"
+                      value={form.customProgram}
+                      onChange={(e) => setForm({ ...form, customProgram: e.target.value })}
+                      required
+                      className="min-h-[44px]"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      This will be submitted as a custom program for admin review
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1227,6 +1327,7 @@ export const ApplicationForm = () => {
                   maxFiles={5}
                   required={false}
                   className="mt-2"
+                  label="Upload Transcripts"
                 />
               </div>
               <div>
@@ -1237,6 +1338,7 @@ export const ApplicationForm = () => {
                   maxFiles={5}
                   required={false}
                   className="mt-2"
+                  label="Upload Certificates"
                 />
               </div>
               <div>
@@ -1247,6 +1349,7 @@ export const ApplicationForm = () => {
                   maxFiles={5}
                   required={false}
                   className="mt-2"
+                  label="Upload Attachments"
                 />
               </div>
             </div>
