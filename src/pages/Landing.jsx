@@ -203,8 +203,8 @@ export const Landing = ({ go }) => {
       {/* Hero Section */}
       <section className="text-center space-y-6">
         <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-gray-900 leading-tight px-4">
-          Empowering Education Through
-          <span className="text-green-600"> {getCMSContent('hero.title')}</span>
+        Akhuwat’s Way to Advancement of 
+          <span className="text-green-600"> Knowledge and Education</span>
         </h1>
         <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
           {getCMSContent('hero.subtitle')}
