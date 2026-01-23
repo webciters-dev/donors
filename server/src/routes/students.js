@@ -33,6 +33,7 @@ router.get("/approved/:id", async (req, res) => {
             id: true,
             term: true,
             amount: true,
+            approvedAmount: true,
             currency: true,
             status: true,
             submittedAt: true,
@@ -78,11 +79,18 @@ router.get("/approved/:id", async (req, res) => {
       communityInvolvement: student.communityInvolvement,
       currentAcademicYear: student.currentAcademicYear,
       specificField: student.specificField,
+      // Previous Academic Records for donor view
+      previousAcademicRecords: student.previousAcademicRecords || [],
+      currentInstitution: student.currentInstitution,
+      currentCity: student.currentCity,
+      currentCompletionYear: student.currentCompletionYear,
       // Media for donors - photos and videos
       photoUrl: student.photoUrl,
       introVideoUrl: student.introVideoUrl,
-      // Financial information
-      amount: app?.amount || 0,
+      // Financial information - use approvedAmount if set, otherwise original amount
+      amount: app?.approvedAmount ?? app?.amount ?? 0,
+      originalAmount: app?.amount ?? 0,
+      approvedAmount: app?.approvedAmount ?? null,
       currency: app?.currency || "USD",
       // Application info
       application: app ? {
@@ -90,7 +98,9 @@ router.get("/approved/:id", async (req, res) => {
         term: app.term,
         status: app.status,
         submittedAt: app.submittedAt,
-        amount: app.amount,
+        amount: app.approvedAmount ?? app.amount,
+        originalAmount: app.amount,
+        approvedAmount: app.approvedAmount,
         currency: app.currency,
       } : null,
       // Sponsorship summary (no donor details for privacy)
@@ -127,6 +137,7 @@ router.get("/approved", async (_req, res) => {
             id: true,
             term: true,
             amount: true,
+            approvedAmount: true,
             currency: true,
             status: true,
             submittedAt: true,
@@ -156,12 +167,14 @@ router.get("/approved", async (_req, res) => {
         photoUrl: s.photoUrl,
         introVideoUrl: s.introVideoUrl,
 
-        // application snapshot for card
+        // application snapshot for card - use approvedAmount if set
         application: app
           ? {
               id: app.id,
               term: app.term,
-              amount: app.amount,
+              amount: app.approvedAmount ?? app.amount,
+              originalAmount: app.amount,
+              approvedAmount: app.approvedAmount,
               currency: app.currency,
               status: app.status,
               submittedAt: app.submittedAt,

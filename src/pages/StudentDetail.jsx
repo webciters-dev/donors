@@ -254,6 +254,57 @@ export const StudentDetail = ({ id, goBack }) => {
         </div>
       </Card>
 
+      {/* Previous Education Records */}
+      {student.previousAcademicRecords && Array.isArray(student.previousAcademicRecords) && student.previousAcademicRecords.length > 0 && (
+        <Card className="p-6">
+          <SectionTitle icon={GraduationCap} title="Previous Education" />
+          <div className="mt-4 space-y-3">
+            {student.previousAcademicRecords.map((record, idx) => (
+              <div key={idx} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <span className="text-slate-500 block">Institution</span>
+                    <span className="font-medium">{record.institution || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">City</span>
+                    <span className="font-medium">{record.city || "—"}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block">Completion Year</span>
+                    <span className="font-medium">{record.completionYear || "—"}</span>
+                  </div>
+                  {record.program && (
+                    <div>
+                      <span className="text-slate-500 block">Program</span>
+                      <span className="font-medium">{record.program}</span>
+                    </div>
+                  )}
+                  {record.educationBoard && (
+                    <div>
+                      <span className="text-slate-500 block">Board</span>
+                      <span className="font-medium">{record.educationBoard}</span>
+                    </div>
+                  )}
+                  {(record.obtainedMarks || record.totalMarks) && (
+                    <div>
+                      <span className="text-slate-500 block">Marks</span>
+                      <span className="font-medium">{record.obtainedMarks || "—"} / {record.totalMarks || "—"}</span>
+                    </div>
+                  )}
+                  {record.gradeValue && (
+                    <div>
+                      <span className="text-slate-500 block">Grade</span>
+                      <span className="font-medium">{record.gradeValue} ({record.gradeType || "%"})</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Personal Introduction */}
       {student.personalIntroduction && (
         <Card className="p-6">
