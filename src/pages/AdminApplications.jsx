@@ -110,21 +110,21 @@ export const AdminApplications = () => {
     let dead = false;
     let timer;
 
-    async function load() {
+    async function fetchData() {
+      if (dead) return;
       try {
-        await (async () => {
-          if (dead) return;
-          await load();
-        })();
+        await load();
       } catch (e) {
         console.error(e);
         if (!dead) setApps([]);
       } finally {
-        timer = setTimeout(load, 15000);
+        if (!dead) {
+          timer = setTimeout(fetchData, 15000);
+        }
       }
     }
 
-    load();
+    fetchData();
     return () => {
       dead = true;
       if (timer) clearTimeout(timer);
