@@ -80,18 +80,26 @@ export const MyApplication = () => {
           headers: { ...authHeader },
         });
         const data = await res.json();
+        console.log('🔍 MyApplication: Raw API response:', data);
         const list = Array.isArray(data?.applications)
           ? data.applications
           : Array.isArray(data)
           ? data
           : [];
+        console.log('🔍 MyApplication: Applications list:', list.length, 'items');
+        console.log('🔍 MyApplication: user?.studentId:', user?.studentId, 'type:', typeof user?.studentId);
 
         // Prefer the logged-in student's application; fallback to DEMO_STUDENT_ID if provided.
         const targetStudentId = (user?.studentId && String(user.studentId)) || (DEMO_STUDENT_ID || "");
+        console.log('🔍 MyApplication: Looking for targetStudentId:', targetStudentId);
         let app = null;
         if (targetStudentId) {
-          app = list.find((a) => a.studentId === targetStudentId) || null;
+          app = list.find((a) => {
+            console.log('🔍 Comparing:', String(a.studentId), '===', targetStudentId, '→', String(a.studentId) === targetStudentId);
+            return String(a.studentId) === targetStudentId;
+          }) || null;
         }
+        console.log('🔍 MyApplication: Found application:', app ? 'YES' : 'NO', app);
         // Do NOT fallback to the first item to avoid showing someone else's application.
         if (!dead) {
           setApplication(app);
@@ -900,9 +908,6 @@ export const MyApplication = () => {
         <div className="text-sm text-gray-700 space-y-1">
           <p>
             <strong>Need:</strong> {needText}
-          </p>
-          <p>
-            <strong>Term:</strong> {application.term}
           </p>
           <p>
             <strong>Submitted:</strong>{" "}

@@ -172,7 +172,8 @@ export const studentProfileAcademicSchema = z
       
       if (gpa === null || gpa === undefined || isNaN(gpa)) return true; // Optional field
       
-      if (gradeType === "PERCENTAGE") {
+      // Accept both "PERCENTAGE" and "%" as percentage indicators
+      if (gradeType === "PERCENTAGE" || gradeType === "%") {
         return gpa >= 0 && gpa <= 100;
       } else {
         // CGPA (default)
@@ -181,7 +182,7 @@ export const studentProfileAcademicSchema = z
     },
     (data) => {
       const gradeType = data.gradeType || "CGPA";
-      if (gradeType === "PERCENTAGE") {
+      if (gradeType === "PERCENTAGE" || gradeType === "%") {
         return {
           message: "Percentage must be between 0 and 100",
           path: ["gpa"],

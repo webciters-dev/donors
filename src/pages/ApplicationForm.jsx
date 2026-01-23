@@ -655,7 +655,7 @@ export const ApplicationForm = () => {
     });
   };
 
-  // Handle scholarship amount change (no longer auto-updates amount - student enters manually)
+  // Handle scholarship amount change (auto-updates amount)
   const handleScholarshipChange = (value) => {
     const total = Number(form.totalExpense || 0);
     const scholarship = Number(value || 0);
@@ -666,9 +666,12 @@ export const ApplicationForm = () => {
       return;
     }
     
+    const newAmount = calculateRequiredAmount(form.totalExpense, value, form.otherResources);
+    
     setForm({
       ...form,
-      scholarshipAmount: value
+      scholarshipAmount: value,
+      amount: newAmount.toString()
     });
   };
 
@@ -685,9 +688,12 @@ export const ApplicationForm = () => {
       return;
     }
     
+    const newAmount = calculateRequiredAmount(form.totalExpense, form.scholarshipAmount, value);
+    
     setForm({
       ...form,
-      otherResources: value
+      otherResources: value,
+      amount: newAmount.toString()
     });
   };
 
@@ -843,11 +849,10 @@ export const ApplicationForm = () => {
     }
   }
 
-  // New handleSubmit for step 3: open checklist modal first
+  // handleSubmit for step 3: proceed to save application and move to next step
   function handleSubmit(e) {
     e.preventDefault();
-    setPendingSubmit(true);
-    setShowChecklistModal(true);
+    doFinalSubmit();
   }
 
     return (
@@ -1815,7 +1820,7 @@ export const ApplicationForm = () => {
                     <hr className="border-blue-300" />
                     <div className="flex justify-between font-semibold">
                       <span>Amount Requested from AWAKE:</span>
-                      <span className="text-blue-800">{Number(form.amount || 0).toLocaleString()} {form.currency}</span>
+                      <span className="text-blue-800">{calculateRequiredAmount(form.totalExpense, form.scholarshipAmount, form.otherResources).toLocaleString()} {form.currency}</span>
                     </div>
                   </div>
                 </div>
@@ -1870,7 +1875,7 @@ export const ApplicationForm = () => {
                 disabled={loading}
                 className="min-h-[44px] w-full sm:w-auto"
               >
-                {loading ? "Submitting..." : "Submit Application"}
+                {loading ? "Processing..." : "Continue"}
               </Button>
             </div>
                 {/* Submission Checklist Modal */}
@@ -1896,5 +1901,5 @@ export const ApplicationForm = () => {
         )}
       </Card>
     </div>
-    );
+  );
 };

@@ -572,7 +572,8 @@ export default function StudentProfile() {
         // field: form.field || "", 
         degreeLevel: form.degreeLevel || "",
         program: form.program || "",
-        gradeType: form.gradeType || (form.gpa && Number(form.gpa) > 4 ? "PERCENTAGE" : "CGPA") || "CGPA",
+        // Auto-detect gradeType based on GPA value - if > 4, it must be a percentage
+        gradeType: (form.gpa && Number(form.gpa) > 4) ? "PERCENTAGE" : (form.gradeType || "CGPA"),
         gpa: form.gpa === "" ? 0 : Number(form.gpa), // Required - use 0 if empty, validation will catch invalid values
         gradYear: form.gradYear === "" ? 0 : Number(form.gradYear), // Required - use 0 if empty, validation will catch invalid values
         

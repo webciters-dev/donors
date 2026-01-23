@@ -80,8 +80,6 @@ router.get("/", optionalAuth, async (req, res) => {
               communityInvolvement: true,
               currentAcademicYear: true,
               specificField: true,
-              // Previous Academic Records (JSON array)
-              previousAcademicRecords: true,
               // Sponsorship status for admin filtering
               sponsored: true,
             },
