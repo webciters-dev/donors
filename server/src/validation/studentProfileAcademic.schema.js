@@ -89,6 +89,42 @@ export const studentProfileAcademicSchema = z
     academicAchievements: z.string().max(300).optional(),
     communityInvolvement: z.string().max(300).optional(),
     specificField: z.string().max(200).optional(),
+    // Social Media fields (all optional)
+    facebookUrl: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^https?:\/\/(www\.)?(facebook|fb)\.com\/.+/i), "Enter a valid Facebook profile URL"),
+    instagramHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9._]{1,30}$/), "Enter a valid Instagram handle (@username)"),
+    whatsappNumber: z
+      .string()
+      .optional()
+      .refine((v) => !v || digitsLenOk(v, 10, 15), "Enter a valid WhatsApp number (10–15 digits)"),
+    linkedinUrl: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^https?:\/\/(www\.)?linkedin\.com\/in\/.+/i), "Enter a valid LinkedIn profile URL"),
+    twitterHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9_]{1,15}$/), "Enter a valid Twitter/X handle (@username)"),
+    tiktokHandle: z
+      .string()
+      .optional()
+      .refine((v) => !v || v.match(/^@[a-zA-Z0-9._]{1,24}$/), "Enter a valid TikTok handle (@username)"),
+    // Photo fields (all optional)
+    photoUrl: z.string().optional(),
+    photoThumbnailUrl: z.string().optional(),
+    photoUploadedAt: z.string().optional(),
+    photoOriginalName: z.string().optional(),
+    // Video fields (all optional)
+    introVideoUrl: z.string().optional(),
+    introVideoThumbnailUrl: z.string().optional(),
+    introVideoUploadedAt: z.string().optional(),
+    introVideoDuration: z.coerce.number().optional(),
+    introVideoOriginalName: z.string().optional(),
   })
   .required()
   .refine(

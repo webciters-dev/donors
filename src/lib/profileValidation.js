@@ -16,11 +16,25 @@ const REQUIRED_KEYS = [
   "program",
   "gpa",
   "gradYear",
-  // Current Education fields (the 3 missing fields from the screenshot)
-  "currentInstitution",
-  "currentCity", 
-  "currentCompletionYear",
+  // Note: previousAcademicRecords is checked separately (array format)
 ];
+
+/**
+ * Check if previousAcademicRecords has at least one complete record
+ * @param {array} records - Previous academic records array
+ * @returns {boolean} - True if at least one record has required fields
+ */
+function hasPreviousAcademicRecord(records) {
+  if (!records || !Array.isArray(records) || records.length === 0) {
+    return false;
+  }
+  // Check if at least one record has the required fields filled
+  return records.some(record => 
+    record.institution && record.institution.trim() !== "" &&
+    record.city && record.city.trim() !== "" &&
+    record.completionYear && record.completionYear !== ""
+  );
+}
 
 /**
  * Calculate profile completion percentage and missing fields
@@ -33,8 +47,18 @@ export function calculateProfileCompleteness(profile = {}) {
     return value === null || value === undefined || value === "" || Number.isNaN(value);
   });
 
-  const filled = REQUIRED_KEYS.length - missing.length;
-  const percent = Math.round((filled / REQUIRED_KEYS.length) * 100);
+  // Check for previous academic records (new array format)
+  // Also support legacy fields for backward compatibility
+  const hasPrevEducation = hasPreviousAcademicRecord(profile?.previousAcademicRecords) ||
+    (profile?.currentInstitution && profile?.currentCity && profile?.currentCompletionYear);
+  
+  if (!hasPrevEducation) {
+    missing.push("previousEducation");
+  }
+
+  const totalRequired = REQUIRED_KEYS.length + 1; // +1 for previousEducation
+  const filled = totalRequired - missing.length;
+  const percent = Math.round((filled / totalRequired) * 100);
   const isComplete = percent === 100;
 
   // Also validate with schema for additional validation errors
@@ -109,7 +133,9 @@ export function getReadableFieldNames(missingFields = []) {
     program: "Program",
     gpa: "GPA",
     gradYear: "Graduation Year",
-    // Previous Academic Record fields
+    // Previous Academic Record
+    previousEducation: "Previous Education Record",
+    // Legacy fields (for backward compatibility)
     currentInstitution: "Previous Institution",
     currentCity: "Previous Institution City",
     currentCompletionYear: "Completion Year"
