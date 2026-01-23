@@ -437,6 +437,55 @@ export default function AdminApplicationDetail() {
           </div>
         </div>
 
+        {/* Previous Academic Records */}
+        {app.student?.previousAcademicRecords && Array.isArray(app.student.previousAcademicRecords) && app.student.previousAcademicRecords.length > 0 && (
+          <div className="mb-6">
+            <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Previous Academic Records</h4>
+            <div className="space-y-3">
+              {app.student.previousAcademicRecords.map((record, idx) => (
+                <div key={idx} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs sm:text-sm">
+                    <div>
+                      <div className="text-slate-500">Institution</div>
+                      <div className="font-medium">{record.institution || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-slate-500">City</div>
+                      <div>{record.city || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-slate-500">Completion Year</div>
+                      <div>{record.completionYear || "-"}</div>
+                    </div>
+                    <div>
+                      <div className="text-slate-500">Program</div>
+                      <div>{record.program || "-"}</div>
+                    </div>
+                    {record.educationBoard && (
+                      <div>
+                        <div className="text-slate-500">Education Board</div>
+                        <div>{record.educationBoard}</div>
+                      </div>
+                    )}
+                    {(record.obtainedMarks || record.totalMarks) && (
+                      <div>
+                        <div className="text-slate-500">Marks</div>
+                        <div>{record.obtainedMarks || "-"} / {record.totalMarks || "-"}</div>
+                      </div>
+                    )}
+                    {record.gradeValue && (
+                      <div>
+                        <div className="text-slate-500">Grade</div>
+                        <div>{record.gradeValue} ({record.gradeType || "%"})</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Family & Background Information */}
         <div className="mb-6">
           <h4 className="font-medium text-sm mb-3 text-slate-700 border-b pb-2">Family & Background</h4>
