@@ -215,7 +215,9 @@ app.use("/api/super-admin", superAdminRouter);
 app.use("/api/uploads", uploadsRouter);     // handles file upload API
 
 // Serve all static files including videos with proper headers
-app.use("/uploads", express.static("uploads", {
+// Use absolute path to ensure uploads are found regardless of working directory
+const uploadsDir = path.join(serverDir, "uploads");
+app.use("/uploads", express.static(uploadsDir, {
   setHeaders: (res, filePath) => {
     // Set proper headers for video files based on extension
     if (filePath.includes('/videos/') || filePath.includes('\\videos\\')) {
