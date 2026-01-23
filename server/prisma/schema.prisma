@@ -76,6 +76,8 @@ model Student {
   introVideoUploadedAt  DateTime?         // When video was uploaded
   introVideoDuration    Int?              // Video duration in seconds (30-120 acceptable)
   introVideoOriginalName String?          // Original filename for reference
+  // Previous Academic Records (stored as JSON array)
+  previousAcademicRecords Json?            // Array of previous education records
   messages              Message[]
   applications          Application[]
   conversations         Conversation[]

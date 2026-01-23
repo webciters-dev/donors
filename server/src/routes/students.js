@@ -506,13 +506,10 @@ router.put(
         updateData.introVideoDuration = introVideoDuration ? Number(introVideoDuration) : null;
       }
       if (introVideoOriginalName !== undefined) updateData.introVideoOriginalName = introVideoOriginalName;
-      // Handle previousAcademicRecords - store as JSON if supported, otherwise skip
-      // Note: This field may need to be added to the Prisma schema as a Json field
+      // Handle previousAcademicRecords - stored as JSON array in database
       if (previousAcademicRecords !== undefined && Array.isArray(previousAcademicRecords)) {
-        // For now, we'll store it - but this requires a Json field in Prisma schema
-        // If the schema doesn't support it, this will need to be handled differently
-        // updateData.previousAcademicRecords = previousAcademicRecords;
-        console.log("PUT /students/me: previousAcademicRecords received (not yet stored in DB):", previousAcademicRecords.length, "records");
+        updateData.previousAcademicRecords = previousAcademicRecords;
+        console.log("PUT /students/me: previousAcademicRecords saved:", previousAcademicRecords.length, "records");
       }
 
       console.log("PUT /students/me: Updating student", { 
