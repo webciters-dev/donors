@@ -114,19 +114,44 @@ export const studentProfileAcademicSchema = z
       .string()
       .optional()
       .refine((v) => !v || v.match(/^@[a-zA-Z0-9._]{1,24}$/), "Enter a valid TikTok handle (@username)"),
-    // Photo fields (all optional)
-    photoUrl: z.string().optional(),
-    photoThumbnailUrl: z.string().optional(),
-    photoUploadedAt: z.string().optional(),
-    photoOriginalName: z.string().optional(),
-    // Video fields (all optional)
-    introVideoUrl: z.string().optional(),
-    introVideoThumbnailUrl: z.string().optional(),
-    introVideoUploadedAt: z.string().optional(),
-    introVideoDuration: z.coerce.number().optional(),
-    introVideoOriginalName: z.string().optional(),
+    // Photo fields (optional in validation - required at application level)
+    photoUrl: z.string().optional().nullable(),
+    photoThumbnailUrl: z.string().optional().nullable(),
+    photoUploadedAt: z.string().optional().nullable(),
+    photoOriginalName: z.string().optional().nullable(),
+    // Video fields (all optional - will be made required later)
+    introVideoUrl: z.string().optional().nullable(),
+    introVideoThumbnailUrl: z.string().optional().nullable(),
+    introVideoUploadedAt: z.string().optional().nullable(),
+    introVideoDuration: z.preprocess(
+      (val) => {
+        if (val === "" || val === null || val === undefined || isNaN(Number(val))) return undefined;
+        return Number(val);
+      },
+      z.number().optional()
+    ),
+    introVideoOriginalName: z.string().optional().nullable(),
   })
-  .required()
+  .partial({
+    // Make video fields truly optional (not affected by .required())
+    introVideoUrl: true,
+    introVideoThumbnailUrl: true,
+    introVideoUploadedAt: true,
+    introVideoDuration: true,
+    introVideoOriginalName: true,
+    // Photo fields optional at profile update level (required at application submission)
+    photoUrl: true,
+    photoThumbnailUrl: true,
+    photoUploadedAt: true,
+    photoOriginalName: true,
+    // Social media also optional
+    facebookUrl: true,
+    instagramHandle: true,
+    whatsappNumber: true,
+    linkedinUrl: true,
+    twitterHandle: true,
+    tiktokHandle: true,
+  })
   .refine(
     (data) => {
       // At least one phone number must be provided
