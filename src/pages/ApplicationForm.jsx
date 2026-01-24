@@ -417,7 +417,11 @@ export const ApplicationForm = () => {
 
       if (!regRes.ok) {
         const errorData = await regRes.json();
-        throw new Error(errorData.error || "Failed to create account");
+        // Show more detailed error message if available
+        const errorMessage = errorData.error || errorData.message || "Failed to create account";
+        const errorDetails = errorData.details ? JSON.stringify(errorData.details) : "";
+        console.error("Registration error:", errorData);
+        throw new Error(errorMessage + (errorDetails ? `: ${errorDetails}` : ""));
       }
 
       const regJson = await regRes.json();

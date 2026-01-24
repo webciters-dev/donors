@@ -180,6 +180,13 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
       return res.status(error.statusCode).json(error);
     }
 
+    // Validate gender is provided and not empty
+    if (!gender || gender.trim() === "") {
+      const error = createValidationError("Gender is required", { field: "gender" }, requestId);
+      logError(new Error("Missing gender in student registration"), { route: "/register-student", action: "register_student_validation" });
+      return res.status(error.statusCode).json(error);
+    }
+
     // 1) Check if email is already registered (prevent duplicates)
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
@@ -202,7 +209,7 @@ router.post("/register-student", requireStrictRecaptcha, async (req, res) => {
         email,
         university: university ?? "",
         program: program ?? "",
-        gender: gender ?? "",
+        gender: gender, // Required field - validated above
         country: country ?? "Pakistan",
         city: city ?? "",
         province: province ?? "",
