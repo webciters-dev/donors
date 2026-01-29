@@ -15,6 +15,19 @@ import AdminSettings from "@/components/AdminSettings";
 import InterviewManager from "@/components/InterviewManager";
 import AdminGeneralDonations from "@/components/AdminGeneralDonations";
 
+// Helper function to safely format dates
+const formatDate = (dateValue) => {
+  if (!dateValue) return null;
+  try {
+    const date = new Date(dateValue);
+    // Check if the date is valid
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString();
+  } catch {
+    return null;
+  }
+};
+
 export const AdminHub = ({ go }) => {
   const navigate = useNavigate();
   const { token } = useAuth();
@@ -478,7 +491,8 @@ export const AdminHub = ({ go }) => {
                       </p>
                       <p className="text-sm text-emerald-700">
                         Need: {fmtAmount(app.amount, app.currency)} 
-                        | Term: {app.term} | Approved: {new Date(app.updatedAt).toLocaleDateString()}
+                        {app.term && <> | Term: {app.term}</>}
+                        {' '}| Approved: {formatDate(app.updatedAt) || formatDate(app.submittedAt) || 'Date pending'}
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
                         <p className="text-xs text-emerald-600 mt-1">
@@ -543,7 +557,10 @@ export const AdminHub = ({ go }) => {
                       </p>
                       <p className="text-sm text-purple-700">
                         Need: {fmtAmount(app.amount, app.currency)} 
-                        | Term: {app.term} | Approved: {new Date(app.updatedAt).toLocaleDateString()}
+                        | Term: {app.term || 'Not specified'}
+                        | Approved: {app.updatedAt || app.submittedAt 
+                          ? new Date(app.updatedAt || app.submittedAt).toLocaleDateString() 
+                          : 'Date pending'}
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
                         <p className="text-xs text-purple-600 mt-1">

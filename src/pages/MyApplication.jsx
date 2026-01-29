@@ -457,14 +457,13 @@ export const MyApplication = () => {
     }
   }, [docs]);
 
-  // Current education documents checklist (visual only)
+  // Current education documents checklist (visual only) - optional documents alphabetically
   const currentDocChecklist = useMemo(
     () => [
+      { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
+      { key: "ENROLLMENT_CERTIFICATE", label: "Enrollment / Admission Proof" },
       { key: "TRANSCRIPT", label: "TRANSCRIPT" },
       { key: "UNIVERSITY_CARD", label: "UNIVERSITY/COLLEGE CARD" },
-      { key: "ENROLLMENT_CERTIFICATE", label: "Enrollment / Admission Proof" },
-      { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
-      { key: "SECOND_GUARDIAN_CNIC", label: "2ND GUARDIAN CNIC" },
     ],
     []
   );
@@ -645,10 +644,14 @@ export const MyApplication = () => {
   function collectSubmissionIssues() {
     const issues = [];
     
-    // Only check that PROFILE FIELDS are complete (not documents)
-    // Documents affect the completion percentage but don't block submission
+    // Check that PROFILE FIELDS are complete (100% required)
     if (completeness.fieldCompletion < 100) {
       issues.push(`Complete your profile fields: ${completeness.missing.join(", ")}`);
+    }
+    
+    // Check that ALL REQUIRED DOCUMENTS are uploaded (100% required)
+    if (completeness.docCompletion < 100) {
+      issues.push(`Upload missing documents: ${completeness.missingDocs.join(", ")}`);
     }
     
     // requested items addressed (admin-requested items still required)

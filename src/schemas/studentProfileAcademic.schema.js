@@ -71,8 +71,8 @@ export const studentProfileAcademicSchema = z
               invalid_type_error: "Completion year must be a number",
             })
             .int("Completion year must be an integer")
-            .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
-            .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
+            .min(THIS_YEAR - 30, `Enter a valid completion year (${THIS_YEAR - 30}–${THIS_YEAR + 5})`)
+            .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 30}–${THIS_YEAR + 5})`),
           program: z.string().optional(),
           educationBoard: z.string().optional(),
           totalMarks: z.coerce.number().min(0).optional(),

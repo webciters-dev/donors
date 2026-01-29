@@ -324,6 +324,63 @@ router.patch("/:id", async (req, res) => {
       }
     }
 
+    // Validation for PENDING status (student submission) - require 100% profile and documents
+    if (status === "PENDING") {
+      const application = await prisma.application.findUnique({
+        where: { id },
+        include: {
+          student: {
+            include: {
+              documents: {
+                select: { type: true }
+              }
+            }
+          }
+        }
+      });
+
+      if (!application) {
+        return res.status(404).json({ error: "Application not found" });
+      }
+
+      const student = application.student;
+      const issues = [];
+
+      // Check required profile fields
+      const REQUIRED_PROFILE_FIELDS = [
+        "cnic", "guardianName", "guardianCnic", "address", "city", "province",
+        "university", "program", "gpa", "gradYear"
+      ];
+      const missingProfileFields = REQUIRED_PROFILE_FIELDS.filter(field => {
+        const value = student[field];
+        return value === null || value === undefined || value === "";
+      });
+      
+      if (missingProfileFields.length > 0) {
+        issues.push(`Missing profile fields: ${missingProfileFields.join(', ')}`);
+      }
+
+      // Check required documents
+      const REQUIRED_DOCS = ["CNIC", "GUARDIAN_CNIC", "FEE_INVOICE", "SSC_RESULT", "HSSC_RESULT", "INCOME_CERTIFICATE", "UTILITY_BILL"];
+      const uploadedTypes = student.documents.map(doc => doc.type);
+      const missingDocs = REQUIRED_DOCS.filter(doc => !uploadedTypes.includes(doc));
+
+      if (missingDocs.length > 0) {
+        issues.push(`Missing required documents: ${missingDocs.join(', ')}`);
+      }
+
+      // Block submission if profile or documents are incomplete
+      if (issues.length > 0) {
+        return res.status(400).json({
+          error: "Cannot submit application with incomplete profile or missing documents",
+          issues: issues,
+          message: "Please complete your profile (100%) and upload all required documents before submitting.",
+          missingProfileFields: missingProfileFields.length > 0 ? missingProfileFields : undefined,
+          missingDocuments: missingDocs.length > 0 ? missingDocs : undefined
+        });
+      }
+    }
+
     // build update payload
     const data = {};
     if (status) data.status = status;
