@@ -83,6 +83,12 @@ router.get("/", optionalAuth, async (req, res) => {
               specificField: true,
               // Sponsorship status for admin filtering
               sponsored: true,
+              // Include documents for completeness check
+              documents: {
+                select: {
+                  type: true,
+                },
+              },
             },
           },
           fieldReviews: {
@@ -327,7 +333,13 @@ router.patch("/:id", async (req, res) => {
 
     // build update payload
     const data = {};
-    if (status) data.status = status;
+    if (status) {
+      data.status = status;
+      // Set approvedAt when status is changed to APPROVED
+      if (status === "APPROVED") {
+        data.approvedAt = new Date();
+      }
+    }
     if (notes !== undefined) data.notes = notes ?? null;
     if (currency) data.currency = currency;
     if (amount !== undefined) {
@@ -442,7 +454,14 @@ router.patch("/:id", async (req, res) => {
   } catch (error) {
     console.error("Error updating application:", error);
     if (error.code === "P2025") return res.status(404).json({ error: "Application not found" });
-    res.status(500).json({ error: "Failed to update application" });
+    // Provide more detailed error information
+    const errorMessage = error.message || "Failed to update application";
+    console.error("Detailed error:", errorMessage, error);
+    res.status(500).json({ 
+      error: "Failed to update application",
+      details: errorMessage,
+      code: error.code
+    });
   }
 });
 
@@ -505,6 +524,8 @@ router.patch("/:id/status", async (req, res) => {
       data: {
         status,
         notes: notes ?? null,
+        // Set approvedAt when status is changed to APPROVED
+        ...(status === "APPROVED" && { approvedAt: new Date() }),
       },
       include: {
         student: {

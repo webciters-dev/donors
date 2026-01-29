@@ -103,6 +103,7 @@ model Application {
   currency           Currency          // Required: Currency of the education cost
   status             ApplicationStatus @default(PENDING)
   submittedAt        DateTime          @default(now())
+  approvedAt         DateTime?         // When the application was approved
   notes              String?
   fxRate             Float?
   amountOriginal     Int?

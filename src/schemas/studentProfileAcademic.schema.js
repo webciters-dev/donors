@@ -66,13 +66,19 @@ export const studentProfileAcademicSchema = z
         z.object({
           institution: z.string().min(1, "Institution is required"),
           city: z.string().min(1, "City is required"),
-          completionYear: z
-            .coerce.number({
-              invalid_type_error: "Completion year must be a number",
-            })
-            .int("Completion year must be an integer")
-            .min(THIS_YEAR - 10, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`)
-            .max(THIS_YEAR + 5, `Enter a valid completion year (${THIS_YEAR - 10}–${THIS_YEAR + 5})`),
+          completionYear: z.preprocess(
+            (val) => {
+              if (val === "" || val === null || val === undefined) return undefined;
+              const num = Number(val);
+              return isNaN(num) ? undefined : num;
+            },
+            z
+              .number({
+                required_error: "Year of completion is required",
+                invalid_type_error: "Completion year must be a number",
+              })
+              .int("Completion year must be an integer")
+          ),
           program: z.string().optional(),
           educationBoard: z.string().optional(),
           totalMarks: z.coerce.number().min(0).optional(),

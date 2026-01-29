@@ -1,38 +1,17 @@
-# Nginx configuration for awake.webciters.dev
-# Save as /etc/nginx/sites-available/awake.webciters.dev
+# Nginx Configuration for AWAKE Connect
+# Place this file at: /etc/nginx/sites-available/awake-connect
+# Then create symlink: sudo ln -s /etc/nginx/sites-available/awake-connect /etc/nginx/sites-enabled/
 
+# Backend API and Frontend
 server {
     listen 80;
-    server_name awake.webciters.dev www.awake.webciters.dev;
-    
-    # Redirect HTTP to HTTPS
-    return 301 https://$server_name$request_uri;
-}
+    server_name yourdomain.com www.yourdomain.com;
 
-server {
-    listen 443 ssl http2;
-    server_name awake.webciters.dev www.awake.webciters.dev;
+    # Increase client body size for file uploads
+    client_max_body_size 50M;
 
-    # SSL Configuration (Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/awake.webciters.dev/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/awake.webciters.dev/privkey.pem;
-    
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
-
-    # File upload size
-    client_max_body_size 10M;
-
-    # Serve static frontend files
-    root /home/awake-app/awake/dist;
-    index index.html;
-
-    # API routes - proxy to Node.js backend
-    location /api/ {
+    # API endpoints - proxy to backend
+    location /api {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -42,25 +21,70 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
+        
+        # Increase timeouts for file uploads
+        proxy_connect_timeout 300s;
+        proxy_send_timeout 300s;
+        proxy_read_timeout 300s;
     }
 
-    # Serve uploaded files
-    location /uploads/ {
-        alias /home/awake-app/awake/server/uploads/;
+    # Serve uploaded files (if serving directly through Nginx)
+    location /uploads {
+        alias /home/sohail/projects/donors/server/uploads;
         expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public";
+        
+        # Security headers for uploads
+        add_header X-Content-Type-Options "nosniff" always;
     }
 
-    # Frontend routing (React Router)
+    # Frontend static files
     location / {
+        root /home/sohail/projects/donors/dist;
         try_files $uri $uri/ /index.html;
-        expires 1h;
-        add_header Cache-Control "public";
+        
+        # Cache static assets
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+        
+        # Don't cache HTML
+        location ~* \.html$ {
+            expires -1;
+            add_header Cache-Control "no-store, no-cache, must-revalidate";
+        }
     }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # Gzip compression
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json;
 }
+
+# SSL Configuration (after running certbot)
+# Uncomment and update after SSL certificate is obtained
+# server {
+#     listen 443 ssl http2;
+#     server_name yourdomain.com www.yourdomain.com;
+#     
+#     ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
+#     ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+#     
+#     # Include the same location blocks as above
+#     # ... (copy from above)
+# }
+# 
+# # Redirect HTTP to HTTPS
+# server {
+#     listen 80;
+#     server_name yourdomain.com www.yourdomain.com;
+#     return 301 https://$server_name$request_uri;
+# }

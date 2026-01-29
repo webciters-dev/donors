@@ -219,7 +219,7 @@ export const Landing = ({ go }) => {
               {getCMSContent('hero.primaryButton')}
             </Button>
           )}
-          {user?.role !== 'DONOR' && (
+          {false && user?.role !== 'DONOR' && (
             <Button 
               onClick={() => navigate("/donor-signup")} 
               variant="outline" 

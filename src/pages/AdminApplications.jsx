@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { API } from "@/lib/api";
 import { fmtAmount, fmtAmountDual } from "@/lib/currency";
 import StudentPhoto from "@/components/StudentPhoto";
+import { calculateProfileCompleteness, calculateOverallCompleteness } from "@/lib/profileValidation";
 
 export const AdminApplications = () => {
   const navigate = useNavigate();
@@ -79,8 +80,17 @@ export const AdminApplications = () => {
         ? data
         : [];
 
+      // Deduplicate applications by ID to prevent duplicates
+      const appMap = new Map();
+      list.forEach(app => {
+        if (app.id && !appMap.has(app.id)) {
+          appMap.set(app.id, app);
+        }
+      });
+      const uniqueList = Array.from(appMap.values());
+
       // add editable fields locally
-      const withLocal = list.map((a) => ({
+      const withLocal = uniqueList.map((a) => ({
         ...a,
         _status: a.status,
         _notes: a.notes ?? "",
@@ -389,22 +399,89 @@ export const AdminApplications = () => {
   const filtered = useMemo(() => {
     const t = query.toLowerCase();
     
-    // First filter by status based on active tab
-    let statusFiltered = apps;
+    // First deduplicate by application ID
+    const appMap = new Map();
+    apps.forEach(app => {
+      if (app.id && !appMap.has(app.id)) {
+        appMap.set(app.id, app);
+      }
+    });
+    const uniqueApps = Array.from(appMap.values());
+    
+    // Filter to only show applications with 100% complete profiles
+    const completeProfiles = uniqueApps.filter((a) => {
+      if (!a.student) {
+        console.log('Application missing student data:', a.id);
+        return false;
+      }
+      try {
+        // Check profile completeness first
+        const profileCompleteness = calculateProfileCompleteness(a.student);
+        if (profileCompleteness.percent !== 100) {
+          if (a.student.name) {
+            console.log(`[AdminApplications] Filtering out incomplete profile: ${a.student.name} (${profileCompleteness.percent}% profile complete)`, {
+              missing: profileCompleteness.missing,
+              studentId: a.studentId,
+              appId: a.id
+            });
+          }
+          return false;
+        }
+        
+        // Check documents completeness (documents are on student, not application)
+        const uploadedDocs = a.student?.documents || [];
+        const overallCompleteness = calculateOverallCompleteness(a.student, uploadedDocs);
+        
+        // Only show if both profile AND documents are 100% complete
+        const isFullyComplete = overallCompleteness.isComplete && overallCompleteness.percent === 100;
+        
+        if (!isFullyComplete && a.student.name) {
+          console.log(`[AdminApplications] Filtering out incomplete application: ${a.student.name} (${overallCompleteness.percent}% overall complete)`, {
+            profilePercent: profileCompleteness.percent,
+            docPercent: overallCompleteness.docPercent,
+            missingDocs: overallCompleteness.missingDocs,
+            studentId: a.studentId,
+            appId: a.id
+          });
+        }
+        
+        return isFullyComplete;
+      } catch (error) {
+        console.error('Error calculating completeness for student:', a.student.name, error);
+        return false;
+      }
+    });
+    
+    // Then filter by status based on active tab
+    let statusFiltered = completeProfiles;
     if (activeTab === "pending") {
-      statusFiltered = apps.filter(a => a.status === "PENDING");
+      statusFiltered = completeProfiles.filter(a => a.status === "PENDING");
     } else if (activeTab === "approved") {
       // Exclude sponsored students from approved tab
-      statusFiltered = apps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)));
+      statusFiltered = completeProfiles.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)));
     } else if (activeTab === "rejected") {
-      statusFiltered = apps.filter(a => a.status === "REJECTED");
+      statusFiltered = completeProfiles.filter(a => a.status === "REJECTED");
     } else if (activeTab === "sponsored") {
-      statusFiltered = apps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0));
+      statusFiltered = completeProfiles.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0));
     }
-    // "all" tab shows everything
+    // "all" tab shows everything (but only complete profiles)
+    
+    // For "all" tab, deduplicate by studentId to show only one application per student (most recent)
+    if (activeTab === "all") {
+      const studentMap = new Map();
+      statusFiltered.forEach(app => {
+        if (app.studentId) {
+          const existing = studentMap.get(app.studentId);
+          if (!existing || new Date(app.submittedAt || app.createdAt) > new Date(existing.submittedAt || existing.createdAt)) {
+            studentMap.set(app.studentId, app);
+          }
+        }
+      });
+      statusFiltered = Array.from(studentMap.values());
+    }
     
     // Then filter by search query
-    return statusFiltered.filter((a) => {
+    const searchFiltered = statusFiltered.filter((a) => {
       const s = a.student || {};
       return (
         !t ||
@@ -413,12 +490,50 @@ export const AdminApplications = () => {
         a.term?.toLowerCase().includes(t)
       );
     });
+    
+    // Final deduplication by application ID (safety check)
+    const finalMap = new Map();
+    searchFiltered.forEach(app => {
+      if (app.id && !finalMap.has(app.id)) {
+        finalMap.set(app.id, app);
+      }
+    });
+    
+    return Array.from(finalMap.values());
   }, [apps, query, activeTab]);
 
-  // Sponsor Manually list: unsponsored students (deduped by studentId)
+  // Sponsor Manually list: unsponsored students (deduped by studentId) with 100% complete profiles
   const sponsorManuallyList = useMemo(() => {
     const t = query.toLowerCase();
-    const base = apps.filter((a) => {
+    
+    // First deduplicate by application ID
+    const appMap = new Map();
+    apps.forEach(app => {
+      if (app.id && !appMap.has(app.id)) {
+        appMap.set(app.id, app);
+      }
+    });
+    const uniqueApps = Array.from(appMap.values());
+    
+    // Filter to only show applications with 100% complete profiles AND all required documents
+    const completeProfiles = uniqueApps.filter((a) => {
+      if (!a.student) return false;
+      
+      // Check profile completeness
+      const profileCompleteness = calculateProfileCompleteness(a.student);
+      if (profileCompleteness.percent !== 100) {
+        return false;
+      }
+      
+      // Check documents completeness (documents are on student, not application)
+      const uploadedDocs = a.student?.documents || [];
+      const overallCompleteness = calculateOverallCompleteness(a.student, uploadedDocs);
+      
+      // Only show if both profile AND documents are 100% complete
+      return overallCompleteness.isComplete && overallCompleteness.percent === 100;
+    });
+    
+    const base = completeProfiles.filter((a) => {
       const isSponsored = a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0);
       // default: skip rejected students; admin can approve+sponsor from pending/processing/approved
       const isRejected = a.status === "REJECTED";
@@ -776,7 +891,15 @@ export const AdminApplications = () => {
           <div className="lg:col-span-1 hidden lg:block text-right pr-2">Actions</div>
         </div>
 
-        {filtered.map((row) => {
+        {filtered.map((row, index) => {
+          // Additional safety check: ensure no duplicates by ID or studentId
+          const isDuplicateById = filtered.findIndex(r => r.id === row.id) !== index;
+          const isDuplicateByStudentId = filtered.findIndex(r => r.studentId === row.studentId && r.studentId) !== index;
+          if (isDuplicateById || isDuplicateByStudentId) {
+            console.warn(`Duplicate found: ${row.student?.name} - App ID: ${row.id}, Student ID: ${row.studentId}`);
+            return null;
+          }
+          
           const needText = fmtAmountDual(row.amount, row.currency);
           const docs = docsByRow[row.id] || [];
 
@@ -1013,7 +1136,7 @@ export const AdminApplications = () => {
               )}
             </div>
           );
-        })}
+        }).filter(Boolean)}
       </Card>
           )}
         </TabsContent>

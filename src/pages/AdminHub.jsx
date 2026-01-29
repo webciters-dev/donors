@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { fmtAmount } from "@/lib/currency";
 import AdminSettings from "@/components/AdminSettings";
 import InterviewManager from "@/components/InterviewManager";
 import AdminGeneralDonations from "@/components/AdminGeneralDonations";
+import { calculateProfileCompleteness } from "@/lib/profileValidation";
 
 export const AdminHub = ({ go }) => {
   const navigate = useNavigate();
@@ -41,7 +42,22 @@ export const AdminHub = ({ go }) => {
         const appsRes = await fetch(`${API.baseURL}/api/applications?limit=100`, { headers: authHeader });
         if (appsRes.ok) {
           const appsData = await appsRes.json();
-          setApplications(appsData.applications || []);
+          const appsList = appsData.applications || [];
+          // Deduplicate applications by ID to prevent duplicates
+          const appMap = new Map();
+          appsList.forEach(app => {
+            if (app.id && !appMap.has(app.id)) {
+              appMap.set(app.id, app);
+            }
+          });
+          const uniqueApps = Array.from(appMap.values());
+          
+          // Debug: Log if duplicates were found
+          if (appsList.length !== uniqueApps.length) {
+            console.warn(`Found ${appsList.length - uniqueApps.length} duplicate applications`);
+          }
+          
+          setApplications(uniqueApps);
         }
         
         // Load donors
@@ -143,9 +159,23 @@ export const AdminHub = ({ go }) => {
     loadData();
   }, [token]);
 
-  const filteredApps = applications.filter((app) =>
-    app.student.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Deduplicate applications by ID and filter by search term
+  // Use useMemo to ensure deduplication happens consistently
+  const filteredApps = useMemo(() => {
+    // First deduplicate by application ID
+    const appMap = new Map();
+    applications.forEach(app => {
+      if (app.id && !appMap.has(app.id)) {
+        appMap.set(app.id, app);
+      }
+    });
+    const uniqueApps = Array.from(appMap.values());
+    
+    // Then filter by search term
+    return uniqueApps.filter((app) =>
+      app.student?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [applications, searchTerm]);
 
   // Filter messages based on selected filter - use allMessages for Communications tab
   const filteredMessages = allMessages.filter((message) => {
@@ -391,14 +421,24 @@ export const AdminHub = ({ go }) => {
         </Card>
         <Card className="p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group">
           <div className="text-2xl sm:text-3xl font-bold text-green-600 group-hover:scale-110 transition-transform duration-300">
-            {loading ? '...' : applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length}
+            {loading ? '...' : applications.filter(app => {
+              const isApproved = app.status === 'APPROVED' && !(app.student?.sponsored === true);
+              if (!isApproved || !app.student) return false;
+              const completeness = calculateProfileCompleteness(app.student);
+              return completeness.percent === 100;
+            }).length}
           </div>
           <div className="text-xs sm:text-sm text-gray-600 font-medium">Approved</div>
           <div className="text-xs text-gray-500">Ready for sponsorship</div>
         </Card>
         <Card className="p-4 sm:p-6 text-center hover:shadow-lg transition-all duration-300 group">
           <div className="text-2xl sm:text-3xl font-bold text-blue-600 group-hover:scale-110 transition-transform duration-300">
-            {loading ? '...' : applications.filter(app => app.student?.sponsored === true).length}
+            {loading ? '...' : applications.filter(app => {
+              const isSponsored = app.student?.sponsored === true;
+              if (!isSponsored || !app.student) return false;
+              const completeness = calculateProfileCompleteness(app.student);
+              return completeness.percent === 100;
+            }).length}
           </div>
           <div className="text-xs sm:text-sm text-gray-600 font-medium">Sponsored</div>
           <div className="text-xs text-gray-500">Education funded</div>
@@ -451,7 +491,12 @@ export const AdminHub = ({ go }) => {
                Approved Students Ready for Sponsorship
             </h3>
             <Badge variant="default" className="bg-emerald-600 self-start sm:self-auto">
-              {applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length} Ready
+              {applications.filter(app => {
+                const isApproved = app.status === 'APPROVED' && !(app.student?.sponsored === true);
+                if (!isApproved || !app.student) return false;
+                const completeness = calculateProfileCompleteness(app.student);
+                return completeness.percent === 100;
+              }).length} Ready
             </Badge>
           </div>
           
@@ -460,12 +505,22 @@ export const AdminHub = ({ go }) => {
               <Card className="p-6 text-center">
                 <div className="text-slate-600">Loading approved applications...</div>
               </Card>
-            ) : applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).length === 0 ? (
+            ) : applications.filter(app => {
+              const isApproved = app.status === 'APPROVED' && !(app.student?.sponsored === true);
+              if (!isApproved || !app.student) return false;
+              const completeness = calculateProfileCompleteness(app.student);
+              return completeness.percent === 100;
+            }).length === 0 ? (
               <Card className="p-6 text-center">
-                <div className="text-slate-600">No approved applications awaiting sponsorship</div>
+                <div className="text-slate-600">No approved applications with complete profiles awaiting sponsorship</div>
               </Card>
             ) : (
-              applications.filter(app => app.status === 'APPROVED' && !(app.student?.sponsored === true)).map((app) => (
+              applications.filter(app => {
+                const isApproved = app.status === 'APPROVED' && !(app.student?.sponsored === true);
+                if (!isApproved || !app.student) return false;
+                const completeness = calculateProfileCompleteness(app.student);
+                return completeness.percent === 100;
+              }).map((app) => (
                 <Card key={app.id} className="p-4 border-l-4 border-l-emerald-500 bg-emerald-50">
                   <div className="flex items-center justify-between">
                     <div>
@@ -478,7 +533,7 @@ export const AdminHub = ({ go }) => {
                       </p>
                       <p className="text-sm text-emerald-700">
                         Need: {fmtAmount(app.amount, app.currency)} 
-                        | Term: {app.term} | Approved: {new Date(app.updatedAt).toLocaleDateString()}
+                        | Term: {app.term} | Approved: {app.approvedAt ? new Date(app.approvedAt).toLocaleDateString() : (app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : 'N/A')}
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
                         <p className="text-xs text-emerald-600 mt-1">
@@ -516,7 +571,12 @@ export const AdminHub = ({ go }) => {
                Sponsored Students
             </h3>
             <Badge variant="default" className="bg-purple-600">
-              {applications.filter(app => app.student?.sponsored === true).length} Sponsored
+              {applications.filter(app => {
+                const isSponsored = app.student?.sponsored === true;
+                if (!isSponsored || !app.student) return false;
+                const completeness = calculateProfileCompleteness(app.student);
+                return completeness.percent === 100;
+              }).length} Sponsored
             </Badge>
           </div>
           
@@ -525,12 +585,22 @@ export const AdminHub = ({ go }) => {
               <Card className="p-6 text-center">
                 <div className="text-slate-600">Loading sponsored students...</div>
               </Card>
-            ) : applications.filter(app => app.student?.sponsored === true).length === 0 ? (
+            ) : applications.filter(app => {
+              const isSponsored = app.student?.sponsored === true;
+              if (!isSponsored || !app.student) return false;
+              const completeness = calculateProfileCompleteness(app.student);
+              return completeness.percent === 100;
+            }).length === 0 ? (
               <Card className="p-6 text-center">
-                <div className="text-slate-600">No sponsored students yet</div>
+                <div className="text-slate-600">No sponsored students with complete profiles yet</div>
               </Card>
             ) : (
-              applications.filter(app => app.student?.sponsored === true).map((app) => (
+              applications.filter(app => {
+                const isSponsored = app.student?.sponsored === true;
+                if (!isSponsored || !app.student) return false;
+                const completeness = calculateProfileCompleteness(app.student);
+                return completeness.percent === 100;
+              }).map((app) => (
                 <Card key={app.id} className="p-4 border-l-4 border-l-purple-500 bg-purple-50">
                   <div className="flex items-center justify-between">
                     <div>
@@ -770,7 +840,14 @@ export const AdminHub = ({ go }) => {
                 </div>
               </Card>
             ) : (
-              filteredApps.map((app) => (
+              filteredApps.map((app, index) => {
+                // Additional safety check: ensure no duplicates by ID
+                const isDuplicate = filteredApps.findIndex(a => a.id === app.id) !== index;
+                if (isDuplicate) {
+                  console.warn(`Duplicate application found: ${app.id} for student ${app.student?.name}`);
+                  return null;
+                }
+                return (
                 <Card key={app.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -803,7 +880,8 @@ export const AdminHub = ({ go }) => {
                     </div>
                   </div>
                 </Card>
-              ))
+                );
+              }).filter(Boolean)
             )}
           </div>
         </TabsContent>

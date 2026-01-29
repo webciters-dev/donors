@@ -472,7 +472,6 @@ export const MyApplication = () => {
       { key: "UNIVERSITY_CARD", label: "UNIVERSITY/COLLEGE CARD" },
       { key: "ENROLLMENT_CERTIFICATE", label: "Enrollment / Admission Proof" },
       { key: "DEGREE_CERTIFICATE", label: "DEGREE CERTIFICATE" },
-      { key: "SECOND_GUARDIAN_CNIC", label: "2ND GUARDIAN CNIC" },
     ],
     []
   );
