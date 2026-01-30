@@ -646,6 +646,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
       university,
       program,
       gpa,
+      gradeType, // CGPA or PERCENTAGE
       gradYear,
       city,
       province,
@@ -692,6 +693,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (gpa !== undefined) {
       updateData.gpa = (gpa === null || gpa === "" || isNaN(Number(gpa))) ? 0 : Number(gpa);
     }
+    if (gradeType !== undefined) updateData.gradeType = gradeType || "CGPA";
     if (gradYear !== undefined) {
       updateData.gradYear = (gradYear === null || gradYear === "" || isNaN(Number(gradYear))) ? null : Number(gradYear);
     }

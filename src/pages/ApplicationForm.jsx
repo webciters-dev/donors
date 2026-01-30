@@ -259,6 +259,7 @@ export const ApplicationForm = () => {
           field: studentData.field || prevForm.field,
           program: studentData.program || prevForm.program,
           gpa: studentData.gpa ? studentData.gpa.toString() : prevForm.gpa,
+          gradeType: studentData.gradeType || prevForm.gradeType || "CGPA", // Load gradeType from student data
           currency: studentData.country ? getCurrencyFromCountry(studentData.country) : prevForm.currency,
           // Add parsed program dates
           startMonth,
@@ -1418,6 +1419,7 @@ export const ApplicationForm = () => {
                       program: finalProgramValue,
                       customProgram: form.program === "Other" && form.customProgram ? form.customProgram.trim() : undefined,
                       gpa: Number(form.gpa) || 0,
+                      gradeType: form.gradeType || "CGPA", // Include gradeType (CGPA or PERCENTAGE)
                       programStartDate: programStartDate || undefined,
                       programEndDate: programEndDate || undefined
                     };
@@ -1480,6 +1482,7 @@ export const ApplicationForm = () => {
                       field: step2Payload.field,
                       program: step2Payload.program,
                       gpa: step2Payload.gpa.toString(),
+                      gradeType: step2Payload.gradeType || prevForm.gradeType || "CGPA", // Preserve gradeType
                       // Also update the dates if they were provided
                       startMonth: form.startMonth,
                       startYear: form.startYear,
@@ -1852,7 +1855,7 @@ export const ApplicationForm = () => {
                   <p><strong>Degree Level:</strong> {form.degreeLevel || "[Your Degree Level]"}</p>
                   <p><strong>Field:</strong> {form.field || "[Your Field]"}</p>
                   <p><strong>Program:</strong> {form.program || "[Your Program]"}</p>
-                  <p><strong>CGPA:</strong> {form.gpa || "[Your CGPA]"}</p>
+                  <p><strong>{form.gradeType === "PERCENTAGE" ? "Percentage" : "CGPA"}:</strong> {form.gpa || (form.gradeType === "PERCENTAGE" ? "[Your Percentage]" : "[Your CGPA]")}</p>
                 </div>
 
                 {/* Financial Information */}

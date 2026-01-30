@@ -561,15 +561,61 @@ export const AdminApplications = () => {
     });
   }, [apps, query]);
 
-  // Statistics for tab badges
-  const stats = useMemo(() => ({
-    all: apps.length,
-    pending: apps.filter(a => a.status === "PENDING").length,
-    approved: apps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0))).length,
-    rejected: apps.filter(a => a.status === "REJECTED").length,
-    sponsored: apps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)).length,
-    sponsorManually: sponsorManuallyList.length,
-  }), [apps]);
+  // Base filtered list (same logic as filtered but without search query) - for stats calculation
+  const baseFilteredApps = useMemo(() => {
+    // First deduplicate by application ID
+    const appMap = new Map();
+    apps.forEach(app => {
+      if (app.id && !appMap.has(app.id)) {
+        appMap.set(app.id, app);
+      }
+    });
+    const uniqueApps = Array.from(appMap.values());
+    
+    // Filter to only show applications with 100% complete profiles AND documents
+    const completeProfiles = uniqueApps.filter((a) => {
+      if (!a.student) return false;
+      try {
+        const profileCompleteness = calculateProfileCompleteness(a.student);
+        if (profileCompleteness.percent !== 100) return false;
+        
+        const uploadedDocs = a.student?.documents || [];
+        const overallCompleteness = calculateOverallCompleteness(a.student, uploadedDocs);
+        
+        return overallCompleteness.isComplete && overallCompleteness.percent === 100;
+      } catch (error) {
+        return false;
+      }
+    });
+    
+    return completeProfiles;
+  }, [apps]);
+
+  // Statistics for tab badges - using baseFilteredApps to match the same filtering logic
+  const stats = useMemo(() => {
+    // For "all" tab, deduplicate by studentId to show only one application per student (most recent)
+    const allDeduped = (() => {
+      const studentMap = new Map();
+      baseFilteredApps.forEach(app => {
+        if (app.studentId) {
+          const existing = studentMap.get(app.studentId);
+          if (!existing || new Date(app.submittedAt || app.createdAt) > new Date(existing.submittedAt || existing.createdAt)) {
+            studentMap.set(app.studentId, app);
+          }
+        }
+      });
+      return Array.from(studentMap.values());
+    })();
+
+    return {
+      all: allDeduped.length,
+      pending: baseFilteredApps.filter(a => a.status === "PENDING").length,
+      approved: baseFilteredApps.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0))).length,
+      rejected: baseFilteredApps.filter(a => a.status === "REJECTED").length,
+      sponsored: baseFilteredApps.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)).length,
+      sponsorManually: sponsorManuallyList.length,
+    };
+  }, [baseFilteredApps, sponsorManuallyList]);
 
   if (!isAdmin) {
     return (
