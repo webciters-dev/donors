@@ -23,6 +23,7 @@ build/
 
 # Database files
 *.sql
+!server/prisma/migrations/**/*.sql
 *.dump
 *.db
 *.sqlite
