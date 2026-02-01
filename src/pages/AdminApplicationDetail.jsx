@@ -11,6 +11,7 @@ import { API } from "@/lib/api";
 import { fmtAmount } from "@/lib/currency";
 import StudentPhoto from "@/components/StudentPhoto";
 import StudentVideo from "@/components/StudentVideo";
+import { calculateOverallCompleteness } from "@/lib/profileValidation";
 
 // Case Worker task types
 const TASK_TYPES = [
@@ -138,17 +139,14 @@ export default function AdminApplicationDetail() {
   }, [id, token]);
 
   const completeness = useMemo(() => {
-    const s = app?.student || {};
-    const required = [
-      "cnic","dateOfBirth","guardianName","guardianCnic","phone","address","city","province","university","program","gpa","gradYear",
-      "currentInstitution","currentCity","currentCompletionYear"
-    ];
-    const missing = required.filter(k => {
-      const v = s?.[k];
-      return v === null || v === undefined || v === "" || Number.isNaN(v);
-    });
-    return { percent: Math.round(((required.length - missing.length)/required.length)*100), missing };
-  }, [app]);
+    if (!app?.student) {
+      return { percent: 0, missing: [], missingDocs: [], profilePercent: 0, docPercent: 0, isComplete: false };
+    }
+    
+    // Use the same completeness calculation as the rest of the app
+    const uploadedDocs = docs || [];
+    return calculateOverallCompleteness(app.student, uploadedDocs);
+  }, [app, docs]);
 
   async function createAssignment() {
     try {
@@ -427,7 +425,7 @@ export default function AdminApplicationDetail() {
               <div>{app.student?.degreeLevel || "-"}</div>
             </div>
             <div>
-              <div className="text-slate-500">GPA</div>
+              <div className="text-slate-500">{app.student?.gradeType === "PERCENTAGE" ? "Percentage" : app.student?.gradeType === "CGPA" ? "CGPA" : "GPA"}</div>
               <div>{app.student?.gpa || "-"}</div>
             </div>
             <div>

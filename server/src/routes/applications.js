@@ -59,6 +59,7 @@ router.get("/", optionalAuth, async (req, res) => {
               currentCompletionYear: true,
               previousAcademicRecords: true, // Previous academic records (JSON array)
               gpa: true,
+              gradeType: true, // CGPA or PERCENTAGE
               gradYear: true,
               // Profile completeness fields
               cnic: true,

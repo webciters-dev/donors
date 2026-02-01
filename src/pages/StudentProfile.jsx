@@ -651,11 +651,21 @@ export default function StudentProfile() {
       if (!res.ok) {
         const errorText = await res.text();
         let errorMessage = "Failed to save profile";
+        const fieldErrors = {};
         
         try {
           const errorJson = JSON.parse(errorText);
           if (errorJson.errors && Array.isArray(errorJson.errors)) {
-            // Validation errors from Zod - show field names
+            // Validation errors from backend - set field-level errors
+            errorJson.errors.forEach(e => {
+              const fieldName = e.path || 'unknown';
+              fieldErrors[fieldName] = e.message;
+            });
+            
+            // Set errors in state for field-level display
+            setErrors(fieldErrors);
+            
+            // Also create a summary message for toast
             const errorDetails = errorJson.errors.map(e => {
               const fieldName = e.path ? e.path.join('.') : 'unknown field';
               return `${fieldName}: ${e.message}`;

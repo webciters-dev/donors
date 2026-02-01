@@ -969,7 +969,7 @@ export const AdminApplications = () => {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <Badge variant="secondary">
-                      GPA {row.student?.gpa ?? "-"}
+                      {row.student?.gradeType === "PERCENTAGE" ? "Percentage" : row.student?.gradeType === "CGPA" ? "CGPA" : "GPA"} {row.student?.gpa ?? "-"}
                     </Badge>
                     
                     {/* Field Review Status Badge */}

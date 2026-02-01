@@ -444,6 +444,69 @@ router.put(
         return res.status(404).json({ error: "Student not found" });
       }
 
+      // Check for duplicate CNIC (excluding current student)
+      if (cnic !== undefined && cnic && cnic.trim() !== "") {
+        const duplicateCnic = await prisma.student.findFirst({
+          where: {
+            cnic: cnic.trim(),
+            id: { not: studentId }
+          }
+        });
+        if (duplicateCnic) {
+          return res.status(409).json({
+            message: "Validation failed",
+            errors: [{
+              path: "cnic",
+              message: "This CNIC is already registered with another student account"
+            }]
+          });
+        }
+      }
+
+      // Check for duplicate Guardian CNIC (excluding current student)
+      if (guardianCnic !== undefined && guardianCnic && guardianCnic.trim() !== "") {
+        const duplicateGuardianCnic = await prisma.student.findFirst({
+          where: {
+            OR: [
+              { guardianCnic: guardianCnic.trim() },
+              { guardian2Cnic: guardianCnic.trim() }
+            ],
+            id: { not: studentId }
+          }
+        });
+        if (duplicateGuardianCnic) {
+          return res.status(409).json({
+            message: "Validation failed",
+            errors: [{
+              path: "guardianCnic",
+              message: "This Guardian CNIC is already registered with another student account"
+            }]
+          });
+        }
+      }
+
+      // Check for duplicate Guardian 2 CNIC (excluding current student)
+      if (guardian2Cnic !== undefined && guardian2Cnic && guardian2Cnic.trim() !== "") {
+        const duplicateGuardian2Cnic = await prisma.student.findFirst({
+          where: {
+            OR: [
+              { guardianCnic: guardian2Cnic.trim() },
+              { guardian2Cnic: guardian2Cnic.trim() }
+            ],
+            id: { not: studentId }
+          }
+        });
+        if (duplicateGuardian2Cnic) {
+          return res.status(409).json({
+            message: "Validation failed",
+            errors: [{
+              path: "guardian2Cnic",
+              message: "This Guardian CNIC is already registered with another student account"
+            }]
+          });
+        }
+      }
+
       // Legacy fields (currentInstitution, currentCity, currentCompletionYear) are optional
       // They are kept for backward compatibility but not required in the new form structure
       // The new form uses previousAcademicRecords array instead

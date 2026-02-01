@@ -126,6 +126,69 @@ router.put("/", requireAuth, onlyRoles("STUDENT"), async (req, res) => {
       return res.status(400).json({ error: "Current institution, city, and completion year are required" });
     }
 
+    // Check for duplicate CNIC (excluding current student)
+    if (cnic != null && cnic && String(cnic).trim() !== "") {
+      const duplicateCnic = await prisma.student.findFirst({
+        where: {
+          cnic: String(cnic).trim(),
+          id: { not: student.id }
+        }
+      });
+      if (duplicateCnic) {
+        return res.status(409).json({
+          message: "Validation failed",
+          errors: [{
+            path: "cnic",
+            message: "This CNIC is already registered with another student account"
+          }]
+        });
+      }
+    }
+
+    // Check for duplicate Guardian CNIC (excluding current student)
+    if (guardianCnic != null && guardianCnic && String(guardianCnic).trim() !== "") {
+      const duplicateGuardianCnic = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { guardianCnic: String(guardianCnic).trim() },
+            { guardian2Cnic: String(guardianCnic).trim() }
+          ],
+          id: { not: student.id }
+        }
+      });
+      if (duplicateGuardianCnic) {
+        return res.status(409).json({
+          message: "Validation failed",
+          errors: [{
+            path: "guardianCnic",
+            message: "This Guardian CNIC is already registered with another student account"
+          }]
+        });
+      }
+    }
+
+    // Check for duplicate Guardian 2 CNIC (excluding current student)
+    if (guardian2Cnic != null && guardian2Cnic && String(guardian2Cnic).trim() !== "") {
+      const duplicateGuardian2Cnic = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { guardianCnic: String(guardian2Cnic).trim() },
+            { guardian2Cnic: String(guardian2Cnic).trim() }
+          ],
+          id: { not: student.id }
+        }
+      });
+      if (duplicateGuardian2Cnic) {
+        return res.status(409).json({
+          message: "Validation failed",
+          errors: [{
+            path: "guardian2Cnic",
+            message: "This Guardian CNIC is already registered with another student account"
+          }]
+        });
+      }
+    }
+
     const updated = await prisma.student.update({
       where: { id: student.id },
       data: {
