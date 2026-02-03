@@ -673,7 +673,7 @@ export default function AdminApplicationDetail() {
                 <div className="flex justify-between border-t pt-2">
                   <span className="text-slate-700 font-semibold">Amount Required</span>
                   <span className="font-bold text-blue-600">
-                    {fmtAmount(app.amount, app.currency)}
+                    {fmtAmount(app.approvedAmount ?? app.amount, app.currency)}
                   </span>
                 </div>
               </div>
@@ -681,7 +681,7 @@ export default function AdminApplicationDetail() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Amount Needed</span>
                 <span className="font-medium">
-                  {fmtAmount(app.amount, app.currency)}
+                  {fmtAmount(app.approvedAmount ?? app.amount, app.currency)}
                 </span>
               </div>
             )}
@@ -863,13 +863,20 @@ export default function AdminApplicationDetail() {
                       }
                     }
                     
-                    // Update local state
-                    setApp(prev => ({
-                      ...prev,
-                      status: prev._status || prev.status,
-                      notes: prev._notes || prev.notes,
-                      approvedAmount: approvedAmountValue
-                    }));
+                    // Reload application data from server to get the latest approvedAmount
+                    const reloadRes = await fetch(`${API.baseURL}/api/applications/${app.id}`);
+                    if (reloadRes.ok) {
+                      const reloadedData = await reloadRes.json();
+                      setApp(reloadedData);
+                    } else {
+                      // Fallback: Update local state if reload fails
+                      setApp(prev => ({
+                        ...prev,
+                        status: prev._status || prev.status,
+                        notes: prev._notes || prev.notes,
+                        approvedAmount: approvedAmountValue
+                      }));
+                    }
                     
                     toast.success("Application updated successfully!");
                   } catch (error) {

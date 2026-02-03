@@ -56,7 +56,7 @@ function StudentCard({ student, onSponsored }) {
   const universityCurrency = getUniversityCurrency(student?.university);
   const countryCurrency = getCurrencyFromCountry(student?.country);
   const currency = student?.application?.currency || student?.currency || universityCurrency || countryCurrency;
-  const displayAmount = student?.application?.amount || student?.amount || 0;
+  const displayAmount = student?.application?.approvedAmount ?? student?.application?.amount ?? student?.amount ?? 0;
   
   // Debug logging for amount display issues
   if (displayAmount === 0) {

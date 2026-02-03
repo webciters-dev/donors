@@ -80,11 +80,66 @@ export const AdminApplications = () => {
         ? data
         : [];
 
+      // Filter out DRAFT applications - they shouldn't appear in admin panel
+      const nonDraftList = list.filter(app => app.status !== "DRAFT");
+      
       // Deduplicate applications by ID to prevent duplicates
       const appMap = new Map();
-      list.forEach(app => {
-        if (app.id && !appMap.has(app.id)) {
-          appMap.set(app.id, app);
+      const seenStudentIds = new Map(); // Track studentId -> application mapping
+      
+      nonDraftList.forEach(app => {
+        // First check: skip if we've already seen this application ID
+        if (app.id && appMap.has(app.id)) {
+          console.warn(`Load: Skipping duplicate application ID: ${app.id} for student: ${app.student?.name}`);
+          return;
+        }
+        
+        // Second check: if we've already seen this studentId, keep only the best application
+        // Priority: 1) Submitted applications (has submittedAt), 2) Most recent, 3) Higher status priority
+        if (app.studentId && seenStudentIds.has(app.studentId)) {
+          const existing = seenStudentIds.get(app.studentId);
+          
+          // Priority rules:
+          // 1. Submitted applications (with submittedAt) always win over non-submitted
+          const appIsSubmitted = !!app.submittedAt;
+          const existingIsSubmitted = !!existing.submittedAt;
+          
+          if (appIsSubmitted && !existingIsSubmitted) {
+            // This app is submitted, existing is not - replace
+            appMap.delete(existing.id);
+            appMap.set(app.id, app);
+            seenStudentIds.set(app.studentId, app);
+            console.log(`Load: Replacing DRAFT/non-submitted with submitted app for student ${app.student?.name}: keeping app ${app.id} over ${existing.id}`);
+            return;
+          } else if (!appIsSubmitted && existingIsSubmitted) {
+            // Existing is submitted, this one is not - skip
+            console.log(`Load: Skipping non-submitted app ${app.id} for student ${app.student?.name}, keeping submitted ${existing.id}`);
+            return;
+          }
+          
+          // Both are submitted or both are not - compare by date
+          const appDate = app.submittedAt ? new Date(app.submittedAt).getTime() : (app.createdAt ? new Date(app.createdAt).getTime() : 0);
+          const existingDate = existing.submittedAt ? new Date(existing.submittedAt).getTime() : (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
+          
+          if (appDate > existingDate || (appDate === existingDate && app.id > existing.id)) {
+            // This app is more recent, replace the existing one
+            appMap.delete(existing.id);
+            appMap.set(app.id, app);
+            seenStudentIds.set(app.studentId, app);
+            console.log(`Load: Replacing application for student ${app.student?.name}: keeping app ${app.id} over ${existing.id}`);
+          } else {
+            // Existing is more recent, skip this one
+            console.log(`Load: Skipping older application ${app.id} for student ${app.student?.name}, keeping ${existing.id}`);
+            return;
+          }
+        } else {
+          // First time seeing this studentId or no studentId
+          if (app.id) {
+            appMap.set(app.id, app);
+            if (app.studentId) {
+              seenStudentIds.set(app.studentId, app);
+            }
+          }
         }
       });
       const uniqueList = Array.from(appMap.values());
@@ -399,9 +454,12 @@ export const AdminApplications = () => {
   const filtered = useMemo(() => {
     const t = query.toLowerCase();
     
+    // Filter out DRAFT applications first - they shouldn't appear in admin panel
+    const nonDraftApps = apps.filter(app => app.status !== "DRAFT");
+    
     // First deduplicate by application ID
     const appMap = new Map();
-    apps.forEach(app => {
+    nonDraftApps.forEach(app => {
       if (app.id && !appMap.has(app.id)) {
         appMap.set(app.id, app);
       }
@@ -452,33 +510,98 @@ export const AdminApplications = () => {
       }
     });
     
+    // First, deduplicate by application ID to ensure no duplicate application records
+    const appIdMap = new Map();
+    completeProfiles.forEach(app => {
+      if (app.id && !appIdMap.has(app.id)) {
+        appIdMap.set(app.id, app);
+      }
+    });
+    const uniqueByAppId = Array.from(appIdMap.values());
+    
     // Then filter by status based on active tab
-    let statusFiltered = completeProfiles;
+    let statusFiltered = uniqueByAppId;
     if (activeTab === "pending") {
-      statusFiltered = completeProfiles.filter(a => a.status === "PENDING");
+      statusFiltered = uniqueByAppId.filter(a => a.status === "PENDING");
     } else if (activeTab === "approved") {
       // Exclude sponsored students from approved tab
-      statusFiltered = completeProfiles.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)));
+      statusFiltered = uniqueByAppId.filter(a => a.status === "APPROVED" && !(a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0)));
     } else if (activeTab === "rejected") {
-      statusFiltered = completeProfiles.filter(a => a.status === "REJECTED");
+      statusFiltered = uniqueByAppId.filter(a => a.status === "REJECTED");
     } else if (activeTab === "sponsored") {
-      statusFiltered = completeProfiles.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0));
+      statusFiltered = uniqueByAppId.filter(a => a.student?.sponsored === true || (a.sponsorships && a.sponsorships.length > 0));
     }
     // "all" tab shows everything (but only complete profiles)
     
-    // For "all" tab, deduplicate by studentId to show only one application per student (most recent)
-    if (activeTab === "all") {
-      const studentMap = new Map();
-      statusFiltered.forEach(app => {
-        if (app.studentId) {
-          const existing = studentMap.get(app.studentId);
-          if (!existing || new Date(app.submittedAt || app.createdAt) > new Date(existing.submittedAt || existing.createdAt)) {
+    // For ALL tabs, deduplicate by studentId to show only one application per student
+    // Priority: 1) Submitted applications (has submittedAt), 2) Most recent, 3) Higher status priority
+    // This prevents the same student from appearing multiple times
+    const studentMap = new Map();
+    const seenAppIds = new Set(); // Track application IDs we've already processed
+    
+    statusFiltered.forEach(app => {
+      // Skip if we've already seen this application ID (shouldn't happen, but safety)
+      if (app.id && seenAppIds.has(app.id)) {
+        console.warn(`Skipping duplicate application ID: ${app.id} for student: ${app.student?.name}`);
+        return;
+      }
+      
+      if (app.studentId) {
+        const existing = studentMap.get(app.studentId);
+        if (!existing) {
+          // First time seeing this studentId
+          studentMap.set(app.studentId, app);
+          if (app.id) seenAppIds.add(app.id);
+        } else {
+          // We already have an application for this student - keep the best one
+          // Priority: submitted apps over non-submitted
+          const appIsSubmitted = !!app.submittedAt;
+          const existingIsSubmitted = !!existing.submittedAt;
+          
+          if (appIsSubmitted && !existingIsSubmitted) {
+            // This app is submitted, existing is not - replace
             studentMap.set(app.studentId, app);
+            if (app.id) seenAppIds.add(app.id);
+            console.log(`Replacing non-submitted with submitted app for student ${app.student?.name}: keeping app ${app.id} over ${existing.id}`);
+          } else if (!appIsSubmitted && existingIsSubmitted) {
+            // Existing is submitted, this one is not - skip
+            if (app.id) seenAppIds.add(app.id);
+            console.log(`Skipping non-submitted app ${app.id} for student ${app.student?.name}, keeping submitted ${existing.id}`);
+          } else {
+            // Both are submitted or both are not - compare by timestamp
+            const appSubmittedAt = app.submittedAt ? new Date(app.submittedAt).getTime() : 0;
+            const appCreatedAt = app.createdAt ? new Date(app.createdAt).getTime() : 0;
+            const appTimestamp = appSubmittedAt || appCreatedAt || 0;
+            
+            const existingSubmittedAt = existing.submittedAt ? new Date(existing.submittedAt).getTime() : 0;
+            const existingCreatedAt = existing.createdAt ? new Date(existing.createdAt).getTime() : 0;
+            const existingTimestamp = existingSubmittedAt || existingCreatedAt || 0;
+            
+            // If this app is more recent, replace the existing one
+            if (appTimestamp > existingTimestamp) {
+              studentMap.set(app.studentId, app);
+              if (app.id) seenAppIds.add(app.id);
+              console.log(`Replacing application for student ${app.student?.name}: keeping app ${app.id} (${appTimestamp}) over ${existing.id} (${existingTimestamp})`);
+            } else if (appTimestamp === existingTimestamp && app.id && existing.id && app.id > existing.id) {
+              // If timestamps are equal, use application ID as tiebreaker
+              studentMap.set(app.studentId, app);
+              if (app.id) seenAppIds.add(app.id);
+            } else {
+              // Keep existing, but still track this app ID
+              if (app.id) seenAppIds.add(app.id);
+            }
           }
         }
-      });
-      statusFiltered = Array.from(studentMap.values());
-    }
+      } else {
+        // If no studentId, keep by application ID (shouldn't happen, but safety check)
+        const key = `app_${app.id}`;
+        if (!studentMap.has(key) && app.id) {
+          studentMap.set(key, app);
+          seenAppIds.add(app.id);
+        }
+      }
+    });
+    statusFiltered = Array.from(studentMap.values());
     
     // Then filter by search query
     const searchFiltered = statusFiltered.filter((a) => {
@@ -491,15 +614,51 @@ export const AdminApplications = () => {
       );
     });
     
-    // Final deduplication by application ID (safety check)
+    // Final deduplication by application ID and studentId (safety check)
     const finalMap = new Map();
+    const finalSeenStudentIds = new Set();
+    const finalSeenAppIds = new Set();
+    
     searchFiltered.forEach(app => {
+      // Skip if we've already seen this application ID
+      if (app.id && finalSeenAppIds.has(app.id)) {
+        console.warn(`Final filter: Skipping duplicate application ID: ${app.id} for student: ${app.student?.name}`);
+        return;
+      }
+      
+      // Skip if we've already seen this studentId (one student should only appear once)
+      if (app.studentId && finalSeenStudentIds.has(app.studentId)) {
+        console.warn(`Final filter: Skipping duplicate studentId: ${app.studentId} (${app.student?.name}) - app ID: ${app.id}`);
+        return;
+      }
+      
+      // Deduplicate by application ID first
       if (app.id && !finalMap.has(app.id)) {
+        if (app.studentId) {
+          finalSeenStudentIds.add(app.studentId);
+        }
+        finalSeenAppIds.add(app.id);
         finalMap.set(app.id, app);
       }
     });
     
-    return Array.from(finalMap.values());
+    const result = Array.from(finalMap.values());
+    
+    // Debug: Log if we still have duplicates
+    const studentIdCounts = new Map();
+    result.forEach(app => {
+      if (app.studentId) {
+        studentIdCounts.set(app.studentId, (studentIdCounts.get(app.studentId) || 0) + 1);
+      }
+    });
+    studentIdCounts.forEach((count, studentId) => {
+      if (count > 1) {
+        const apps = result.filter(a => a.studentId === studentId);
+        console.error(`ERROR: Still have ${count} applications for studentId ${studentId}:`, apps.map(a => ({ id: a.id, name: a.student?.name })));
+      }
+    });
+    
+    return result;
   }, [apps, query, activeTab]);
 
   // Sponsor Manually list: unsponsored students (deduped by studentId) with 100% complete profiles
@@ -805,10 +964,11 @@ export const AdminApplications = () => {
                       if (e.target.checked) {
                         const allIds = sponsorManuallyList.map((app) => app.studentId);
                         setSelectedStudentIds(new Set(allIds));
-                        // Initialize amounts to 0 for all students
+                        // Initialize amounts to approved amount (or original amount) for all students
                         const initialAmounts = {};
-                        allIds.forEach((id) => {
-                          initialAmounts[id] = "0";
+                        sponsorManuallyList.forEach((app) => {
+                          const amount = app.approvedAmount ?? app.amount ?? 0;
+                          initialAmounts[app.studentId] = String(amount);
                         });
                         setStudentAmounts(initialAmounts);
                       } else {
@@ -849,10 +1009,11 @@ export const AdminApplications = () => {
                               });
                             } else {
                               next.add(app.studentId);
-                              // Initialize amount to 0 when selected
+                              // Initialize amount to approved amount (or original amount) when selected
+                              const defaultAmount = app.approvedAmount ?? app.amount ?? 0;
                               setStudentAmounts((prevAmounts) => ({
                                 ...prevAmounts,
-                                [app.studentId]: prevAmounts[app.studentId] || "0",
+                                [app.studentId]: prevAmounts[app.studentId] || String(defaultAmount),
                               }));
                             }
                             return next;
@@ -868,10 +1029,11 @@ export const AdminApplications = () => {
                                 const next = new Set(prev);
                                 if (e.target.checked) {
                                   next.add(app.studentId);
-                                  // Initialize amount to 0 when selected
+                                  // Initialize amount to approved amount (or original amount) when selected
+                                  const defaultAmount = app.approvedAmount ?? app.amount ?? 0;
                                   setStudentAmounts((prevAmounts) => ({
                                     ...prevAmounts,
-                                    [app.studentId]: prevAmounts[app.studentId] || "0",
+                                    [app.studentId]: prevAmounts[app.studentId] || String(defaultAmount),
                                   }));
                                 } else {
                                   next.delete(app.studentId);
@@ -893,7 +1055,7 @@ export const AdminApplications = () => {
                               {app.student?.program} at {app.student?.university}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Status: {app.status} · Term: {app.term} · Need: {fmtAmountDual(app.amount, app.currency)}
+                              Status: {app.status} · Term: {app.term} · Need: {fmtAmountDual(app.approvedAmount ?? app.amount, app.currency)}
                             </p>
                           </div>
                         </div>
@@ -907,7 +1069,7 @@ export const AdminApplications = () => {
                               min="0"
                               step="0.01"
                               placeholder="0"
-                              value={studentAmounts[app.studentId] || "0"}
+                              value={studentAmounts[app.studentId] || String(app.approvedAmount ?? app.amount ?? 0)}
                               onChange={(e) => {
                                 const value = e.target.value;
                                 setStudentAmounts((prev) => ({
@@ -939,14 +1101,16 @@ export const AdminApplications = () => {
 
         {filtered.map((row, index) => {
           // Additional safety check: ensure no duplicates by ID or studentId
-          const isDuplicateById = filtered.findIndex(r => r.id === row.id) !== index;
-          const isDuplicateByStudentId = filtered.findIndex(r => r.studentId === row.studentId && r.studentId) !== index;
+          // Use a more robust check that looks at all previous items
+          const seenBefore = filtered.slice(0, index);
+          const isDuplicateById = seenBefore.some(r => r.id === row.id);
+          const isDuplicateByStudentId = row.studentId && seenBefore.some(r => r.studentId === row.studentId);
           if (isDuplicateById || isDuplicateByStudentId) {
-            console.warn(`Duplicate found: ${row.student?.name} - App ID: ${row.id}, Student ID: ${row.studentId}`);
+            console.warn(`Duplicate found and filtered: ${row.student?.name} - App ID: ${row.id}, Student ID: ${row.studentId}`);
             return null;
           }
           
-          const needText = fmtAmountDual(row.amount, row.currency);
+          const needText = fmtAmountDual(row.approvedAmount ?? row.amount, row.currency);
           const docs = docsByRow[row.id] || [];
 
           return (

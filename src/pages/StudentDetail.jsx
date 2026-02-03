@@ -149,7 +149,7 @@ export const StudentDetail = ({ id, goBack }) => {
 
   // Determine currency and amount from application or student
   let currency = application?.currency || student?.currency;
-  let displayAmount = application?.amount || student?.amount || 0;
+  let displayAmount = application?.approvedAmount ?? application?.amount ?? student?.amount ?? 0;
   
   // If no explicit currency, detect from university or country
   if (!currency) {

@@ -43,18 +43,74 @@ export const AdminHub = ({ go }) => {
         if (appsRes.ok) {
           const appsData = await appsRes.json();
           const appsList = appsData.applications || [];
-          // Deduplicate applications by ID to prevent duplicates
+          
+          // Filter out DRAFT applications - they shouldn't appear in admin panel
+          const nonDraftList = appsList.filter(app => app.status !== "DRAFT");
+          
+          // Deduplicate applications by ID and studentId to prevent duplicates
           const appMap = new Map();
-          appsList.forEach(app => {
-            if (app.id && !appMap.has(app.id)) {
-              appMap.set(app.id, app);
+          const seenStudentIds = new Map(); // Track studentId -> application mapping
+          
+          nonDraftList.forEach(app => {
+            // First check: skip if we've already seen this application ID
+            if (app.id && appMap.has(app.id)) {
+              console.warn(`AdminHub Load: Skipping duplicate application ID: ${app.id} for student: ${app.student?.name}`);
+              return;
+            }
+            
+            // Second check: if we've already seen this studentId, keep only the best application
+            // Priority: 1) Submitted applications (has submittedAt), 2) Most recent
+            if (app.studentId && seenStudentIds.has(app.studentId)) {
+              const existing = seenStudentIds.get(app.studentId);
+              
+              // Priority: submitted apps over non-submitted
+              const appIsSubmitted = !!app.submittedAt;
+              const existingIsSubmitted = !!existing.submittedAt;
+              
+              if (appIsSubmitted && !existingIsSubmitted) {
+                // This app is submitted, existing is not - replace
+                appMap.delete(existing.id);
+                appMap.set(app.id, app);
+                seenStudentIds.set(app.studentId, app);
+                console.log(`AdminHub Load: Replacing non-submitted with submitted app for student ${app.student?.name}: keeping app ${app.id} over ${existing.id}`);
+                return;
+              } else if (!appIsSubmitted && existingIsSubmitted) {
+                // Existing is submitted, this one is not - skip
+                console.log(`AdminHub Load: Skipping non-submitted app ${app.id} for student ${app.student?.name}, keeping submitted ${existing.id}`);
+                return;
+              }
+              
+              // Both are submitted or both are not - compare by date
+              const appDate = app.submittedAt ? new Date(app.submittedAt).getTime() : (app.createdAt ? new Date(app.createdAt).getTime() : 0);
+              const existingDate = existing.submittedAt ? new Date(existing.submittedAt).getTime() : (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
+              
+              if (appDate > existingDate || (appDate === existingDate && app.id > existing.id)) {
+                // This app is more recent, replace the existing one
+                appMap.delete(existing.id);
+                appMap.set(app.id, app);
+                seenStudentIds.set(app.studentId, app);
+                console.log(`AdminHub Load: Replacing application for student ${app.student?.name}: keeping app ${app.id} over ${existing.id}`);
+              } else {
+                // Existing is more recent, skip this one
+                console.log(`AdminHub Load: Skipping older application ${app.id} for student ${app.student?.name}, keeping ${existing.id}`);
+                return;
+              }
+            } else {
+              // First time seeing this studentId or no studentId
+              if (app.id) {
+                appMap.set(app.id, app);
+                if (app.studentId) {
+                  seenStudentIds.set(app.studentId, app);
+                }
+              }
             }
           });
+          
           const uniqueApps = Array.from(appMap.values());
           
           // Debug: Log if duplicates were found
           if (appsList.length !== uniqueApps.length) {
-            console.warn(`Found ${appsList.length - uniqueApps.length} duplicate applications`);
+            console.warn(`AdminHub: Filtered ${appsList.length - uniqueApps.length} duplicate/draft applications (${appsList.length} -> ${uniqueApps.length})`);
           }
           
           setApplications(uniqueApps);
@@ -157,23 +213,81 @@ export const AdminHub = ({ go }) => {
       }
     }
     loadData();
+    
+    // Set up polling to refresh data every 15 seconds (same as AdminApplications)
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    }, 15000);
+    
+    // Also refresh when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [token]);
 
   // Deduplicate applications by ID and filter by search term
   // Use useMemo to ensure deduplication happens consistently
   const filteredApps = useMemo(() => {
+    // Filter out DRAFT applications first
+    const nonDraftApps = applications.filter(app => app.status !== "DRAFT");
+    
     // First deduplicate by application ID
     const appMap = new Map();
-    applications.forEach(app => {
+    nonDraftApps.forEach(app => {
       if (app.id && !appMap.has(app.id)) {
         appMap.set(app.id, app);
       }
     });
     const uniqueApps = Array.from(appMap.values());
     
+    // Then deduplicate by studentId to show only one application per student (most recent)
+    const studentMap = new Map();
+    uniqueApps.forEach(app => {
+      if (app.studentId) {
+        const existing = studentMap.get(app.studentId);
+        if (!existing) {
+          studentMap.set(app.studentId, app);
+        } else {
+          // Keep the most recent submitted application
+          const appIsSubmitted = !!app.submittedAt;
+          const existingIsSubmitted = !!existing.submittedAt;
+          
+          if (appIsSubmitted && !existingIsSubmitted) {
+            studentMap.set(app.studentId, app);
+          } else if (!appIsSubmitted && existingIsSubmitted) {
+            // Keep existing
+          } else {
+            // Both submitted or both not - compare by date
+            const appDate = app.submittedAt ? new Date(app.submittedAt).getTime() : (app.createdAt ? new Date(app.createdAt).getTime() : 0);
+            const existingDate = existing.submittedAt ? new Date(existing.submittedAt).getTime() : (existing.createdAt ? new Date(existing.createdAt).getTime() : 0);
+            
+            if (appDate > existingDate || (appDate === existingDate && app.id > existing.id)) {
+              studentMap.set(app.studentId, app);
+            }
+          }
+        }
+      } else {
+        // No studentId - keep by app ID
+        if (app.id && !studentMap.has(`app_${app.id}`)) {
+          studentMap.set(`app_${app.id}`, app);
+        }
+      }
+    });
+    const dedupedByStudent = Array.from(studentMap.values());
+    
     // Then filter by search term
-    return uniqueApps.filter((app) =>
-      app.student?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    return dedupedByStudent.filter((app) =>
+      !searchTerm || app.student?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [applications, searchTerm]);
 
@@ -532,7 +646,7 @@ export const AdminHub = ({ go }) => {
                         {app.student.program} at {app.student.university}
                       </p>
                       <p className="text-sm text-emerald-700">
-                        Need: {fmtAmount(app.amount, app.currency)} 
+                        Need: {fmtAmount(app.approvedAmount ?? app.amount, app.currency)} 
                         | Term: {app.term} | Approved: {app.approvedAt ? new Date(app.approvedAt).toLocaleDateString() : (app.updatedAt ? new Date(app.updatedAt).toLocaleDateString() : 'N/A')}
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
@@ -612,7 +726,7 @@ export const AdminHub = ({ go }) => {
                         {app.student.program} at {app.student.university}
                       </p>
                       <p className="text-sm text-purple-700">
-                        Need: {fmtAmount(app.amount, app.currency)} 
+                        Need: {fmtAmount(app.approvedAmount ?? app.amount, app.currency)} 
                         | Term: {app.term} | Approved: {new Date(app.updatedAt).toLocaleDateString()}
                       </p>
                       {app.fieldReviews?.some(r => r.status === 'COMPLETED') && (
@@ -856,7 +970,7 @@ export const AdminHub = ({ go }) => {
                         {app.student.program} at {app.student.university}
                       </p>
                       <p className="text-sm text-slate-500">
-                        Submitted: {new Date(app.submittedAt).toLocaleDateString()} | Need: {fmtAmount(app.amount, app.currency)}
+                        Submitted: {new Date(app.submittedAt).toLocaleDateString()} | Need: {fmtAmount(app.approvedAmount ?? app.amount, app.currency)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
