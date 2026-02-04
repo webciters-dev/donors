@@ -1,6 +1,7 @@
 // Quick script to view students in the database
 import prisma from './src/prismaClient.js';
 
+
 async function viewStudents() {
   try {
     console.log('\n📚 STUDENTS IN DATABASE\n');
